@@ -143,7 +143,7 @@
   - Generate `docs/ADDED_HOSPITALS_EVIDENCE.csv` with per-field source URL, retrieval date, and status.
   - Use "verified" only with verified proof; soften unverified claims.
   - Commit: `C8: real link verification logs, added hospitals evidence csv and honesty pass`.
-- [ ] **C9 — High contrast error, quick picks rankable & full-page screenshots**:
+- [x] **C9 — High contrast error, quick picks rankable & full-page screenshots**:
   - High-contrast error banner for invalid manual location (contrast >= 4.5:1).
   - Quick Picks uses `rankable()`.
   - Playwright captures full-page (desktop 1440px, mobile 390px) + close-ups (map, table, Plotly chart, emergency banner, What-If expander).

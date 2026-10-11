@@ -141,6 +141,25 @@ st.markdown("""
         margin-left: 6px;
         border: 1px solid rgba(255,170,0,0.3);
     }
+    /* High-contrast sidebar error banner (Contrast ratio >= 4.5:1, WCAG AAA compliant) */
+    .location-error-box {
+        background-color: #7F1D1D !important;
+        color: #FFFFFF !important;
+        border: 2px solid #EF4444 !important;
+        border-radius: 8px !important;
+        padding: 12px 14px !important;
+        font-size: 0.88rem !important;
+        line-height: 1.4 !important;
+        margin: 10px 0 !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+    }
+    .location-error-box code {
+        background: #991B1B !important;
+        color: #FEE2E2 !important;
+        padding: 2px 5px !important;
+        border-radius: 4px !important;
+        font-weight: 700 !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -206,10 +225,23 @@ with st.sidebar:
                 user_lat, user_lon = float(parts[0]), float(parts[1])
                 if not (ODISHA_BOUNDS["lat_min"] <= user_lat <= ODISHA_BOUNDS["lat_max"] and
                         ODISHA_BOUNDS["lon_min"] <= user_lon <= ODISHA_BOUNDS["lon_max"]):
-                    st.error("📍 Location is outside Odisha bounds (lat 17.8–22.6, lon 81.3–87.5). Please enter valid coordinates inside Odisha.")
+                    st.markdown(
+                        '<div class="location-error-box">'
+                        '<strong>⚠️ Location Out of Bounds:</strong><br>'
+                        'Coordinates must be within Odisha bounds (lat 17.8–22.6, lon 81.3–87.5). '
+                        'Please enter valid coordinates inside Odisha.'
+                        '</div>',
+                        unsafe_allow_html=True
+                    )
                     st.stop()
             except (ValueError, IndexError):
-                st.error("📍 Please enter valid coordinates in format: lat, lon (e.g. 20.2961, 85.8245)")
+                st.markdown(
+                    '<div class="location-error-box">'
+                    '<strong>⚠️ Invalid Format:</strong><br>'
+                    'Please enter valid coordinates in format: <code>lat, lon</code> (e.g. <code>20.2961, 85.8245</code>) or a known area name.'
+                    '</div>',
+                    unsafe_allow_html=True
+                )
                 st.stop()
     else:  # "Use my current location"
         place = "Device Location (Bhubaneswar Central)"
@@ -268,6 +300,24 @@ with st.sidebar:
             snap.loc[snap["hospital_name"] == sim_hosp, "general_ward_available_beds"] = sim_free
             snap.loc[snap["hospital_name"] == sim_hosp, "beds_free_now"] = sim_free
             st.info(f"Simulating {sim_hosp[:24]}: {sim_free} beds free.")
+            if sim_free == 0:
+                st.markdown(
+                    '<div class="sim-warning-badge" style="background: rgba(239, 68, 68, 0.2); color: #F87171; '
+                    'border: 1px solid #EF4444; padding: 8px 12px; border-radius: 6px; font-weight: 600; '
+                    'font-size: 0.82rem; margin-top: 8px;">'
+                    '⚠️ P(bed arrival) &lt; 50%: Facility critical / zero beds available on arrival.'
+                    '</div>',
+                    unsafe_allow_html=True
+                )
+        elif sim_free == 0:
+            st.markdown(
+                '<div class="sim-warning-badge" style="background: rgba(239, 68, 68, 0.2); color: #F87171; '
+                'border: 1px solid #EF4444; padding: 8px 12px; border-radius: 6px; font-weight: 600; '
+                'font-size: 0.82rem; margin-top: 8px;">'
+                '⚠️ P(bed arrival) &lt; 50%: Facility critical / zero beds available on arrival.'
+                '</div>',
+                unsafe_allow_html=True
+            )
 
     st.markdown("---")
 
@@ -314,10 +364,11 @@ if not ranked.empty:
     st.markdown("#### 🏆 Quick Picks")
     c1, c2, c3, c4 = st.columns(4)
 
-    nearest = ranked.loc[ranked["dist_km"].idxmin()]
-    cheapest = ranked.loc[ranked["admission_fee_inr"].idxmin()]
-    best_rated = ranked.loc[ranked["rating_5"].idxmax()]
-    most_beds = ranked.loc[ranked["beds_free_now"].idxmax()]
+    # Quick picks follow rankable() with deterministic tie-breaking for identical behavior across modes
+    nearest = ranked.sort_values(["dist_km", "hospital_id"]).iloc[0]
+    cheapest = ranked.sort_values(["admission_fee_inr", "dist_km", "hospital_id"]).iloc[0]
+    best_rated = ranked.sort_values(["rating_5", "review_count", "hospital_id"], ascending=[False, False, True]).iloc[0]
+    most_beds = ranked.sort_values(["beds_free_now", "dist_km", "hospital_id"], ascending=[False, True, True]).iloc[0]
 
     with c1:
         st.markdown(render_html("""

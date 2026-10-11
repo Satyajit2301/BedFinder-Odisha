@@ -220,3 +220,61 @@ class TestSchemeCardToggleAffordability:
             assert row_on["fee_eff"] == row_off["fee_eff"], "Fee must be unchanged for non-accepting"
             assert row_on["t_afford"] == row_off["t_afford"], "Affordability must be unchanged for non-accepting"
 
+
+class TestQuickPicks:
+    def test_quick_picks_identical_between_mentor_and_bedscore(self):
+        """C9: Quick Picks must behave identically in Mentor mode and BedScore mode."""
+        from src.config import ENRICHED_CSV, LANDMARKS
+        from src.geo import road_distance_km
+        hosp = pd.read_csv(ENRICHED_CSV)
+        lat, lon = LANDMARKS["Bhubaneswar Railway Station"]
+        hosp["dist_km"] = road_distance_km(lat, lon, hosp["latitude"].values, hosp["longitude"].values).round(1)
+
+        res_mentor = rank_hospitals(hosp, lat, lon, method="mentor", include_specialty=False)
+        res_bedscore = rank_hospitals(hosp, lat, lon, method="bedscore", include_specialty=False)
+
+        cand_m = rankable(res_mentor, include_specialty=False)
+        cand_b = rankable(res_bedscore, include_specialty=False)
+
+        # Nearest
+        near_m = cand_m.sort_values(["dist_km", "hospital_id"]).iloc[0]["hospital_id"]
+        near_b = cand_b.sort_values(["dist_km", "hospital_id"]).iloc[0]["hospital_id"]
+        assert near_m == near_b
+
+        # Cheapest
+        cheap_m = cand_m.sort_values(["admission_fee_inr", "dist_km", "hospital_id"]).iloc[0]["hospital_id"]
+        cheap_b = cand_b.sort_values(["admission_fee_inr", "dist_km", "hospital_id"]).iloc[0]["hospital_id"]
+        assert cheap_m == cheap_b
+
+        # Best Rated
+        rate_m = cand_m.sort_values(["rating_5", "review_count", "hospital_id"], ascending=[False, False, True]).iloc[0]["hospital_id"]
+        rate_b = cand_b.sort_values(["rating_5", "review_count", "hospital_id"], ascending=[False, False, True]).iloc[0]["hospital_id"]
+        assert rate_m == rate_b
+
+        # Most Beds
+        beds_m = cand_m.sort_values(["general_ward_available_beds", "dist_km", "hospital_id"], ascending=[False, True, True]).iloc[0]["hospital_id"]
+        beds_b = cand_b.sort_values(["general_ward_available_beds", "dist_km", "hospital_id"], ascending=[False, True, True]).iloc[0]["hospital_id"]
+        assert beds_m == beds_b
+
+    def test_quick_picks_excludes_specialty_when_toggle_off(self):
+        """C9: Quick Picks must never pick specialty hospitals when toggle is off."""
+        from src.config import ENRICHED_CSV, LANDMARKS
+        from src.geo import road_distance_km
+        hosp = pd.read_csv(ENRICHED_CSV)
+        lat, lon = LANDMARKS["Jaydev Vihar Square"]
+        hosp["dist_km"] = road_distance_km(lat, lon, hosp["latitude"].values, hosp["longitude"].values).round(1)
+
+        res = rank_hospitals(hosp, lat, lon, method="bedscore", include_specialty=False)
+        candidates = rankable(res, include_specialty=False)
+
+        specialty_ids = set(hosp.loc[hosp["category"].str.lower() == "specialty", "hospital_id"])
+        picks = [
+            candidates.sort_values(["dist_km", "hospital_id"]).iloc[0]["hospital_id"],
+            candidates.sort_values(["admission_fee_inr", "dist_km", "hospital_id"]).iloc[0]["hospital_id"],
+            candidates.sort_values(["rating_5", "review_count", "hospital_id"], ascending=[False, False, True]).iloc[0]["hospital_id"],
+            candidates.sort_values(["general_ward_available_beds", "dist_km", "hospital_id"], ascending=[False, True, True]).iloc[0]["hospital_id"],
+        ]
+        for p in picks:
+            assert p not in specialty_ids, f"Specialty hospital {p} selected in Quick Picks"
+
+

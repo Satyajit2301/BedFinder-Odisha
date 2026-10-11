@@ -47,89 +47,125 @@ def main():
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
 
-            # --- DESKTOP VIEWPORT (1366x768) ---
-            desktop = browser.new_context(viewport={"width": 1366, "height": 768})
+            # --- DESKTOP VIEWPORT (1440x900) ---
+            desktop = browser.new_context(viewport={"width": 1440, "height": 900})
             page = desktop.new_page()
 
-            # 1. Default view
-            print("1. Capturing 01_default_view_1366x768.png...")
+            # 1. Full Page Desktop (1440 wide)
+            print("1. Capturing 01_full_page_desktop_1440.png...")
             page.goto(url)
-            page.wait_for_selector(".hospital-card", timeout=25000)
+            page.wait_for_selector(".hospital-card", timeout=30000)
+            page.wait_for_timeout(4000)
+            # Scroll down to trigger lazy loading of map and table
+            page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
             page.wait_for_timeout(3000)
-            page.screenshot(path=str(SCREENSHOTS_DIR / "01_default_view_1366x768.png"), full_page=True)
+            page.evaluate("window.scrollTo(0, 0)")
+            page.wait_for_timeout(1500)
+            page.screenshot(path=str(SCREENSHOTS_DIR / "01_full_page_desktop_1440.png"), full_page=True)
 
-            # 2. BedScore method
-            print("2. Capturing 06_bedscore_method_1366x768.png...")
-            bedscore_opt = page.locator('label:has-text("BedScore")')
-            if bedscore_opt.count() > 0:
-                bedscore_opt.first.click()
-                page.wait_for_timeout(3000)
-                page.screenshot(path=str(SCREENSHOTS_DIR / "06_bedscore_method_1366x768.png"), full_page=True)
-
-            # 3. Card toggle ON
-            print("3. Capturing 04_card_toggle_on_1366x768.png...")
-            card_toggle = page.locator('label:has-text("Ayushman")')
-            if card_toggle.count() > 0:
-                card_toggle.first.click()
-                page.wait_for_timeout(3000)
-                page.screenshot(path=str(SCREENSHOTS_DIR / "04_card_toggle_on_1366x768.png"), full_page=True)
-                card_toggle.first.click()  # reset
-                page.wait_for_timeout(1500)
-
-            # 4. What-if expander
-            print("4. Capturing 07_whatif_expander_1366x768.png...")
-            expander = page.locator('summary:has-text("Simulate a hospital filling up")')
-            if expander.count() == 0:
-                expander = page.locator('text=Simulate a hospital filling up')
-            if expander.count() > 0:
-                expander.first.click()
-                page.wait_for_timeout(2500)
-                page.screenshot(path=str(SCREENSHOTS_DIR / "07_whatif_expander_1366x768.png"), full_page=True)
-                expander.first.click()  # close
+            # 2. Close-up of Emergency Banner
+            print("2. Capturing 02_closeup_emergency_banner.png...")
+            try:
+                page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                page.wait_for_selector(".emergency-bar", timeout=10000)
+                banner = page.locator(".emergency-bar").first
+                banner.scroll_into_view_if_needed()
                 page.wait_for_timeout(1000)
+                banner.screenshot(path=str(SCREENSHOTS_DIR / "02_closeup_emergency_banner.png"))
+                print("   [ok] Saved 02_closeup_emergency_banner.png")
+            except Exception as e:
+                print(f"   [err] Emergency banner capture failed: {e}")
 
-            # 5. Invalid manual location
-            print("5. Capturing 05_invalid_manual_location_1366x768.png...")
-            manual_opt = page.locator('label:has-text("Enter manually")')
-            if manual_opt.count() > 0:
-                manual_opt.first.click()
+            # 3. Close-up of Data Table
+            print("3. Capturing 03_closeup_data_table.png...")
+            try:
+                page.wait_for_selector('[data-testid="stDataFrame"], .stDataFrame', timeout=10000)
+                table = page.locator('[data-testid="stDataFrame"]').first
+                if table.count() == 0:
+                    table = page.locator('.stDataFrame').first
+                table.scroll_into_view_if_needed()
+                page.wait_for_timeout(1000)
+                table.screenshot(path=str(SCREENSHOTS_DIR / "03_closeup_data_table.png"))
+                print("   [ok] Saved 03_closeup_data_table.png")
+            except Exception as e:
+                print(f"   [err] Data table capture failed: {e}")
+
+            # 4. Close-up of Hospital Map
+            print("4. Capturing 04_closeup_map_markers.png...")
+            try:
+                map_elem = page.locator('iframe[title*="folium"], .stCustomComponentV1').first
+                map_elem.scroll_into_view_if_needed()
+                page.wait_for_timeout(2000)
+                map_elem.screenshot(path=str(SCREENSHOTS_DIR / "04_closeup_map_markers.png"))
+                print("   [ok] Saved 04_closeup_map_markers.png")
+            except Exception as e:
+                print(f"   [err] Map capture failed: {e}")
+
+            # 5. Close-up of Plotly "Why this rank?" Chart
+            print("5. Capturing 05_closeup_plotly_breakdown.png...")
+            try:
+                why_expander = page.locator('summary:has-text("Why this rank")').first
+                why_expander.scroll_into_view_if_needed()
+                why_expander.click()
+                page.wait_for_selector('[data-testid="stPlotlyChart"], .stPlotlyChart, .js-plotly-plot', timeout=15000)
+                page.wait_for_timeout(2000)
+                plotly_chart = page.locator('[data-testid="stPlotlyChart"]').first
+                if plotly_chart.count() == 0:
+                    plotly_chart = page.locator('.stPlotlyChart').first
+                plotly_chart.scroll_into_view_if_needed()
+                page.wait_for_timeout(1000)
+                plotly_chart.screenshot(path=str(SCREENSHOTS_DIR / "05_closeup_plotly_breakdown.png"))
+                print("   [ok] Saved 05_closeup_plotly_breakdown.png")
+                why_expander.click()  # close
+                page.wait_for_timeout(1000)
+            except Exception as e:
+                print(f"   [err] Plotly chart capture failed: {e}")
+
+            # 6. Simulate expander at 0 beds with warning badge
+            print("6. Capturing 06_closeup_simulate_0_beds_warning.png...")
+            try:
+                sim_expander = page.locator('summary:has-text("Simulate a hospital filling up")').first
+                sim_expander.scroll_into_view_if_needed()
+                sim_expander.click()
+                page.wait_for_timeout(2000)
+                beds_input = page.locator('input[type="number"]').first
+                if beds_input.count() > 0:
+                    beds_input.fill("0")
+                    beds_input.press("Enter")
+                    page.wait_for_timeout(3500)
+                # Capture the expander container showing 0 beds and warning badge
+                exp_container = page.locator('div[data-testid="stExpander"]:has-text("Simulate a hospital filling up")').first
+                if exp_container.count() > 0:
+                    exp_container.screenshot(path=str(SCREENSHOTS_DIR / "06_closeup_simulate_0_beds_warning.png"))
+                else:
+                    page.locator('.sim-warning-badge').first.screenshot(path=str(SCREENSHOTS_DIR / "06_closeup_simulate_0_beds_warning.png"))
+                print("   [ok] Saved 06_closeup_simulate_0_beds_warning.png")
+            except Exception as e:
+                print(f"   [err] Simulate warning capture failed: {e}")
+
+            # 7. Invalid location error high contrast close-up
+            print("7. Capturing 07_closeup_invalid_location_contrast.png...")
+            try:
+                manual_opt = page.locator('label:has-text("Enter manually")').first
+                manual_opt.scroll_into_view_if_needed()
+                manual_opt.click()
                 page.wait_for_timeout(2000)
                 input_box = page.locator('input[type="text"]').first
                 if input_box.count() > 0:
                     input_box.fill("28.6139, 77.2090")
                     input_box.press("Enter")
-                    page.wait_for_timeout(2500)
-                    page.screenshot(path=str(SCREENSHOTS_DIR / "05_invalid_manual_location_1366x768.png"), full_page=True)
-
-            # Reset back to default landmark
-            landmark_opt = page.locator('label:has-text("Select landmark")')
-            if landmark_opt.count() > 0:
-                landmark_opt.first.click()
-                page.wait_for_timeout(2000)
-
-            # 6. Top N = 1 (via slider interaction)
-            print("6. Capturing 02_top_n_1_1366x768.png...")
-            slider = page.locator('div[role="slider"]')
-            if slider.count() > 0:
-                slider.first.focus()
-                for _ in range(35):
-                    slider.first.press("ArrowLeft")
-                page.wait_for_timeout(2500)
-                page.screenshot(path=str(SCREENSHOTS_DIR / "02_top_n_1_1366x768.png"), full_page=True)
-
-            # 7. Top N = all (32)
-            print("7. Capturing 03_top_n_all_1366x768.png...")
-            if slider.count() > 0:
-                slider.first.focus()
-                for _ in range(35):
-                    slider.first.press("ArrowRight")
-                page.wait_for_timeout(2500)
-                page.screenshot(path=str(SCREENSHOTS_DIR / "03_top_n_all_1366x768.png"), full_page=True)
+                    page.wait_for_timeout(3000)
+                    page.wait_for_selector(".location-error-box", timeout=10000)
+                    err_box = page.locator(".location-error-box").first
+                    err_box.screenshot(path=str(SCREENSHOTS_DIR / "07_closeup_invalid_location_contrast.png"))
+                    print("   [ok] Saved 07_closeup_invalid_location_contrast.png")
+            except Exception as e:
+                print(f"   [err] Location error capture failed: {e}")
 
             desktop.close()
 
             # --- MOBILE VIEWPORT (390x844) ---
-            print("8. Capturing 08_mobile_view_390x844.png...")
+            print("8. Capturing 08_full_page_mobile_390.png...")
             mobile = browser.new_context(
                 viewport={"width": 390, "height": 844},
                 is_mobile=True,
@@ -137,14 +173,14 @@ def main():
             )
             mob_page = mobile.new_page()
             mob_page.goto(url)
-            mob_page.wait_for_selector(".hospital-card", timeout=25000)
+            mob_page.wait_for_selector(".hospital-card", timeout=30000)
             mob_page.wait_for_timeout(3000)
-            mob_page.screenshot(path=str(SCREENSHOTS_DIR / "08_mobile_view_390x844.png"), full_page=True)
+            mob_page.screenshot(path=str(SCREENSHOTS_DIR / "08_full_page_mobile_390.png"), full_page=True)
             mobile.close()
 
             browser.close()
 
-        print(f"All 8 screenshots successfully captured into {SCREENSHOTS_DIR}!")
+        print(f"All screenshots successfully captured into {SCREENSHOTS_DIR}!")
         return 0
     finally:
         print("Stopping Streamlit server...")
