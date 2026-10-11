@@ -103,3 +103,19 @@ def test_contact_verification_ui_rules():
         assert rendered_link is None, f"Dead link rendered for {r['hospital_id']}: {raw_web} with status {r['website_status']}"
 
 
+def test_screenshots_folder_only_contains_produced_files():
+    """D5: capture_screenshots.py is the only source of files in docs/screenshots/."""
+    from scripts.capture_screenshots import PRODUCED_FILES
+    from pathlib import Path
+
+    sc_dir = Path(__file__).resolve().parent.parent / "docs" / "screenshots"
+    assert sc_dir.exists(), "docs/screenshots directory must exist"
+
+    actual_files = sorted([f.name for f in sc_dir.iterdir() if f.is_file()])
+    expected_files = sorted(PRODUCED_FILES)
+
+    # Every file in the folder must be in PRODUCED_FILES
+    unexpected = [f for f in actual_files if f not in expected_files]
+    assert not unexpected, f"Unexpected screenshot files found in docs/screenshots: {unexpected}"
+
+

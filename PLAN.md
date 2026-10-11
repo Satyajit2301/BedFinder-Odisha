@@ -178,7 +178,7 @@
   - Set scheme flags to `unknown` unless specific source page exists.
   - Fee = 0 marked estimated unless sourced.
   - Commit: `D4: scheme flags and fee honesty pass`.
-- [ ] **D5 — Stale screenshots purge & badge leak regression assertions**:
+- [x] **D5 — Stale screenshots purge & badge leak regression assertions**:
   - Delete old stale screenshots (1366x768 / 390x844).
   - Assert `page.inner_text("body")` contains no `<span`, `&lt;`, or `est-badge` before saving.
   - Regenerate screenshots via `capture_screenshots.py`.

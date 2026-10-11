@@ -8,6 +8,26 @@ from pathlib import Path
 SCREENSHOTS_DIR = Path("docs/screenshots")
 SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
 
+PRODUCED_FILES = [
+    "01_full_page_desktop_1440.png",
+    "02_closeup_emergency_banner.png",
+    "03_closeup_data_table.png",
+    "04_closeup_map_markers.png",
+    "05_closeup_plotly_breakdown.png",
+    "06_closeup_simulate_0_beds_warning.png",
+    "07_closeup_invalid_location_contrast.png",
+    "08_full_page_mobile_390.png",
+]
+
+
+def assert_no_badge_leak(page, step_name: str):
+    """Assert DOM body contains no raw HTML '<span', '&lt;', or 'est-badge' leaks."""
+    body_text = page.inner_text("body")
+    assert "<span" not in body_text, f"[{step_name}] Leaked '<span' found in inner text"
+    assert "&lt;" not in body_text, f"[{step_name}] Leaked '&lt;' found in inner text"
+    assert "est-badge" not in body_text, f"[{step_name}] Leaked 'est-badge' found in inner text"
+    print(f"   [leak check PASS] {step_name}: 0 '<span', 0 '&lt;', 0 'est-badge' in inner text")
+
 
 def wait_for_server(url: str, timeout: int = 30) -> bool:
     import urllib.request
@@ -61,6 +81,7 @@ def main():
             page.wait_for_timeout(3000)
             page.evaluate("window.scrollTo(0, 0)")
             page.wait_for_timeout(1500)
+            assert_no_badge_leak(page, "01_full_page_desktop_1440")
             page.screenshot(path=str(SCREENSHOTS_DIR / "01_full_page_desktop_1440.png"), full_page=True)
 
             # 2. Close-up of Emergency Banner
@@ -71,6 +92,7 @@ def main():
                 banner = page.locator(".emergency-bar").first
                 banner.scroll_into_view_if_needed()
                 page.wait_for_timeout(1000)
+                assert_no_badge_leak(page, "02_closeup_emergency_banner")
                 banner.screenshot(path=str(SCREENSHOTS_DIR / "02_closeup_emergency_banner.png"))
                 print("   [ok] Saved 02_closeup_emergency_banner.png")
             except Exception as e:
@@ -85,6 +107,7 @@ def main():
                     table = page.locator('.stDataFrame').first
                 table.scroll_into_view_if_needed()
                 page.wait_for_timeout(1000)
+                assert_no_badge_leak(page, "03_closeup_data_table")
                 table.screenshot(path=str(SCREENSHOTS_DIR / "03_closeup_data_table.png"))
                 print("   [ok] Saved 03_closeup_data_table.png")
             except Exception as e:
@@ -96,6 +119,7 @@ def main():
                 map_elem = page.locator('iframe[title*="folium"], .stCustomComponentV1').first
                 map_elem.scroll_into_view_if_needed()
                 page.wait_for_timeout(2000)
+                assert_no_badge_leak(page, "04_closeup_map_markers")
                 map_elem.screenshot(path=str(SCREENSHOTS_DIR / "04_closeup_map_markers.png"))
                 print("   [ok] Saved 04_closeup_map_markers.png")
             except Exception as e:
@@ -114,6 +138,7 @@ def main():
                     plotly_chart = page.locator('.stPlotlyChart').first
                 plotly_chart.scroll_into_view_if_needed()
                 page.wait_for_timeout(1000)
+                assert_no_badge_leak(page, "05_closeup_plotly_breakdown")
                 plotly_chart.screenshot(path=str(SCREENSHOTS_DIR / "05_closeup_plotly_breakdown.png"))
                 print("   [ok] Saved 05_closeup_plotly_breakdown.png")
                 why_expander.click()  # close
@@ -134,6 +159,7 @@ def main():
                     beds_input.press("Enter")
                     page.wait_for_timeout(3500)
                 # Capture the expander container showing 0 beds and warning badge
+                assert_no_badge_leak(page, "06_closeup_simulate_0_beds_warning")
                 exp_container = page.locator('div[data-testid="stExpander"]:has-text("Simulate a hospital filling up")').first
                 if exp_container.count() > 0:
                     exp_container.screenshot(path=str(SCREENSHOTS_DIR / "06_closeup_simulate_0_beds_warning.png"))
@@ -156,6 +182,7 @@ def main():
                     input_box.press("Enter")
                     page.wait_for_timeout(3000)
                     page.wait_for_selector(".location-error-box", timeout=10000)
+                    assert_no_badge_leak(page, "07_closeup_invalid_location_contrast")
                     err_box = page.locator(".location-error-box").first
                     err_box.screenshot(path=str(SCREENSHOTS_DIR / "07_closeup_invalid_location_contrast.png"))
                     print("   [ok] Saved 07_closeup_invalid_location_contrast.png")
@@ -175,6 +202,7 @@ def main():
             mob_page.goto(url)
             mob_page.wait_for_selector(".hospital-card", timeout=30000)
             mob_page.wait_for_timeout(3000)
+            assert_no_badge_leak(mob_page, "08_full_page_mobile_390")
             mob_page.screenshot(path=str(SCREENSHOTS_DIR / "08_full_page_mobile_390.png"), full_page=True)
             mobile.close()
 
