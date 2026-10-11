@@ -443,6 +443,23 @@ else:
             if p_val < 0.5:
                 bed_warning = safe_html('<div style="color: #FFAA00; font-size: 0.8rem; margin-top: 4px; font-weight: 600;">⚠️ This hospital may have no free bed on arrival.</div>')
 
+            # UI rule D3: show phone only if phone_confirmed == 'yes'
+            is_phone_conf = str(r.get("phone_confirmed", "")).strip().lower() == "yes"
+            raw_phone = str(r.get("phone", "")).strip() if pd.notna(r.get("phone")) else ""
+            if is_phone_conf and raw_phone and raw_phone != "nan":
+                phone_card = safe_html(f'📞 <a href="tel:{raw_phone}" style="color:#00BFA6;">{raw_phone}</a>')
+            else:
+                phone_card = safe_html('📞 Phone: <span style="color:#888;">Not verified</span>')
+
+            # UI rule D3: show website as link only if status is LIVE or website_confirmed == 'yes'
+            is_web_live = str(r.get("website_status", "")).strip() == "LIVE"
+            is_web_conf = str(r.get("website_confirmed", "")).strip().lower() == "yes"
+            raw_web = str(r.get("website", "")).strip() if pd.notna(r.get("website")) else ""
+            if (is_web_live or is_web_conf) and raw_web and raw_web != "nan" and raw_web:
+                web_card = safe_html(f'🌐 <a href="{raw_web}" target="_blank" rel="noopener" style="color:#00BFA6;">Website</a>')
+            else:
+                web_card = safe_html('🌐 Website: <span style="color:#888;">Not verified</span>')
+
             card_html = render_html("""
             <div class="hospital-card">
                 <h3>#{rank} {name}{spec_tag}{est_tag}</h3>
@@ -458,13 +475,17 @@ else:
                 <div class="detail">
                     PM-JAY: {pmjay} &nbsp; GJAY (Odisha): {state_sch}
                 </div>
+                <div class="detail">
+                    {phone_card} &nbsp; {web_card}
+                </div>
             </div>
             """, rank=int(r["rank"]), name=r["hospital_name"][:32], spec_tag=spec_tag, est_tag=est_tag,
                est_disclosure=est_disclosure,
                p_col=p_col, p_ico=p_ico, p_word=p_word, chance=pct(p_val), beds=r["beds_free_now"],
                bed_warning=bed_warning, dist=r["dist_km"], eta=r["eta_min"], fee=r["admission_fee_inr"],
                rating=r["rating_5"], reviews=r["review_count"], type_str=r["hospital_type"],
-               live_text=live_text, pmjay=pmjay_status, state_sch=state_status)
+               live_text=live_text, pmjay=pmjay_status, state_sch=state_status,
+               phone_card=phone_card, web_card=web_card)
 
             st.markdown(card_html, unsafe_allow_html=True)
 
@@ -513,13 +534,22 @@ for _, r in result.iterrows():
     if not is_ranked:
         marker_hex = "#6B7280"
 
-    website_line = ""
-    if r.get("website_verified") and r.get("website") and str(r["website"]) != "nan":
-        website_line = f'<a href="{r["website"]}" target="_blank" rel="noopener">🌐 Website (Verified)</a><br>'
+    # UI rule D3: show phone only if phone_confirmed == yes. Otherwise "Not verified" in plain text.
+    is_phone_conf = str(r.get("phone_confirmed", "")).strip().lower() == "yes"
+    raw_phone = str(r.get("phone", "")).strip() if pd.notna(r.get("phone")) else ""
+    if is_phone_conf and raw_phone and raw_phone != "nan":
+        phone_line = f'📞 <a href="tel:{raw_phone}">{raw_phone}</a><br>'
+    else:
+        phone_line = f'📞 Phone: <span style="color:#888;">Not verified</span><br>'
 
-    phone_line = ""
-    if r.get("phone_verified") and r.get("phone") and str(r["phone"]) != "nan":
-        phone_line = f'📞 <a href="tel:{r["phone"]}">{r["phone"]}</a><br>'
+    # UI rule D3: show website as link only if status is LIVE or website_confirmed == yes. Never dead link.
+    is_web_live = str(r.get("website_status", "")).strip() == "LIVE"
+    is_web_conf = str(r.get("website_confirmed", "")).strip().lower() == "yes"
+    raw_web = str(r.get("website", "")).strip() if pd.notna(r.get("website")) else ""
+    if (is_web_live or is_web_conf) and raw_web and raw_web != "nan" and raw_web:
+        website_line = f'<a href="{raw_web}" target="_blank" rel="noopener">🌐 Website</a><br>'
+    else:
+        website_line = f'🌐 Website: <span style="color:#888;">Not verified</span><br>'
 
     directions_url = r.get("google_maps_url", "")
     directions_line = f'<a href="{directions_url}" target="_blank" rel="noopener">🧭 Directions</a>'
@@ -612,9 +642,15 @@ table_data["Rating"] = table_data["rating_5"]
 table_data["Reviews"] = table_data["review_count"]
 table_data["PM-JAY"] = table_data["accepts_pmjay"].apply(scheme_icon)
 table_data["GJAY (Odisha)"] = table_data["accepts_state_scheme"].apply(scheme_icon)
-# Only verified websites
+# Phone column: show number only if phone_confirmed == 'yes'
+table_data["Phone"] = result.apply(
+    lambda r: str(r["phone"]).strip() if str(r.get("phone_confirmed", "")).strip().lower() == "yes" and pd.notna(r.get("phone")) and str(r.get("phone")) != "nan" else "Not verified",
+    axis=1,
+)
+
+# Website column: show link only if status is LIVE or website_confirmed == 'yes', otherwise None (no dead links)
 table_data["Website"] = result.apply(
-    lambda r: r["website"] if r.get("website_verified") and r.get("website") and str(r["website"]) != "nan" else None,
+    lambda r: str(r["website"]).strip() if ((str(r.get("website_status", "")).strip() == "LIVE" or str(r.get("website_confirmed", "")).strip().lower() == "yes")) and pd.notna(r.get("website")) and str(r.get("website")) != "nan" and str(r.get("website")).strip() else None,
     axis=1,
 )
 table_data["Directions"] = table_data["google_maps_url"]
@@ -622,7 +658,7 @@ table_data["Directions"] = table_data["google_maps_url"]
 display_cols = [
     "Rank", "Hospital", "Category", "Type", "Km", "ETA min", "Free Beds",
     "Bed Chance", "Fee/day", "Rating", "Reviews", "PM-JAY", "GJAY (Odisha)",
-    "Website", "Directions",
+    "Phone", "Website", "Directions",
 ]
 display_df = table_data[display_cols]
 
@@ -649,6 +685,7 @@ st.dataframe(
         "Reviews": st.column_config.NumberColumn("Reviews", format="%d"),
         "PM-JAY": st.column_config.TextColumn("PM-JAY", help="✓ Accepts | ✗ Does not accept | ? Confirm"),
         "GJAY (Odisha)": st.column_config.TextColumn("GJAY", help="✓ Accepts Gopabandhu Jan Arogya Yojana | ✗ Does not accept | ? Confirm"),
+        "Phone": st.column_config.TextColumn("Phone", width="small", help="Verified phone number or 'Not verified'"),
         "Website": st.column_config.LinkColumn("Website", display_text="Visit"),
         "Directions": st.column_config.LinkColumn("Directions", display_text="Navigate"),
     },

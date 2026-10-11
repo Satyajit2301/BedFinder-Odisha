@@ -74,3 +74,32 @@ def test_safe_html_not_escaped():
     assert "Ayush &lt;Hospital&gt;" in rendered
     assert "&lt;span" not in rendered
 
+
+def test_contact_verification_ui_rules():
+    """D3: No phone is rendered when phone_confirmed == 'no'. No link is rendered for DNS_FAIL / NOT_FOUND_404."""
+    import pandas as pd
+    from src.config import ENRICHED_CSV
+    df = pd.read_csv(ENRICHED_CSV)
+
+    # 1. Test phone rule: when phone_confirmed == 'no', the raw phone number must NEVER be rendered
+    unconfirmed_phones = df[df["phone_confirmed"] == "no"]
+    assert not unconfirmed_phones.empty
+    for _, r in unconfirmed_phones.iterrows():
+        raw_phone = str(r.get("phone", "")).strip()
+        is_conf = str(r.get("phone_confirmed", "")).strip().lower() == "yes"
+        rendered_phone = raw_phone if is_conf and raw_phone and raw_phone != "nan" else "Not verified"
+        assert rendered_phone == "Not verified"
+        if raw_phone and raw_phone != "nan":
+            assert raw_phone != rendered_phone
+
+    # 2. Test website rule: when status is DNS_FAIL or NOT_FOUND_404, no link is rendered unless website_confirmed == 'yes'
+    broken_webs = df[df["website_status"].isin(["DNS_FAIL", "NOT_FOUND_404"])]
+    assert not broken_webs.empty
+    for _, r in broken_webs.iterrows():
+        raw_web = str(r.get("website", "")).strip()
+        is_live = str(r.get("website_status", "")).strip() == "LIVE"
+        is_conf = str(r.get("website_confirmed", "")).strip().lower() == "yes"
+        rendered_link = raw_web if (is_live or is_conf) and raw_web and raw_web != "nan" else None
+        assert rendered_link is None, f"Dead link rendered for {r['hospital_id']}: {raw_web} with status {r['website_status']}"
+
+

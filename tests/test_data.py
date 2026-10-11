@@ -129,5 +129,5 @@ def test_verify_links_output_exists():
     assert output_path.exists(), "verify_links_output.txt must exist"
     content = output_path.read_text(encoding="utf-8")
     assert "Verification Summary:" in content
-    assert "Total Hospitals Evaluated: 32" in content
+    assert "Total Hospitals Evaluated: 25" in content
 

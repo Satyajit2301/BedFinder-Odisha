@@ -169,7 +169,7 @@
   - Set `team_confirmed` with date for team check rows; `verified` only with specific page URL in `docs/evidence/`.
   - Add test asserting no vague/root URLs marked verified and values match `hospitals_enriched.csv`.
   - Commit: `D2: evidence csv honesty overhaul and strict integrity tests`.
-- [ ] **D3 — Contacts & URL verification honesty**:
+- [x] **D3 — Contacts & URL verification honesty**:
   - Clean up `verify_links.py`: exact probe statuses `LIVE`, `BLOCKED_403`, `DNS_FAIL`, `NOT_FOUND_404`, `TLS_ERROR`, `NONE`; try bare domain and www for DNS_FAIL.
   - Add `phone_confirmed` and `website_confirmed`.
   - UI rule: show phone only if confirmed; show website link only if LIVE or confirmed; else plain text "Not verified".

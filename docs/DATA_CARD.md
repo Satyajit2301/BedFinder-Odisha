@@ -9,53 +9,41 @@
 | Data Layer | Source | Status | Description |
 |---|---|---|---|
 | **Mentor Hospitals (20)** | Mentor CSV (`data/raw/dataset_npn_7.csv`) | **REAL** | 20 hospitals with real names, coordinates, ratings, reviews, bed counts, and admission fees. Untouched and verified unchanged. |
-| **Added Hospitals (12)** | Public hospital directories & team research | **RESEARCHED / ESTIMATED** | Added notable Bhubaneswar medical facilities to reflect city-wide healthcare options. |
-| **Occupancy History** | Simulated generator (`scripts/generate_history.py`) | **SIMULATED** | 90 days of hourly occupancy (69,120 rows) incorporating diurnal cycles, weekly seasonality, monsoon dengue surges, and AR(1) noise. |
-| **Scheme Acceptance** | PM-JAY Empanelment Registry & Odisha GJAY Portal | **PARTIAL / THREE-STATE** | Verified empanelled hospitals marked `true`; non-accepting marked `false`; others marked `unknown`. |
-| **Websites & Phones** | Directory & HTTP probe (`scripts/verify_links.py`) | **AUDITED & LOGGED** | 12 phone numbers verified against Bhubaneswar BSNL/hospital directories. 3 hospital websites return HTTP 200 live; major corporate portals (Apollo, KIMS, Max, Kalinga) trigger Cloudflare 403 on automated probes; state domains require internal intranet resolution. Full raw probe output logged in `docs/verify_links_output.txt`. |
+| **Added Hospitals (5)** | Google Maps team check (`data/team_check.csv`, 2026-10-11) | **TEAM CHECKED / ESTIMATED BEDS** | 5 verified Bhubaneswar facilities kept from team check (KIMS, Blue Wheel, Hemalata, Kar Clinic, Ayush). 7 unconfirmed/mislocated candidate entries removed completely. |
+| **Occupancy History** | Simulated generator (`scripts/generate_history.py`) | **SIMULATED** | 90 days of hourly occupancy (54,000 rows across 25 hospitals) anchored to the mentor snapshot occupancy and free beds at the final timestamp. |
+| **Scheme Acceptance** | Empirical check & public listings | **THREE-STATE** | Flagged as `true`, `false`, or `unknown`. Flags without specific verified source page URLs remain `unknown`. |
+| **Websites & Phones** | HTTP probe & team check (`scripts/verify_links.py`) | **AUDITED & LOGGED** | 25 hospitals evaluated: 16 websites listed (6 LIVE, 4 BLOCKED_403, 4 DNS_FAIL, 1 NOT_FOUND_404, 1 TLS_ERROR, 9 NONE). 16 phones listed (5 team confirmed, 11 unconfirmed). Full audit log in `docs/verify_links_output.txt`. |
 
 ---
 
-## 2. Review and Categorization of the 12 Added Hospitals
+## 2. Review and Categorization of the 5 Kept Added Hospitals
 
-To prevent specialized clinics (e.g. eye hospitals, cancer institutes) from being recommended for general medical emergencies, every added hospital is classified as either `general` or `specialty`.
-> **Data Status Note:** Added hospitals: **NOT independently verified — team to confirm**. Full field-by-field audit trail with source URLs and estimation status is documented in `docs/ADDED_HOSPITALS_EVIDENCE.csv`.
+To prevent specialized clinics from being recommended for general medical emergencies, every added hospital is classified as either `general` or `specialty`.
+7 candidate facilities that could not be confirmed in Bhubaneswar or were located far away (Acharya Harihar in Cuttack, Fakir Mohan in Balasore, Sadguru Netra, Prachi, Ashwini, DHH Khordha, Sanjeevani) were completely removed.
 
-| ID | Hospital Name | Category | Decision & Rationale |
-|---|---|---|---|
-| **BBSR021** | Kalinga Institute of Medical Sciences (KIMS) | `general` | **Included in general ranking.** Major tertiary teaching hospital with multi-specialty general ward. |
-| **BBSR022** | Acharya Harihar Post Graduate Institute of Cancer | `specialty` | **Classified as specialty (Oncology).** Visible on map and table, but not ranked for general emergency beds. |
-| **BBSR023** | Blue Wheel Hospital | `general` | **Included in general ranking.** General medical and surgical hospital in Unit 3. |
-| **BBSR024** | Hemalata Hospital & Research Centre | `specialty` | **Classified as specialty (Cancer Care).** Dedicated cancer treatment hospital; excluded from general bed ranking. |
-| **BBSR025** | Kar Clinic & Hospital | `general` | **Included in general ranking.** Multi-specialty general hospital in Unit 6. |
-| **BBSR026** | Prachi Hospital | `general` | **Included in general ranking.** General private facility serving Palasuni / Mancheswar. |
-| **BBSR027** | Sadguru Netra Chikitsalaya | `specialty` | **Classified as specialty (Ophthalmology).** Dedicated eye hospital. Fixes audit defect where an eye clinic was ranked #1 for general emergency beds. |
-| **BBSR028** | Ashwini Hospital | `general` | **Included in general ranking.** Multi-specialty hospital in Nayapalli. |
-| **BBSR029** | District Headquarters Hospital (DHH) Khordha | `general` | **Included in general ranking.** Major government district general hospital. |
-| **BBSR030** | Sanjeevani Hospital | `general` | **Included in general ranking.** General private hospital in Satya Nagar. |
-| **BBSR031** | Ayush Hospital | `general` | **Included in general ranking.** General hospital in Dumduma. |
-| **BBSR032** | Fakir Mohan Soren Medical College & Hospital | `general` | **Included in general ranking.** Government medical college serving regional outskirts. |
+| ID | Hospital Name | Category | Status & Source | Decision & Rationale |
+|---|---|---|---|---|
+| **BBSR021** | Kalinga Institute of Medical Sciences (KIMS) | `general` | `team_confirmed` (Google Maps, 2026-10-11) | **Included in general ranking.** 1,200-bed teaching hospital in Patia. Phone 0674-7111000 and website confirmed. Beds estimated. |
+| **BBSR023** | Blue Wheel Hospital | `general` | `team_confirmed` (Google Maps, 2026-10-11) | **Included in general ranking.** 150-bed general hospital. Phone 0674-7196600 and website confirmed. Beds estimated. |
+| **BBSR024** | Hemalata Hospitals & Research Centre | `specialty` | `team_confirmed` (Google Maps, 2026-10-11) | **Classified as specialty (Oncology).** Visible on map and table, unranked for general emergency beds. Phone 0674-2302333 confirmed. |
+| **BBSR025** | Kar Clinic & Hospital | `general` | `team_confirmed` (Google Maps, 2026-10-11) | **Included in general ranking.** 80-bed multi-specialty hospital in Unit 6. Phone 0674-2516666 and website confirmed. Beds estimated. |
+| **BBSR031** | Ayush Hospitals & Trauma Care | `general` | `team_confirmed` (Google Maps, 2026-10-11) | **Included in general ranking.** 60-bed general facility. Phone 0674-7111100 confirmed. Rating 3.6★ / 380 reviews. Beds and fee estimated. |
+
+Full field-by-field audit trail with source documentation is recorded in `docs/ADDED_HOSPITALS_EVIDENCE.csv`.
 
 ---
 
-## 3. Data Anchoring & Verification
+## 3. Contact & URL Display Rules (UI Guards)
+
+1. **Phone Numbers:** Shown in the UI only if `phone_confirmed == yes`. For unconfirmed or unlisted phone numbers, the UI displays `"Not verified"` in plain text.
+2. **Websites:** Rendered as a hyperlink only if probe status is `LIVE` or `website_confirmed == yes`. Dead links (`DNS_FAIL`, `NOT_FOUND_404`, `TLS_ERROR`) or unconfirmed blocked sites are displayed as `"Not verified"` in plain text. Never show a dead link.
+
+---
+
+## 4. Data Anchoring & Verification
 
 1. **Snapshot Anchoring:** For all 20 mentor hospitals, `beds_free_now` displayed in the app equals `general_ward_available_beds` from the mentor CSV exactly.
 2. **Re-anchored History:** `scripts/generate_history.py` simulates past occupancy such that the final timestamp matches `general_ward_occupancy_pct / 100.0` and `general_ward_available_beds` exactly.
-3. **State Scheme Naming:** Reported as **Gopabandhu Jan Arogya Yojana (GJAY)** (Odisha's state health insurance program, transitioning from BSKY, integrating Ayushman Bharat PM-JAY. Source: Odisha Health & Family Welfare Department public notifications, pending automated API confirmation).
+3. **State Scheme Naming:** Reported as **Gopabandhu Jan Arogya Yojana (GJAY)** (Odisha's state health insurance program, transitioning from BSKY, integrating Ayushman Bharat PM-JAY).
 4. **Emergency Helplines:** 108 (State Ambulance) / 112 (National Emergency Response): Reported as official public emergency response helplines per Odisha Department of Health & Family Welfare.
 5. **Estimated Fields Provenance & Treatment:** Every added hospital with imputed bed numbers or fees lists those specific fields in `fields_estimated`. In the UI, hospitals with estimated attributes carry an amber `some fields estimated` badge.
-
----
-
-## 4. Decision on Estimated Data Handling & Ayush Hospital (C4)
-
-- **Audit Finding on Ayush Hospital (`BBSR031`):**
-  - Ayush Hospital's estimated fields are strictly: `general_ward_total_beds`, `general_ward_available_beds`, `general_ward_occupancy_pct`, and `admission_fee_inr`.
-  - Its rating (**4.1★**) and review count (**380**) are real public listings, not estimated.
-- **Conservative Trust Discount Rule:**
-  - If a hospital has estimated rating or review counts, `src/scoring.py::trust()` applies a conservative 50% discount to effective review volume (`reviews * 0.5`). This ensures imputed or guessed reputation cannot elevate a facility into the Top 3 over genuine facilities.
-- **Card Disclosure:**
-  - For hospitals where only beds or fee are estimated (such as Ayush Hospital), the badge `some fields estimated` is retained and a prominent disclosure is rendered on the hospital card:
-    `ℹ️ Some data estimated — confirm by phone`
-  - This informs the user to verify bed availability directly with the facility before dispatching an ambulance or traveling.
