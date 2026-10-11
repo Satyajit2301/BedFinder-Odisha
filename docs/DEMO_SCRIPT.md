@@ -49,7 +49,7 @@ Launch offline with a single click: double-click `run_demo.bat` or run `streamli
   - Point out the caption: *"Confirm cashless acceptance with the hospital before travelling."*
 - Click a hospital pin on the Leaflet dark map:
   - Demonstrate that only the map tile layer is darkened via CSS; hospital pins and rank badges retain their distinct colors.
-  - Point out the popup with verified hospital website, telephone link, directions, and bed counts.
+  - Point out the popup with hospital website (if live/confirmed), telephone link (if confirmed), directions, and bed counts.
 
 ---
 

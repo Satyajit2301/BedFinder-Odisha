@@ -32,8 +32,8 @@ For added hospitals:
 "It is a 3-class classification model (`Full: <5%`, `Limited: 5-15%`, `Available: >=15%`) trained using scikit-learn's `HistGradientBoostingClassifier`. It predicts bed status at the patient's estimated time of arrival (1 to 6 hours ahead).
 - Features include current occupancy ratio, hour of day, day of week, hospital capacity, and cyclic time embeddings.
 - We evaluated the model across 5 distinct random seeds on simulated hourly samples.
-- The model achieves a Macro-F1 of **0.7710 ± 0.0006**, compared to **0.7626** for a persistence baseline.
-- We report honestly in `docs/ML_REPORT.md` that ML is comparable overall, slightly worse at +1h (0.8576 vs 0.8636), and better at +4h to +6h (0.6947 vs 0.6610). Short-term occupancy is dominated by inertia.
+- The model achieves a Macro-F1 of **0.7769 ± 0.0009**, compared to **0.7687 ± 0.0000** for a persistence baseline.
+- We report honestly in `docs/ML_REPORT.md` that ML is comparable overall, slightly worse at +1h (0.8633 vs 0.8696), and better at +4h to +6h (0.6914 vs 0.6675). Short-term occupancy is dominated by inertia.
 - **Important Distinction:** The 3-class ML model predicts forward horizons (+1h..+6h). For real-time arrival bed probability during the ambulance trip ($p_{\text{bed\_arrival}}$), `src/scoring.py` uses the closed-form **physics queue birth-death model**, guaranteeing strict monotonicity with trip ETA and free beds."
 
 ---

@@ -193,7 +193,7 @@
   - Rename `availability` to `bed_chance_on_arrival`; add `beds_free`, `beds_total`, `bed_availability_pct`.
   - Update prompt, number check allow-list, live call proof, and test against `availability` key.
   - Commit: `D7: llm schema fix distinguishing bed chance from availability`.
-- [ ] **D8 — Minor polish & final audit reconciliation**:
+- [x] **D8 — Minor polish & final audit reconciliation**:
   - Remove/clarify undefined Brier 0.1256 in ML_REPORT.
   - Update BLOCKED.md with exact selectbox replacement note.
   - Full test suite run, VERIFICATION.md update, and final presentation report.

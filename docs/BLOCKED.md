@@ -25,7 +25,7 @@ During the audit and development passes, several issues and fix loops were encou
 The following items cannot be independently verified in this environment and remain honest limitations of the current prototype:
 
 1. **Live Production LLM Call in Restricted Environments:**
-   - A live Groq API call was tested via `scripts/test_llm_call.py` (model `qwen/qwen3.8-27b`, 22 numbers verified, saved in `docs/llm_proof.json`).
+   - A live Groq API call was tested via `scripts/test_llm_call.py` (model `qwen/qwen3.8-27b`, 28 numbers verified, saved in `docs/llm_proof.json`).
    - *Limitation:* In an environment without internet access or with an invalid/revoked API key, the live LLM call cannot run. The system safely falls back to deterministic template fallback (`provider: "template_fallback"`). Live LLM calls in air-gapped demo environments are **UNKNOWN / UNVERIFIED**.
    - *Security Note:* The Groq API key in `.env` was previously pushed to a commit history and must be rotated immediately by the team.
 
