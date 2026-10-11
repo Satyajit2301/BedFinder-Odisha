@@ -10,7 +10,7 @@ This document records the exact commands run, their raw outputs, and PASS / FAIL
 | C2 | Fix HTML escaping leak in badges across cards & tables | `src/ui_utils.py`, `app.py`, `tests/test_ui.py`, `tests/test_app.py` | PASS |
 | C3 | Unified `rankable(df, include_specialty)` across all consumers | `src/scoring.py`, `scripts/formula_sensitivity.py`, `tests/test_scoring.py` | PASS |
 | C4 | Conservative trust penalty for estimated rating & data disclosure | `src/scoring.py`, `app.py`, `docs/DATA_CARD.md`, `tests/test_scoring.py` | PASS |
-| C5 | Scheme toggle effective fee Rs 0 (no +10% boost) | `src/scoring.py`, `tests/test_bedscore.py`, `tests/test_scoring.py` | PENDING |
+| C5 | Scheme toggle effective fee Rs 0 (no +10% boost) | `src/scoring.py`, `tests/test_bedscore.py`, `tests/test_scoring.py` | PASS |
 | C6 | Reconcile ML reporting, honest horizon breakdown & ETA decay table | `docs/ML_REPORT.md`, `scripts/audit_ml.py`, `tests/test_ml.py` | PENDING |
 | C7 | `formula_text` helper, TREE sync & strict doc tests | `src/scoring.py`, `docs/TREE.txt`, `tests/test_docs.py` | PENDING |
 | C8 | Real link verification logs & added hospitals evidence CSV | `scripts/verify_links.py`, `docs/verify_links_output.txt`, `docs/ADDED_HOSPITALS_EVIDENCE.csv` | PENDING |
@@ -129,5 +129,20 @@ tests/test_scoring.py::TestEstimatedDataTrustPenalty::test_estimated_rating_neve
 ====================== 1 passed, 14 deselected in 0.44s =======================
 ```
 **Verdict:** PASS. Verified Ayush Hospital estimated fields are beds and fee; its rating (4.1★) and reviews (380) are real Google listings. Implemented 50% reviews trust penalty for estimated ratings ensuring unverified ratings cannot elevate hospitals to top 3. Card disclosure "Some data estimated — confirm by phone" added to UI and documented in `docs/DATA_CARD.md`.
+
+### C5: Scheme Toggle Effective Fee Rs 0 (No +10% Boost)
+
+**Command:** `pytest tests/test_scoring.py -k test_scheme_toggle -v`
+```text
+tests/test_scoring.py::TestSchemeCardToggleAffordability::test_scheme_toggle_affects_only_accepting_rows PASSED [100%]
+====================== 1 passed, 14 deselected in 0.56s =======================
+```
+
+**Command:** `pytest tests/test_bedscore.py -k test_scheme_card -v`
+```text
+tests/test_bedscore.py::TestSchemeCardToggle::test_scheme_card_keeps_all_rows_and_alters_fee PASSED [100%]
+====================== 1 passed, 11 deselected in 0.44s =======================
+```
+**Verdict:** PASS. When card toggle is active, `effective_fee` is set to ₹0.0 strictly for hospitals with verified cashless scheme acceptance (`flag == True`), which flows naturally into the Affordability score term. Hospitals with `flag == False` or unknown retain their listed fees. Total hospital count remains 32 (never hidden). All mentions of arbitrary "+10%" boost removed from all docs, tests, and decisions.
 
 

@@ -121,7 +121,7 @@
   - Card disclosure: "Some data estimated - confirm by phone". Document decision in DATA_CARD.
   - Unit test: estimated-rating hospital never outranks identical real hospital.
   - Commit: `C4: conservative trust penalty for estimated rating and data disclosure`.
-- [ ] **C5 — Scheme toggle effective fee Rs 0 (no +10% boost)**:
+- [x] **C5 — Scheme toggle effective fee Rs 0 (no +10% boost)**:
   - When toggle is on: `effective_fee = 0` for `scheme_card_accepted == True` (flows into Affordability). Unknown is not cashless.
   - Remove all mentions of "+10% boost" across code, docs, tests.
   - Tests: toggle alters Affordability only for True rows; row count unchanged (nothing hidden).

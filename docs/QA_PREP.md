@@ -57,7 +57,7 @@ Across 12 locations in Bhubaneswar, BedScore produces 12 distinct rankings and 9
 **Answer:**
 "Ayushman Bharat PM-JAY is the central government scheme providing ₹5 lakh coverage per family. Odisha originally ran Biju Swasthya Kalyan Yojana (BSKY), which is currently transitioning to Gopabandhu Jan Arogya Yojana (GJAY).
 - We support three verification states: Yes (✓), No (✗), and Unknown (?).
-- We provide a toggle: *'I have a PM-JAY / State Scheme card'* that applies a +10% boost for empanelled hospitals without ever hiding non-participating hospitals from the map or table.
+- We provide a toggle: *'I have an Ayushman / Odisha scheme card'* that sets effective fee to ₹0 for verified empanelled hospitals (flowing into the Affordability score) without ever hiding non-participating hospitals from the map or table.
 - A prominent caveat reminds families: *'Confirm cashless acceptance with the hospital before travelling.'*"
 
 ---

@@ -106,7 +106,7 @@ The app is fully functional with LLM disabled. Template fallback is always ready
 
 **What:** Diagnosed why `test_browser_audit.py` crashed on PM-JAY selection and migrated UI to a clean checkbox/toggle.
 
-**Diagnosis:** The original selectbox in `app.py` had options `["All", "Yes", "No"]`, but the test script searched for `"PM-JAY Accepted"`, throwing a `TimeoutError`. Furthermore, filtering by selectbox completely removed hospitals from the map and table, violating the core design principle "Recommend, never restrict". We migrated the control to a toggle: `"I have a PM-JAY / State Scheme card"` with the explicit caveat `"Confirm cashless acceptance with the hospital before travelling."` Non-participating hospitals remain fully visible on the map and table, while participating hospitals receive a +10% score boost in BedScore mode.
+**Diagnosis:** The original selectbox in `app.py` had options `["None", "PM-JAY (Ayushman Bharat)", "BSKY/GJAY (State Scheme)"]`, but the test script searched for `"PM-JAY Accepted"`, throwing a `TimeoutError`. Furthermore, filtering by selectbox completely removed hospitals from the map and table, violating the core design principle "Recommend, never restrict". We migrated the control to a toggle: `"I have an Ayushman / Odisha scheme card"` with the explicit caveat `"Confirm cashless acceptance with the hospital before travelling."` Non-participating hospitals remain fully visible on the map and table, while participating hospitals have their effective admission fee set to ₹0, which directly enhances their Affordability score in an economically sound manner.
 
 ---
 

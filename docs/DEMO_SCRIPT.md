@@ -44,7 +44,7 @@ Launch offline with a single click: double-click `run_demo.bat` or run `streamli
 ## 5. Scheme Acceptance & Interactive Dark Map (45 seconds)
 - Turn on the toggle: **"I have a PM-JAY / State Scheme card"**.
 - Explain:
-  - *"Instead of filtering out non-participating hospitals, participating hospitals receive a +10% boost. Hospitals without verified coverage remain fully visible on the map and table with a question mark (?) badge."*
+  - *"Instead of filtering out non-participating hospitals, participating cashless hospitals have effective fee ₹0 (maximizing their Affordability score). Hospitals without verified coverage remain fully visible on the map and table with a question mark (?) badge."*
   - Point out the caption: *"Confirm cashless acceptance with the hospital before travelling."*
 - Click a hospital pin on the Leaflet dark map:
   - Demonstrate that only the map tile layer is darkened via CSS; hospital pins and rank badges retain their distinct colors.
