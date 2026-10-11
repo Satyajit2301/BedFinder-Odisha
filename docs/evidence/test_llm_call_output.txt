@@ -1,0 +1,25 @@
+Generated grounded input facts for Bhubaneswar Railway Station (Top 3 hospitals):
+  #1 Neelachal Hospital Pvt. Ltd. - Dist: 0.9km, Fee: Rs500, Rating: 4.9, Free beds: 9
+  #2 Sunshine Hospital - Dist: 1.3km, Fee: Rs900, Rating: 4.6, Free beds: 29
+  #3 Shree Hospitals - Dist: 1.4km, Fee: Rs750, Rating: 4.5, Free beds: 21
+
+Calling Groq API...
+Groq API call succeeded using model 'qwen/qwen3.8-27b' in 3503ms!
+Number check: PASSED (25 numbers verified)
+
+Saved proof to docs\llm_proof.json!
+2026-10-12 00:28:49.669 WARNING streamlit.runtime.caching.cache_data_api: No runtime found, using MemoryCacheStorageManager
+2026-10-12 00:28:49.671 WARNING streamlit.runtime.caching.cache_data_api: No runtime found, using MemoryCacheStorageManager
+2026-10-12 00:28:49.685 WARNING streamlit.runtime.caching.cache_data_api: No runtime found, using MemoryCacheStorageManager
+2026-10-12 00:28:49.685 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-10-12 00:28:50.329 
+  [33m[1mWarning:[0m to view this Streamlit app on a browser, run it with the following
+  command:
+
+    streamlit run scripts/test_llm_call.py [ARGUMENTS]
+2026-10-12 00:28:50.329 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-10-12 00:28:50.329 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-10-12 00:28:50.329 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-10-12 00:28:50.346 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-10-12 00:28:50.347 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-10-12 00:28:50.347 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.

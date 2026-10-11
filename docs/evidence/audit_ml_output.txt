@@ -1,0 +1,20 @@
+Preparing features from history...
+Total rows: 266,600
+Running 5-seed evaluation...
+ seed  model_macro_f1  model_acc  baseline_macro_f1  baseline_acc  brier_model
+   42        0.776285   0.782429           0.768718      0.773427     0.060311
+  101        0.777229   0.783409           0.768718      0.773427     0.060217
+ 2024        0.777212   0.782825           0.768718      0.773427     0.059786
+  777        0.777985   0.784237           0.768718      0.773427     0.060025
+  999        0.775678   0.781864           0.768718      0.773427     0.060361
+Evaluating horizons...
+ horizon_hours  model_macro_f1  model_acc  baseline_macro_f1  baseline_acc
+             1        0.863294   0.866885           0.869555      0.873068
+             2        0.812314   0.817371           0.810347      0.814554
+             3        0.770252   0.776471           0.766816      0.771576
+             4        0.740483   0.747264           0.727825      0.732925
+             6        0.691392   0.700190           0.667542      0.673649
+Evaluating ETA sensitivity on forced tight capacity cases...
+
+[ok] Saved docs\ML_REPORT.md successfully!
+[ok] Updated docs\numbers.json with ML metrics.

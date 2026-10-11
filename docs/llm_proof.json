@@ -1,7 +1,7 @@
 {
   "provider": "groq",
   "model": "qwen/qwen3.8-27b",
-  "latency_ms": 1620,
+  "latency_ms": 3503,
   "input_facts": {
     "method": "BedScore (recommended)",
     "location_name": "Bhubaneswar Railway Station",
@@ -47,7 +47,7 @@
       }
     ]
   },
-  "raw_response": "[machine-generated]\nBased on the BedScore (recommended) method, here are the top hospitals near Bhubaneswar Railway Station. Note that bed occupancy is a demo snapshot.\n\n1. **Neelachal Hospital Pvt. Ltd.** (Rank 1, Score 82.0): 0.9 km away. Fee: \u20b9500. Rating: 4.9 (1234 reviews). Bed chance on arrival: 100%. Current availability: 19.1% (9/47 beds free).\n2. **Sunshine Hospital** (Rank 2, Score 80.2): 1.3 km away. Fee: \u20b9900. Rating: 4.6 (5469 reviews). Bed chance on arrival: 100%. Current availability: 12.1% (29/240 beds free).\n3. **Shree Hospitals** (Rank 3, Score 78.4): 1.4 km away. Fee: \u20b9750. Rating: 4.5 (2825 reviews). Bed chance on arrival: 100%. Current availability: 12.4% (21/170 beds free).\n\nNo medical advice is provided.",
+  "raw_response": "[machine-generated]\nBased on BedScore (recommended) from Bhubaneswar Railway Station, top hospitals are:\n1. Neelachal Hospital Pvt. Ltd. (Score 82.0): 0.9 km, \u20b9500 fee, 4.9 rating. 100% bed chance on arrival; 19.1% beds free (9/47).\n2. Sunshine Hospital (Score 80.2): 1.3 km, \u20b9900 fee, 4.6 rating. 100% bed chance on arrival; 12.1% beds free (29/240).\n3. Shree Hospitals (Score 78.4): 1.4 km, \u20b9750 fee, 4.5 rating. 100% bed chance on arrival; 12.4% beds free (21/170).\n\nNote: Bed occupancy is a demo snapshot. \"Bed chance\" is the probability of securing a bed after travel, distinct from current free bed percentage. No medical advice provided.",
   "numbers_extracted": [
     "0.9",
     "1",
@@ -56,13 +56,11 @@
     "100",
     "12.1",
     "12.4",
-    "1234",
     "170",
     "19.1",
     "2",
     "21",
     "240",
-    "2825",
     "29",
     "3",
     "4.5",
@@ -70,7 +68,6 @@
     "4.9",
     "47",
     "500",
-    "5469",
     "750",
     "78.4",
     "80.2",
@@ -131,7 +128,7 @@
   ],
   "suspicious_numbers": [],
   "number_check_passed": true,
-  "final_output": "[machine-generated]\nBased on the BedScore (recommended) method, here are the top hospitals near Bhubaneswar Railway Station. Note that bed occupancy is a demo snapshot.\n\n1. **Neelachal Hospital Pvt. Ltd.** (Rank 1, Score 82.0): 0.9 km away. Fee: \u20b9500. Rating: 4.9 (1234 reviews). Bed chance on arrival: 100%. Current availability: 19.1% (9/47 beds free).\n2. **Sunshine Hospital** (Rank 2, Score 80.2): 1.3 km away. Fee: \u20b9900. Rating: 4.6 (5469 reviews). Bed chance on arrival: 100%. Current availability: 12.1% (29/240 beds free).\n3. **Shree Hospitals** (Rank 3, Score 78.4): 1.4 km away. Fee: \u20b9750. Rating: 4.5 (2825 reviews). Bed chance on arrival: 100%. Current availability: 12.4% (21/170 beds free).\n\nNo medical advice is provided.",
+  "final_output": "[machine-generated]\nBased on BedScore (recommended) from Bhubaneswar Railway Station, top hospitals are:\n1. Neelachal Hospital Pvt. Ltd. (Score 82.0): 0.9 km, \u20b9500 fee, 4.9 rating. 100% bed chance on arrival; 19.1% beds free (9/47).\n2. Sunshine Hospital (Score 80.2): 1.3 km, \u20b9900 fee, 4.6 rating. 100% bed chance on arrival; 12.1% beds free (29/240).\n3. Shree Hospitals (Score 78.4): 1.4 km, \u20b9750 fee, 4.5 rating. 100% bed chance on arrival; 12.4% beds free (21/170).\n\nNote: Bed occupancy is a demo snapshot. \"Bed chance\" is the probability of securing a bed after travel, distinct from current free bed percentage. No medical advice provided.",
   "code_lines_highlight": {
     "post_check_numbers": "src/llm.py:114-131",
     "call_groq_detailed": "src/llm.py:157-227",

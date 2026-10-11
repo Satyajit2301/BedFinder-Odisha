@@ -1,0 +1,55 @@
+=====================================================================================
+BEDFINDER ODISHA — FORMULA SENSITIVITY ANALYSIS (25 HOSPITALS)
+=====================================================================================
+
+--- 1. MENTOR FORMULA (Literal: 1000*A + X - Y - Z) ---
+  Bhubaneswar Railway Station   : #1 Apollo Hospitals Bhubanesw #2 Manipal Hospitals, Bhubane #3 SUM Ultimate Medicare     
+  Biju Patnaik Airport          : #1 Apollo Hospitals Bhubanesw #2 Manipal Hospitals, Bhubane #3 SUM Ultimate Medicare     
+  Master Canteen Square         : #1 Apollo Hospitals Bhubanesw #2 Manipal Hospitals, Bhubane #3 SUM Ultimate Medicare     
+  Jaydev Vihar Square           : #1 Apollo Hospitals Bhubanesw #2 Manipal Hospitals, Bhubane #3 SUM Ultimate Medicare     
+  Patia / KIIT Square           : #1 Apollo Hospitals Bhubanesw #2 Manipal Hospitals, Bhubane #3 SUM Ultimate Medicare     
+  Khandagiri Square             : #1 Apollo Hospitals Bhubanesw #2 Manipal Hospitals, Bhubane #3 SUM Ultimate Medicare     
+  Nayapalli                     : #1 Apollo Hospitals Bhubanesw #2 Manipal Hospitals, Bhubane #3 SUM Ultimate Medicare     
+  Rasulgarh Square              : #1 Apollo Hospitals Bhubanesw #2 Manipal Hospitals, Bhubane #3 SUM Ultimate Medicare     
+  Vani Vihar / Utkal University : #1 Apollo Hospitals Bhubanesw #2 Manipal Hospitals, Bhubane #3 SUM Ultimate Medicare     
+  Saheed Nagar                  : #1 Apollo Hospitals Bhubanesw #2 Manipal Hospitals, Bhubane #3 SUM Ultimate Medicare     
+  Baramunda Bus Stand           : #1 Apollo Hospitals Bhubanesw #2 Manipal Hospitals, Bhubane #3 SUM Ultimate Medicare     
+  Kalinga Nagar / Ghatikia      : #1 Apollo Hospitals Bhubanesw #2 Manipal Hospitals, Bhubane #3 SUM Ultimate Medicare     
+
+  >>> Distinct Rank-1 hospitals: 1 (Apollo Hospitals Bhubaneswar)
+  >>> Full ranking IDENTICAL at all locations: True
+
+--- 2. BEDSCORE METHOD (Recommended) ---
+  Bhubaneswar Railway Station   : #1 Neelachal Hospital Pvt. Lt #2 Sunshine Hospital          #3 Shree Hospitals           
+  Biju Patnaik Airport          : #1 Shree Hospitals            #2 Vivekanand Hospital Bhuban #3 Neelachal Hospital Pvt. Lt
+  Master Canteen Square         : #1 Neelachal Hospital Pvt. Lt #2 Shree Hospitals            #3 Sunshine Hospital         
+  Jaydev Vihar Square           : #1 Apollo Hospitals Bhubanesw #2 Vivekanand Hospital Bhuban #3 PGIMER & Capital Hospital 
+  Patia / KIIT Square           : #1 Kalinga Institute of Medic #2 UTKAL HOSPITAL             #3 CARE Hospitals, Bhubaneswa
+  Khandagiri Square             : #1 SUM Ultimate Medicare      #2 IGKC Multispeciality Hospi #3 Manipal Hospitals, Bhubane
+  Nayapalli                     : #1 Vivekanand Hospital Bhuban #2 Usthi Hospital             #3 Health Village Hospital   
+  Rasulgarh Square              : #1 Hi-Tech Medical College an #2 Blue Wheel Hospital        #3 Sparsh Hospitals & Critica
+  Vani Vihar / Utkal University : #1 PGIMER & Capital Hospital  #2 Sparsh Hospitals & Critica #3 Kar Clinic & Hospital     
+  Saheed Nagar                  : #1 Sparsh Hospitals & Critica #2 PGIMER & Capital Hospital  #3 Jagannath Hospital        
+  Baramunda Bus Stand           : #1 Vivekanand Hospital Bhuban #2 Health Village Hospital    #3 Shree Hospitals           
+  Kalinga Nagar / Ghatikia      : #1 SUM Ultimate Medicare      #2 IGKC Multispeciality Hospi #3 Vivekanand Hospital Bhuban
+
+  >>> Distinct full rank orders: 12 across 12 locations
+  >>> Distinct Rank-1 hospitals: 9 (Sparsh Hospitals & C, SUM Ultimate Medicar, Shree Hospitals, Vivekanand Hospital , Hi-Tech Medical Coll, PGIMER & Capital Hos, Apollo Hospitals Bhu, Neelachal Hospital P, Kalinga Institute of)
+  >>> Ranking dynamically responds to user location: True
+
+--- 3. WHY MENTOR FORMULA DOES NOT RESPOND TO LOCATION ---
+  X (rating * reviews) range: 1,228.5 to 149,544.6
+  A (availability %) range: 7.3 to 19.1
+  1000*A term range: 7,333.3 to 19,148.9
+  Smallest gap between top consecutive X: 59.2
+  Max possible road distance (Y) variation across city: ~25 km
+  Conclusion: Because X ranges up to 149,545, review count dominates completely.
+
+--- 4. PAIRWISE FLIPPABLE PAIRS ANALYSIS (12 LANDMARKS) ---
+  Total general hospital pairs evaluated: 276
+  Theoretically flippable pairs (base score gap < max distance difference change): 0
+  Actually flipped pairs across 12 landmarks under mentor formula: 0
+  Summary finding: Moving the user changes each score only by the change in distance (tens of points at most), while hospitals differ by hundreds or thousands of points, so in our 12 test locations no pair of hospitals swapped places.
+=====================================================================================
+Saved: C:\Cognizant Hackathon\bedfinder_odisha\docs\scoring_sensitivity.txt
+[ok] Updated C:\Cognizant Hackathon\bedfinder_odisha\docs\numbers.json with sensitivity and hospital count metrics.

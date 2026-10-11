@@ -1,0 +1,72 @@
+================================================================================
+BedFinder Odisha Link & Contact Verification
+Timestamp: 2026-10-11 18:56:26 UTC
+Dataset: C:\Cognizant Hackathon\bedfinder_odisha\data\hospitals_enriched.csv (25 hospitals)
+================================================================================
+BBSR001  | All India Institute of Medical Sci  | WEB     | LIVE          | https://aiimsbhubaneswar.nic.in (Resolved on variant https://aiimsbhubaneswar.nic.in)
+BBSR001  | All India Institute of Medical Sci  | PHONE   | UNVERIFIED    | 0674-2476001 (Valid 0674 format; unconfirmed directory listing)
+BBSR002  | PGIMER & Capital Hospital Bhubanes  | WEB     | DNS_FAIL      | Primary (https://capitalhospitalbbsr.odisha.gov.in): DNS_FAIL; Alternate (https://www.capitalhospitalbbsr.odisha.gov.in): DNS_FAIL
+BBSR002  | PGIMER & Capital Hospital Bhubanes  | PHONE   | UNVERIFIED    | 0674-2392638 (Valid 0674 format; unconfirmed directory listing)
+BBSR003  | SUM Ultimate Medicare               | WEB     | DNS_FAIL      | Primary (https://www.sumultimatemedicare.com): DNS_FAIL; Alternate (https://sumultimatemedicare.com): DNS_FAIL
+BBSR003  | SUM Ultimate Medicare               | PHONE   | UNVERIFIED    | 0674-2725555 (Valid 0674 format; unconfirmed directory listing)
+BBSR004  | CARE Hospitals, Bhubaneswar         | WEB     | NOT_FOUND_404 | https://www.carehospitals.com/best-hospital-in-bhubaneswar (HTTP 404 Not Found)
+BBSR004  | CARE Hospitals, Bhubaneswar         | PHONE   | UNVERIFIED    | 0674-6654900 (Valid 0674 format; unconfirmed directory listing)
+BBSR005  | Kalinga Hospital                    | WEB     | BLOCKED_403   | https://www.kalingahospital.com (HTTP 403 Forbidden)
+BBSR005  | Kalinga Hospital                    | PHONE   | UNVERIFIED    | 0674-2744266 (Valid 0674 format; unconfirmed directory listing)
+BBSR006  | Hi-Tech Medical College and Hospit  | WEB     | DNS_FAIL      | Primary (https://www.himchhospital.com): DNS_FAIL; Alternate (https://himchhospital.com): DNS_FAIL
+BBSR006  | Hi-Tech Medical College and Hospit  | PHONE   | UNVERIFIED    | 0674-2725525 (Valid 0674 format; unconfirmed directory listing)
+BBSR007  | Apollo Hospitals Bhubaneswar        | WEB     | BLOCKED_403   | https://www.apollohospitals.com/locations/india/bhubaneswar (HTTP 403 Forbidden)
+BBSR007  | Apollo Hospitals Bhubaneswar        | PHONE   | UNVERIFIED    | 0674-6661066 (Valid 0674 format; unconfirmed directory listing)
+BBSR008  | Manipal Hospitals, Bhubaneswar      | WEB     | LIVE          | https://www.manipalhospitals.com:443/bhubaneswar/
+BBSR008  | Manipal Hospitals, Bhubaneswar      | PHONE   | UNVERIFIED    | 0674-6676700 (Valid 0674 format; unconfirmed directory listing)
+BBSR009  | UTKAL HOSPITAL                      | WEB     | LIVE          | https://utkalhospital.com/
+BBSR009  | UTKAL HOSPITAL                      | PHONE   | UNVERIFIED    | 0674-2721199 (Valid 0674 format; unconfirmed directory listing)
+BBSR010  | Sparsh Hospitals & Critical Care    | WEB     | LIVE          | https://www.sparshhospital.com
+BBSR010  | Sparsh Hospitals & Critical Care    | PHONE   | UNVERIFIED    | 0674-2546400 (Valid 0674 format; unconfirmed directory listing)
+BBSR011  | Sunshine Hospital                   | WEB     | DNS_FAIL      | Primary (https://www.sunshinehospitalbbsr.com): DNS_FAIL; Alternate (https://sunshinehospitalbbsr.com): DNS_FAIL
+BBSR011  | Sunshine Hospital                   | PHONE   | UNVERIFIED    | 0674-2571188 (Valid 0674 format; unconfirmed directory listing)
+BBSR012  | Health Village Hospital             | WEB     | NONE          | (No website listed)
+BBSR012  | Health Village Hospital             | PHONE   | NONE          | (No phone listed)
+BBSR013  | IGKC Multispeciality Hospital       | WEB     | TLS_ERROR     | https://www.igkchospital.com (TLS handshake / SSL certificate error)
+BBSR013  | IGKC Multispeciality Hospital       | PHONE   | NONE          | (No phone listed)
+BBSR014  | Shree Hospitals                     | WEB     | NONE          | (No website listed)
+BBSR014  | Shree Hospitals                     | PHONE   | NONE          | (No phone listed)
+BBSR015  | Sushruta Hospital and Trauma Care   | WEB     | NONE          | (No website listed)
+BBSR015  | Sushruta Hospital and Trauma Care   | PHONE   | NONE          | (No phone listed)
+BBSR016  | Vivekanand Hospital Bhubaneswar     | WEB     | NONE          | (No website listed)
+BBSR016  | Vivekanand Hospital Bhubaneswar     | PHONE   | NONE          | (No phone listed)
+BBSR017  | Usthi Hospital                      | WEB     | NONE          | (No website listed)
+BBSR017  | Usthi Hospital                      | PHONE   | NONE          | (No phone listed)
+BBSR018  | Max Hospital Bhubaneswar            | WEB     | BLOCKED_403   | https://www.maxhealthcare.in/hospital/bhubaneswar (HTTP 403 Forbidden)
+BBSR018  | Max Hospital Bhubaneswar            | PHONE   | NONE          | (No phone listed)
+BBSR019  | Jagannath Hospital                  | WEB     | NONE          | (No website listed)
+BBSR019  | Jagannath Hospital                  | PHONE   | NONE          | (No phone listed)
+BBSR020  | Neelachal Hospital Pvt. Ltd.        | WEB     | NONE          | (No website listed)
+BBSR020  | Neelachal Hospital Pvt. Ltd.        | PHONE   | NONE          | (No phone listed)
+BBSR021  | Kalinga Institute of Medical Scien  | WEB     | BLOCKED_403   | https://kims.ac.in (HTTP 403 Forbidden)
+BBSR021  | Kalinga Institute of Medical Scien  | PHONE   | CONFIRMED     | 0674-7111000 (Listed in added hospitals demo data)
+BBSR023  | Blue Wheel Hospital                 | WEB     | LIVE          | https://bluewheelhospital.org
+BBSR023  | Blue Wheel Hospital                 | PHONE   | CONFIRMED     | 0674-7196600 (Listed in added hospitals demo data)
+BBSR024  | Hemalata Hospitals & Research Cent  | WEB     | NONE          | (No website listed)
+BBSR024  | Hemalata Hospitals & Research Cent  | PHONE   | CONFIRMED     | 0674-2302333 (Listed in added hospitals demo data)
+BBSR025  | Kar Clinic & Hospital               | WEB     | LIVE          | https://karhospitals.com
+BBSR025  | Kar Clinic & Hospital               | PHONE   | CONFIRMED     | 0674-2516666 (Listed in added hospitals demo data)
+BBSR031  | Ayush Hospitals & Trauma Care       | WEB     | NONE          | (No website listed)
+BBSR031  | Ayush Hospitals & Trauma Care       | PHONE   | CONFIRMED     | 0674-7111100 (Listed in added hospitals demo data)
+--------------------------------------------------------------------------------
+Verification Summary:
+  Total Hospitals Evaluated: 25
+  Websites Listed:           16
+    LIVE (200 / redirect):   6
+    BLOCKED_403:             4
+    DNS_FAIL:                4
+    NOT_FOUND_404:           1
+    TLS_ERROR:               1
+    NONE:                    9
+  Websites Confirmed (Team): 3
+  Phones Listed:             16
+  Phones Confirmed (Team):   5
+  Phones Unconfirmed:        11
+================================================================================
+[ok] Updated C:\Cognizant Hackathon\bedfinder_odisha\data\hospitals_enriched.csv
+[ok] Saved verification log to C:\Cognizant Hackathon\bedfinder_odisha\docs\verify_links_output.txt

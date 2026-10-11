@@ -143,3 +143,21 @@ class TestDocIntegrity:
         for sn in stale_numbers:
             assert sn not in blocked
 
+    def test_verification_md_passed_count_equals_pytest_output(self):
+        """G6: Passed count in VERIFICATION.md equals the count in docs/evidence/pytest_output.txt."""
+        pytest_out = DOCS_DIR / "evidence" / "pytest_output.txt"
+        assert pytest_out.exists(), "docs/evidence/pytest_output.txt missing"
+        pytest_text = pytest_out.read_text(encoding="utf-8")
+        m_pytest = re.search(r"(\d+)\s+passed", pytest_text)
+        assert m_pytest, "Could not find passed count in pytest_output.txt"
+        pytest_count = int(m_pytest.group(1))
+
+        verif_file = DOCS_DIR / "VERIFICATION.md"
+        assert verif_file.exists(), "docs/VERIFICATION.md missing"
+        verif_text = verif_file.read_text(encoding="utf-8")
+        m_verif = re.search(r"(\d+)\s+passed", verif_text)
+        assert m_verif, "Could not find passed count in VERIFICATION.md"
+        verif_count = int(m_verif.group(1))
+
+        assert verif_count == pytest_count, f"VERIFICATION.md count ({verif_count}) != pytest_output.txt count ({pytest_count})"
+

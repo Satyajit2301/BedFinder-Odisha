@@ -1,5 +1,5 @@
 BedFinder Odisha Link & Contact Verification Report
-Generated: 2026-10-11 13:47:41 UTC
+Generated: 2026-10-11 18:56:26 UTC
 Target Dataset: C:\Cognizant Hackathon\bedfinder_odisha\data\hospitals_enriched.csv (Total records: 25)
 --------------------------------------------------------------------------------
 ID       | Hospital Name                       | Type    | Status        | Detail
@@ -45,15 +45,15 @@ BBSR019  | Jagannath Hospital                  | PHONE   | NONE          | (No p
 BBSR020  | Neelachal Hospital Pvt. Ltd.        | WEB     | NONE          | (No website listed)
 BBSR020  | Neelachal Hospital Pvt. Ltd.        | PHONE   | NONE          | (No phone listed)
 BBSR021  | Kalinga Institute of Medical Scien  | WEB     | BLOCKED_403   | https://kims.ac.in (HTTP 403 Forbidden)
-BBSR021  | Kalinga Institute of Medical Scien  | PHONE   | CONFIRMED     | 0674-7111000 (Confirmed in team check Google Maps)
+BBSR021  | Kalinga Institute of Medical Scien  | PHONE   | CONFIRMED     | 0674-7111000 (Listed in added hospitals demo data)
 BBSR023  | Blue Wheel Hospital                 | WEB     | LIVE          | https://bluewheelhospital.org
-BBSR023  | Blue Wheel Hospital                 | PHONE   | CONFIRMED     | 0674-7196600 (Confirmed in team check Google Maps)
+BBSR023  | Blue Wheel Hospital                 | PHONE   | CONFIRMED     | 0674-7196600 (Listed in added hospitals demo data)
 BBSR024  | Hemalata Hospitals & Research Cent  | WEB     | NONE          | (No website listed)
-BBSR024  | Hemalata Hospitals & Research Cent  | PHONE   | CONFIRMED     | 0674-2302333 (Confirmed in team check Google Maps)
+BBSR024  | Hemalata Hospitals & Research Cent  | PHONE   | CONFIRMED     | 0674-2302333 (Listed in added hospitals demo data)
 BBSR025  | Kar Clinic & Hospital               | WEB     | LIVE          | https://karhospitals.com
-BBSR025  | Kar Clinic & Hospital               | PHONE   | CONFIRMED     | 0674-2516666 (Confirmed in team check Google Maps)
+BBSR025  | Kar Clinic & Hospital               | PHONE   | CONFIRMED     | 0674-2516666 (Listed in added hospitals demo data)
 BBSR031  | Ayush Hospitals & Trauma Care       | WEB     | NONE          | (No website listed)
-BBSR031  | Ayush Hospitals & Trauma Care       | PHONE   | CONFIRMED     | 0674-7111100 (Confirmed in team check Google Maps)
+BBSR031  | Ayush Hospitals & Trauma Care       | PHONE   | CONFIRMED     | 0674-7111100 (Listed in added hospitals demo data)
 --------------------------------------------------------------------------------
 Verification Summary:
   Total Hospitals Evaluated: 25
