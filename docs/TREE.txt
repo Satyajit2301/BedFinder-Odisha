@@ -6,10 +6,10 @@ PLAN.md
 README.md
 app.py
 bedscore_reference.py
+data/added_hospitals_demo.csv
 data/history.csv
 data/hospitals_enriched.csv
 data/raw/dataset_npn_7.csv
-data/team_check.csv
 docs/ADDED_HOSPITALS_EVIDENCE.csv
 docs/BLOCKED.md
 docs/DATA_CARD.md
@@ -18,7 +18,14 @@ docs/ML_REPORT.md
 docs/QA_PREP.md
 docs/TREE.txt
 docs/VERIFICATION.md
+docs/evidence/audit_ml_output.txt
+docs/evidence/bedscore_ui_vs_function.txt
+docs/evidence/formula_sensitivity_output.txt
+docs/evidence/pytest_output.txt
+docs/evidence/test_llm_call_output.txt
+docs/evidence/verify_links_output.txt
 docs/llm_proof.json
+docs/numbers.json
 docs/scoring_sensitivity.txt
 docs/screenshots/01_full_page_desktop_1440.png
 docs/screenshots/02_closeup_emergency_banner.png
@@ -28,6 +35,8 @@ docs/screenshots/05_closeup_plotly_breakdown.png
 docs/screenshots/06_closeup_simulate_0_beds_warning.png
 docs/screenshots/07_closeup_invalid_location_contrast.png
 docs/screenshots/08_full_page_mobile_390.png
+docs/screenshots/09_bedscore_top3_railway_station.png
+docs/screenshots/10_bedscore_top3_patia.png
 docs/verify_links_output.txt
 models/bed_model.joblib
 models/model_metadata.json
@@ -40,6 +49,8 @@ scripts/enrich_data.py
 scripts/formula_sensitivity.py
 scripts/generate_added_hospitals_evidence.py
 scripts/generate_history.py
+scripts/reproduce_g1.py
+scripts/sync_verification.py
 scripts/test_llm_call.py
 scripts/train.py
 scripts/verify_links.py
@@ -52,7 +63,6 @@ src/llm.py
 src/ml.py
 src/scoring.py
 src/ui_utils.py
-team_check.csv
 tests/__init__.py
 tests/test_app.py
 tests/test_bedscore.py

@@ -17,6 +17,8 @@ PRODUCED_FILES = [
     "06_closeup_simulate_0_beds_warning.png",
     "07_closeup_invalid_location_contrast.png",
     "08_full_page_mobile_390.png",
+    "09_bedscore_top3_railway_station.png",
+    "10_bedscore_top3_patia.png",
 ]
 
 
@@ -188,6 +190,37 @@ def main():
                     print("   [ok] Saved 07_closeup_invalid_location_contrast.png")
             except Exception as e:
                 print(f"   [err] Location error capture failed: {e}")
+
+            # 9. BedScore Top 3 at Railway Station
+            print("9. Capturing 09_bedscore_top3_railway_station.png...")
+            try:
+                page.goto(url)
+                page.wait_for_selector(".hospital-card", timeout=30000)
+                bedscore_radio = page.locator('label:has-text("BedScore (recommended)")').first
+                bedscore_radio.click()
+                page.wait_for_timeout(3000)
+                assert_no_badge_leak(page, "09_bedscore_top3_railway_station")
+                page.evaluate("window.scrollTo(0, 0)")
+                page.screenshot(path=str(SCREENSHOTS_DIR / "09_bedscore_top3_railway_station.png"))
+                print("   [ok] Saved 09_bedscore_top3_railway_station.png")
+            except Exception as e:
+                print(f"   [err] BedScore railway station capture failed: {e}")
+
+            # 10. BedScore Top 3 at Patia / KIIT Square
+            print("10. Capturing 10_bedscore_top3_patia.png...")
+            try:
+                selectbox = page.locator('div[data-testid="stSelectbox"]:has-text("Where are you?")').first
+                selectbox.click()
+                page.wait_for_timeout(1000)
+                patia_opt = page.locator('li:has-text("Patia / KIIT Square")').first
+                patia_opt.click()
+                page.wait_for_timeout(3500)
+                assert_no_badge_leak(page, "10_bedscore_top3_patia")
+                page.evaluate("window.scrollTo(0, 0)")
+                page.screenshot(path=str(SCREENSHOTS_DIR / "10_bedscore_top3_patia.png"))
+                print("   [ok] Saved 10_bedscore_top3_patia.png")
+            except Exception as e:
+                print(f"   [err] BedScore patia capture failed: {e}")
 
             desktop.close()
 

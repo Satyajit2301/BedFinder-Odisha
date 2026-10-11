@@ -313,6 +313,45 @@ Saved proof to docs\llm_proof.json!
 
 ---
 
+## G7 — Security Check, Visual UI Audit & Tree Regeneration
+
+### 1. Git History Check for Groq API Key
+- Command: `git log --all --oneline -- .env`
+  ```text
+  (empty - .env has never been committed)
+  ```
+- Command: `git log --all -p -S "GROQ_API_KEY"`
+  ```text
+  (only code references to os.getenv("GROQ_API_KEY"); no literal API key ever committed to repository history)
+  ```
+- **Conclusion:** No API key was ever committed to git history. Per standard security protocol, key rotation at console.groq.com remains recommended.
+
+### 2. Visual Inspection of Generated Screenshots (`docs/screenshots/`)
+- All 10 screenshots regenerated cleanly via Playwright:
+  1. `01_full_page_desktop_1440.png`
+  2. `02_closeup_emergency_banner.png`
+  3. `03_closeup_data_table.png`
+  4. `04_closeup_map_markers.png`
+  5. `05_closeup_plotly_breakdown.png`
+  6. `06_closeup_simulate_0_beds_warning.png`
+  7. `07_closeup_invalid_location_contrast.png`
+  8. `08_full_page_mobile_390.png`
+  9. `09_bedscore_top3_railway_station.png`
+  10. `10_bedscore_top3_patia.png`
+- **Card #3 Content & Raw Tag Audit:**
+  Card #3 in desktop default shows SUM Ultimate Medicare (73 beds free now, Likely >99%, 8.6 km, ₹1500/day, 4.7★ from 11,266 reviews), and in Patia BedScore view shows CARE Hospitals, Bhubaneswar (38 beds free now, Likely >99%, 3.8 km, ₹1800/day, 4.4★ from 8,406 reviews); zero raw HTML tags (`<span`, `&lt;`, `est-badge`) are visible anywhere in either view.
+- **BedScore Top 3 Landmark Pair:**
+  - `09_bedscore_top3_railway_station.png`: #1 Neelachal Hospital Pvt. Ltd., #2 Sunshine Hospital, #3 Shree Hospitals.
+  - `10_bedscore_top3_patia.png`: #1 Kalinga Institute of Medical Sciences (KIMS), #2 UTKAL HOSPITAL, #3 CARE Hospitals, Bhubaneswar.
+  - Demonstrates full location-sensitivity dynamically changing top-ranked recommendations.
+
+### 3. Repository File Tree
+`docs/TREE.txt` regenerated directly from `git ls-files`.
+
+**Verdict:** PASS.
+
+---
+
 ## Full Test Suite Execution (pytest -v)
 
 **Command:** `python -m pytest -v`  
@@ -412,7 +451,7 @@ tests/test_ui.py::test_safe_html_not_escaped PASSED                      [ 97%]
 tests/test_ui.py::test_contact_verification_ui_rules PASSED              [ 98%]
 tests/test_ui.py::test_screenshots_folder_only_contains_produced_files PASSED [100%]
 
-============================= 83 passed in 30.85s =============================
+============================= 83 passed in 29.13s =============================
 C:\Users\satya\AppData\Roaming\Python\Python314\site-packages\langsmith\schemas.py:23: UserWarning: Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater.
   from pydantic.v1 import (
 ```
