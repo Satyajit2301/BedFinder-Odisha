@@ -164,7 +164,7 @@
   - Filter `enrich_data.py`, regenerate `history.csv`, retrain ML model, rerun `audit_ml.py`, `formula_sensitivity.py`, `test_llm_call.py`.
   - Dynamically update hospital counts in docs and tests.
   - Commit: `D1: curate added hospitals against team check, prune unconfirmed and retrain`.
-- [ ] **D2 — Evidence CSV honesty overhaul**:
+- [x] **D2 — Evidence CSV honesty overhaul**:
   - Fix `generate_added_hospitals_evidence.py` to read real columns (`rating_5`, `review_count`).
   - Set `team_confirmed` with date for team check rows; `verified` only with specific page URL in `docs/evidence/`.
   - Add test asserting no vague/root URLs marked verified and values match `hospitals_enriched.csv`.

@@ -1,109 +1,46 @@
 hospital_id,hospital_name,field,value,source_url,retrieval_date,status
-BBSR021,Kalinga Institute of Medical Sciences (KIMS),lat/lon,"20.3547, 85.8190",,2026-10-10,estimated
-BBSR021,Kalinga Institute of Medical Sciences (KIMS),website,https://kims.ac.in,https://kims.ac.in,2026-10-11,estimated
-BBSR021,Kalinga Institute of Medical Sciences (KIMS),phone,0674-2725214,BSNL / National Health Directory Bhubaneswar,2026-10-10,verified
-BBSR021,Kalinga Institute of Medical Sciences (KIMS),beds,"Total: 1200, Available: 108",,2026-10-10,unknown
-BBSR021,Kalinga Institute of Medical Sciences (KIMS),fee,INR 1800,,2026-10-10,unknown
-BBSR021,Kalinga Institute of Medical Sciences (KIMS),rating,0.0 stars,https://maps.google.com (Google Places Public Review Aggregation),2026-10-10,verified
-BBSR021,Kalinga Institute of Medical Sciences (KIMS),reviews,0 reviews,https://maps.google.com (Google Places Public Review Aggregation),2026-10-10,verified
-BBSR021,Kalinga Institute of Medical Sciences (KIMS),category,Private / general,https://health.odisha.gov.in / National Health Portal listings,2026-10-10,verified
-BBSR021,Kalinga Institute of Medical Sciences (KIMS),scheme flag,"PM-JAY: true, State (GJAY): true",https://pmjay.gov.in (Hospital Empanelment Directory),2026-10-10,verified
-BBSR022,Acharya Harihar Post Graduate Institute of Cancer,lat/lon,"20.2820, 85.8590",,2026-10-10,estimated
-BBSR022,Acharya Harihar Post Graduate Institute of Cancer,website,Not Available,,2026-10-10,unknown
-BBSR022,Acharya Harihar Post Graduate Institute of Cancer,phone,Not Available,,2026-10-10,unknown
-BBSR022,Acharya Harihar Post Graduate Institute of Cancer,beds,"Total: 350, Available: 32",,2026-10-10,unknown
-BBSR022,Acharya Harihar Post Graduate Institute of Cancer,fee,INR 200,https://health.odisha.gov.in (Universal Free Healthcare Policy),2026-10-10,verified
-BBSR022,Acharya Harihar Post Graduate Institute of Cancer,rating,0.0 stars,https://maps.google.com (Google Places Public Review Aggregation),2026-10-10,verified
-BBSR022,Acharya Harihar Post Graduate Institute of Cancer,reviews,0 reviews,https://maps.google.com (Google Places Public Review Aggregation),2026-10-10,verified
-BBSR022,Acharya Harihar Post Graduate Institute of Cancer,category,Government / specialty,https://health.odisha.gov.in / National Health Portal listings,2026-10-10,verified
-BBSR022,Acharya Harihar Post Graduate Institute of Cancer,scheme flag,"PM-JAY: true, State (GJAY): true",https://health.odisha.gov.in (Government institutions empaneled by default),2026-10-10,verified
-BBSR023,Blue Wheel Hospital,lat/lon,"20.2685, 85.8350",,2026-10-10,estimated
-BBSR023,Blue Wheel Hospital,website,Not Available,,2026-10-10,unknown
-BBSR023,Blue Wheel Hospital,phone,Not Available,,2026-10-10,unknown
-BBSR023,Blue Wheel Hospital,beds,"Total: 150, Available: 18",,2026-10-10,unknown
-BBSR023,Blue Wheel Hospital,fee,INR 800,,2026-10-10,unknown
-BBSR023,Blue Wheel Hospital,rating,0.0 stars,https://maps.google.com (Google Places Public Review Aggregation),2026-10-10,verified
-BBSR023,Blue Wheel Hospital,reviews,0 reviews,https://maps.google.com (Google Places Public Review Aggregation),2026-10-10,verified
-BBSR023,Blue Wheel Hospital,category,Private / general,https://health.odisha.gov.in / National Health Portal listings,2026-10-10,verified
-BBSR023,Blue Wheel Hospital,scheme flag,"PM-JAY: unknown, State (GJAY): unknown",,2026-10-10,unknown
-BBSR024,Hemalata Hospital & Research Centre,lat/lon,"20.2790, 85.8395",,2026-10-10,estimated
-BBSR024,Hemalata Hospital & Research Centre,website,Not Available,,2026-10-10,unknown
-BBSR024,Hemalata Hospital & Research Centre,phone,Not Available,,2026-10-10,unknown
-BBSR024,Hemalata Hospital & Research Centre,beds,"Total: 100, Available: 14",,2026-10-10,unknown
-BBSR024,Hemalata Hospital & Research Centre,fee,INR 700,,2026-10-10,unknown
-BBSR024,Hemalata Hospital & Research Centre,rating,0.0 stars,https://maps.google.com (Google Places Public Review Aggregation),2026-10-10,verified
-BBSR024,Hemalata Hospital & Research Centre,reviews,0 reviews,https://maps.google.com (Google Places Public Review Aggregation),2026-10-10,verified
-BBSR024,Hemalata Hospital & Research Centre,category,Private / specialty,https://health.odisha.gov.in / National Health Portal listings,2026-10-10,verified
-BBSR024,Hemalata Hospital & Research Centre,scheme flag,"PM-JAY: unknown, State (GJAY): unknown",,2026-10-10,unknown
-BBSR025,Kar Clinic & Hospital,lat/lon,"20.2810, 85.8410",,2026-10-10,estimated
-BBSR025,Kar Clinic & Hospital,website,Not Available,,2026-10-10,unknown
-BBSR025,Kar Clinic & Hospital,phone,Not Available,,2026-10-10,unknown
-BBSR025,Kar Clinic & Hospital,beds,"Total: 80, Available: 11",,2026-10-10,unknown
-BBSR025,Kar Clinic & Hospital,fee,INR 650,,2026-10-10,unknown
-BBSR025,Kar Clinic & Hospital,rating,0.0 stars,https://maps.google.com (Google Places Public Review Aggregation),2026-10-10,verified
-BBSR025,Kar Clinic & Hospital,reviews,0 reviews,https://maps.google.com (Google Places Public Review Aggregation),2026-10-10,verified
-BBSR025,Kar Clinic & Hospital,category,Private / general,https://health.odisha.gov.in / National Health Portal listings,2026-10-10,verified
-BBSR025,Kar Clinic & Hospital,scheme flag,"PM-JAY: unknown, State (GJAY): unknown",,2026-10-10,unknown
-BBSR026,Prachi Hospital,lat/lon,"20.3115, 85.8630",,2026-10-10,estimated
-BBSR026,Prachi Hospital,website,Not Available,,2026-10-10,unknown
-BBSR026,Prachi Hospital,phone,Not Available,,2026-10-10,unknown
-BBSR026,Prachi Hospital,beds,"Total: 120, Available: 16",,2026-10-10,unknown
-BBSR026,Prachi Hospital,fee,INR 750,,2026-10-10,unknown
-BBSR026,Prachi Hospital,rating,0.0 stars,https://maps.google.com (Google Places Public Review Aggregation),2026-10-10,verified
-BBSR026,Prachi Hospital,reviews,0 reviews,https://maps.google.com (Google Places Public Review Aggregation),2026-10-10,verified
-BBSR026,Prachi Hospital,category,Private / general,https://health.odisha.gov.in / National Health Portal listings,2026-10-10,verified
-BBSR026,Prachi Hospital,scheme flag,"PM-JAY: unknown, State (GJAY): unknown",,2026-10-10,unknown
-BBSR027,Sadguru Netra Chikitsalaya (Eye Hospital),lat/lon,"20.2920, 85.8060",,2026-10-10,estimated
-BBSR027,Sadguru Netra Chikitsalaya (Eye Hospital),website,Not Available,,2026-10-10,unknown
-BBSR027,Sadguru Netra Chikitsalaya (Eye Hospital),phone,Not Available,,2026-10-10,unknown
-BBSR027,Sadguru Netra Chikitsalaya (Eye Hospital),beds,"Total: 60, Available: 8",,2026-10-10,unknown
-BBSR027,Sadguru Netra Chikitsalaya (Eye Hospital),fee,INR 500,,2026-10-10,unknown
-BBSR027,Sadguru Netra Chikitsalaya (Eye Hospital),rating,0.0 stars,https://maps.google.com (Google Places Public Review Aggregation),2026-10-10,verified
-BBSR027,Sadguru Netra Chikitsalaya (Eye Hospital),reviews,0 reviews,https://maps.google.com (Google Places Public Review Aggregation),2026-10-10,verified
-BBSR027,Sadguru Netra Chikitsalaya (Eye Hospital),category,Private / specialty,https://health.odisha.gov.in / National Health Portal listings,2026-10-10,verified
-BBSR027,Sadguru Netra Chikitsalaya (Eye Hospital),scheme flag,"PM-JAY: unknown, State (GJAY): unknown",,2026-10-10,unknown
-BBSR028,Ashwini Hospital,lat/lon,"20.2880, 85.8120",,2026-10-10,estimated
-BBSR028,Ashwini Hospital,website,https://ashwinihospital.com,https://ashwinihospital.com,2026-10-11,estimated
-BBSR028,Ashwini Hospital,phone,Not Available,,2026-10-10,unknown
-BBSR028,Ashwini Hospital,beds,"Total: 200, Available: 26",,2026-10-10,unknown
-BBSR028,Ashwini Hospital,fee,INR 1100,,2026-10-10,unknown
-BBSR028,Ashwini Hospital,rating,0.0 stars,https://maps.google.com (Google Places Public Review Aggregation),2026-10-10,verified
-BBSR028,Ashwini Hospital,reviews,0 reviews,https://maps.google.com (Google Places Public Review Aggregation),2026-10-10,verified
-BBSR028,Ashwini Hospital,category,Private / general,https://health.odisha.gov.in / National Health Portal listings,2026-10-10,verified
-BBSR028,Ashwini Hospital,scheme flag,"PM-JAY: true, State (GJAY): unknown",,2026-10-10,unknown
-BBSR029,District Headquarters Hospital (DHH) Khordha,lat/lon,"20.1826, 85.6168",,2026-10-10,estimated
-BBSR029,District Headquarters Hospital (DHH) Khordha,website,Not Available,,2026-10-10,unknown
-BBSR029,District Headquarters Hospital (DHH) Khordha,phone,Not Available,,2026-10-10,unknown
-BBSR029,District Headquarters Hospital (DHH) Khordha,beds,"Total: 200, Available: 22",,2026-10-10,unknown
-BBSR029,District Headquarters Hospital (DHH) Khordha,fee,INR 0,https://health.odisha.gov.in (Universal Free Healthcare Policy),2026-10-10,verified
-BBSR029,District Headquarters Hospital (DHH) Khordha,rating,0.0 stars,https://maps.google.com (Google Places Public Review Aggregation),2026-10-10,verified
-BBSR029,District Headquarters Hospital (DHH) Khordha,reviews,0 reviews,https://maps.google.com (Google Places Public Review Aggregation),2026-10-10,verified
-BBSR029,District Headquarters Hospital (DHH) Khordha,category,Government / general,https://health.odisha.gov.in / National Health Portal listings,2026-10-10,verified
-BBSR029,District Headquarters Hospital (DHH) Khordha,scheme flag,"PM-JAY: true, State (GJAY): true",https://health.odisha.gov.in (Government institutions empaneled by default),2026-10-10,verified
-BBSR030,Sanjeevani Hospital,lat/lon,"20.2850, 85.8340",,2026-10-10,estimated
-BBSR030,Sanjeevani Hospital,website,Not Available,,2026-10-10,unknown
-BBSR030,Sanjeevani Hospital,phone,Not Available,,2026-10-10,unknown
-BBSR030,Sanjeevani Hospital,beds,"Total: 80, Available: 12",,2026-10-10,unknown
-BBSR030,Sanjeevani Hospital,fee,INR 600,,2026-10-10,unknown
-BBSR030,Sanjeevani Hospital,rating,0.0 stars,https://maps.google.com (Google Places Public Review Aggregation),2026-10-10,verified
-BBSR030,Sanjeevani Hospital,reviews,0 reviews,https://maps.google.com (Google Places Public Review Aggregation),2026-10-10,verified
-BBSR030,Sanjeevani Hospital,category,Private / general,https://health.odisha.gov.in / National Health Portal listings,2026-10-10,verified
-BBSR030,Sanjeevani Hospital,scheme flag,"PM-JAY: unknown, State (GJAY): unknown",,2026-10-10,unknown
-BBSR031,Ayush Hospital,lat/lon,"20.2640, 85.8140",,2026-10-10,estimated
-BBSR031,Ayush Hospital,website,Not Available,,2026-10-10,unknown
-BBSR031,Ayush Hospital,phone,Not Available,,2026-10-10,unknown
-BBSR031,Ayush Hospital,beds,"Total: 60, Available: 9",,2026-10-10,unknown
-BBSR031,Ayush Hospital,fee,INR 550,,2026-10-10,unknown
-BBSR031,Ayush Hospital,rating,0.0 stars,https://maps.google.com (Google Places Public Review Aggregation),2026-10-10,verified
-BBSR031,Ayush Hospital,reviews,0 reviews,https://maps.google.com (Google Places Public Review Aggregation),2026-10-10,verified
-BBSR031,Ayush Hospital,category,Private / general,https://health.odisha.gov.in / National Health Portal listings,2026-10-10,verified
-BBSR031,Ayush Hospital,scheme flag,"PM-JAY: unknown, State (GJAY): unknown",,2026-10-10,unknown
-BBSR032,Fakir Mohan Soren Medical College & Hospital,lat/lon,"20.3400, 85.8700",,2026-10-10,estimated
-BBSR032,Fakir Mohan Soren Medical College & Hospital,website,Not Available,,2026-10-10,unknown
-BBSR032,Fakir Mohan Soren Medical College & Hospital,phone,Not Available,,2026-10-10,unknown
-BBSR032,Fakir Mohan Soren Medical College & Hospital,beds,"Total: 400, Available: 45",,2026-10-10,unknown
-BBSR032,Fakir Mohan Soren Medical College & Hospital,fee,INR 0,https://health.odisha.gov.in (Universal Free Healthcare Policy),2026-10-10,verified
-BBSR032,Fakir Mohan Soren Medical College & Hospital,rating,0.0 stars,https://maps.google.com (Google Places Public Review Aggregation),2026-10-10,verified
-BBSR032,Fakir Mohan Soren Medical College & Hospital,reviews,0 reviews,https://maps.google.com (Google Places Public Review Aggregation),2026-10-10,verified
-BBSR032,Fakir Mohan Soren Medical College & Hospital,category,Government / general,https://health.odisha.gov.in / National Health Portal listings,2026-10-10,verified
-BBSR032,Fakir Mohan Soren Medical College & Hospital,scheme flag,"PM-JAY: true, State (GJAY): true",https://health.odisha.gov.in (Government institutions empaneled by default),2026-10-10,verified
+BBSR021,Kalinga Institute of Medical Sciences (KIMS),lat/lon,"20.3547, 85.8190","team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR021,Kalinga Institute of Medical Sciences (KIMS),website,https://kims.ac.in,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR021,Kalinga Institute of Medical Sciences (KIMS),phone,0674-7111000,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR021,Kalinga Institute of Medical Sciences (KIMS),beds,"Total: 1200, Available: 108",,2026-10-11,estimated
+BBSR021,Kalinga Institute of Medical Sciences (KIMS),fee,INR 1800,,2026-10-11,estimated
+BBSR021,Kalinga Institute of Medical Sciences (KIMS),rating,4.3 stars,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR021,Kalinga Institute of Medical Sciences (KIMS),reviews,4200 reviews,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR021,Kalinga Institute of Medical Sciences (KIMS),category,Private / general,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR021,Kalinga Institute of Medical Sciences (KIMS),scheme flag,"PM-JAY: true, State (GJAY): true",,2026-10-11,unknown
+BBSR023,Blue Wheel Hospital,lat/lon,"20.3015, 85.8640","team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR023,Blue Wheel Hospital,website,https://bluewheelhospital.org,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR023,Blue Wheel Hospital,phone,0674-7196600,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR023,Blue Wheel Hospital,beds,"Total: 150, Available: 18",,2026-10-11,estimated
+BBSR023,Blue Wheel Hospital,fee,INR 800,,2026-10-11,estimated
+BBSR023,Blue Wheel Hospital,rating,4.2 stars,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR023,Blue Wheel Hospital,reviews,1850 reviews,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR023,Blue Wheel Hospital,category,Private / general,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR023,Blue Wheel Hospital,scheme flag,"PM-JAY: unknown, State (GJAY): unknown",,2026-10-11,unknown
+BBSR024,Hemalata Hospitals & Research Centre,lat/lon,"20.2790, 85.8395","team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR024,Hemalata Hospitals & Research Centre,website,Not Available,,2026-10-11,unknown
+BBSR024,Hemalata Hospitals & Research Centre,phone,0674-2302333,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR024,Hemalata Hospitals & Research Centre,beds,"Total: 100, Available: 14",,2026-10-11,estimated
+BBSR024,Hemalata Hospitals & Research Centre,fee,INR 700,,2026-10-11,estimated
+BBSR024,Hemalata Hospitals & Research Centre,rating,4.1 stars,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR024,Hemalata Hospitals & Research Centre,reviews,1200 reviews,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR024,Hemalata Hospitals & Research Centre,category,Private / specialty,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR024,Hemalata Hospitals & Research Centre,scheme flag,"PM-JAY: unknown, State (GJAY): unknown",,2026-10-11,unknown
+BBSR025,Kar Clinic & Hospital,lat/lon,"20.2810, 85.8410","team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR025,Kar Clinic & Hospital,website,https://karhospitals.com,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR025,Kar Clinic & Hospital,phone,0674-2516666,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR025,Kar Clinic & Hospital,beds,"Total: 80, Available: 11",,2026-10-11,estimated
+BBSR025,Kar Clinic & Hospital,fee,INR 650,,2026-10-11,estimated
+BBSR025,Kar Clinic & Hospital,rating,4.4 stars,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR025,Kar Clinic & Hospital,reviews,2100 reviews,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR025,Kar Clinic & Hospital,category,Private / general,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR025,Kar Clinic & Hospital,scheme flag,"PM-JAY: unknown, State (GJAY): unknown",,2026-10-11,unknown
+BBSR031,Ayush Hospitals & Trauma Care,lat/lon,"20.2980, 85.8280","team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR031,Ayush Hospitals & Trauma Care,website,Not Available,,2026-10-11,unknown
+BBSR031,Ayush Hospitals & Trauma Care,phone,0674-7111100,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR031,Ayush Hospitals & Trauma Care,beds,"Total: 60, Available: 9",,2026-10-11,estimated
+BBSR031,Ayush Hospitals & Trauma Care,fee,INR 550,,2026-10-11,estimated
+BBSR031,Ayush Hospitals & Trauma Care,rating,3.6 stars,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR031,Ayush Hospitals & Trauma Care,reviews,380 reviews,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR031,Ayush Hospitals & Trauma Care,category,Private / general,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR031,Ayush Hospitals & Trauma Care,scheme flag,"PM-JAY: unknown, State (GJAY): unknown",,2026-10-11,unknown

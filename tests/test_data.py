@@ -86,19 +86,40 @@ def test_history_final_timestamp_matches_snapshot(enriched):
         assert hist_free == expected_free, f"{hid}: history end {hist_free} != {expected_free}"
 
 
-def test_added_hospitals_evidence_csv():
-    """docs/ADDED_HOSPITALS_EVIDENCE.csv must audit all 12 added hospitals with honest status."""
+def test_added_hospitals_evidence_csv(enriched):
+    """docs/ADDED_HOSPITALS_EVIDENCE.csv must audit curated added hospitals with honest status."""
     from pathlib import Path
+    from urllib.parse import urlparse
     evidence_path = Path(__file__).resolve().parent.parent / "docs" / "ADDED_HOSPITALS_EVIDENCE.csv"
     assert evidence_path.exists(), "ADDED_HOSPITALS_EVIDENCE.csv must exist"
     
     ev_df = pd.read_csv(evidence_path)
-    assert set(ev_df["status"].unique()).issubset({"verified", "estimated", "unknown"})
-    assert set(ev_df["hospital_id"].unique()) == {f"BBSR{i:03d}" for i in range(21, 33)}
+    assert set(ev_df["status"].unique()).issubset({"verified", "team_confirmed", "estimated", "unknown"})
     
-    # Rows without source URL must never be marked verified
-    no_url = ev_df[ev_df["source_url"].isna() | (ev_df["source_url"] == "")]
-    assert not (no_url["status"] == "verified").any(), "Rows without source URL cannot be verified"
+    added_in_enriched = enriched[enriched["data_origin"] == "added_by_team"]
+    assert set(ev_df["hospital_id"].unique()) == set(added_in_enriched["hospital_id"].unique())
+    
+    # Rule 1 / D2: Any verified row must have a specific, non-empty, non-root, non-vague source URL
+    verified_rows = ev_df[ev_df["status"] == "verified"]
+    for _, r in verified_rows.iterrows():
+        url = str(r["source_url"]).strip()
+        assert url != "" and not pd.isna(url), f"{r['hospital_id']} verified row has empty source_url"
+        parsed = urlparse(url)
+        assert parsed.scheme in ("http", "https"), f"Vague source '{url}' is not a valid URL"
+        assert parsed.netloc != "", f"Vague source '{url}' missing domain"
+        assert parsed.path not in ("", "/"), f"Root-only URL '{url}' not allowed for verified status"
+    
+    # D2: Rating and review values must match hospitals_enriched.csv exactly
+    enriched_map = added_in_enriched.set_index("hospital_id")
+    for _, r in ev_df[ev_df["field"] == "rating"].iterrows():
+        hid = r["hospital_id"]
+        expected_rating = f"{float(enriched_map.loc[hid, 'rating_5']):.1f} stars"
+        assert r["value"] == expected_rating, f"{hid} rating value {r['value']} != {expected_rating}"
+        
+    for _, r in ev_df[ev_df["field"] == "reviews"].iterrows():
+        hid = r["hospital_id"]
+        expected_rev = f"{int(enriched_map.loc[hid, 'review_count'])} reviews"
+        assert r["value"] == expected_rev, f"{hid} review value {r['value']} != {expected_rev}"
 
 
 def test_verify_links_output_exists():
