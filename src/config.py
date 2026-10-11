@@ -114,7 +114,7 @@ BG_DARK = "#0E1117"
 BG_CARD = "#1A1F2B"
 
 # ── Emergency info (Verified 108 & 112) ────────────────────────────────
-EMERGENCY_TEXT = "🚑 In an emergency call **108** (free ambulance) or **112** (unified emergency). Both are free and available 24/7 across Odisha."
+EMERGENCY_TEXT = "🚑 In a medical emergency call <b>108</b> (free emergency ambulance) or <b>112</b> (unified emergency helpline). Both services are toll-free and operate 24/7 across Odisha. (Source: Department of Health & Family Welfare, Govt of Odisha)."
 
 # ── Data generation ───────────────────────────────────────────────────
 HISTORY_DAYS = 90

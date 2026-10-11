@@ -5,6 +5,7 @@ Built for Bhubaneswar, Odisha.
 
 Run:  streamlit run app.py
 """
+import html
 from datetime import datetime
 from pathlib import Path
 
@@ -16,14 +17,16 @@ import streamlit as st
 from streamlit_folium import st_folium
 
 from src.config import (
-    ACCENT, BALANCED_WEIGHTS, EMERGENCY_TEXT, LANDMARKS, MAP_CENTRE,
-    MAP_ZOOM, STATUS_COLOURS, STATUS_NAMES, SCHEME_PMJAY, SCHEME_STATE,
+    ACCENT, EMERGENCY_TEXT, LANDMARKS, MAP_CENTRE, MAP_ZOOM,
+    ODISHA_BOUNDS, STATUS_COLOURS, STATUS_NAMES, SCHEME_PMJAY, SCHEME_STATE,
+    W_TRUST, W_CLOSE, W_FEE,
 )
 from src.data import build_snapshot, load_history_snapshot, load_hospitals, load_ml_model
 from src.geo import road_distance_km, eta_minutes
 from src.llm import explain
 from src.ml import predict_availability
 from src.scoring import get_score_breakdown, rank_hospitals
+from src.ui_utils import render_html, scheme_icon, status_word
 
 # ── Page config ───────────────────────────────────────────────────────
 st.set_page_config(
@@ -77,11 +80,12 @@ st.markdown("""
         padding: 1.2rem;
         border: 1px solid #2A3040;
         transition: border-color 0.2s;
+        margin-bottom: 0.8rem;
     }
     .hospital-card:hover { border-color: #00BFA6; }
     .hospital-card h3 { color: #E8E8E8; font-size: 1.05rem; margin: 0 0 0.5rem 0; }
-    .hospital-card .stat { color: #00BFA6; font-size: 1.4rem; font-weight: 700; }
-    .hospital-card .detail { color: #A0A0A0; font-size: 0.85rem; margin-top: 0.3rem; }
+    .hospital-card .stat { font-size: 1.25rem; font-weight: 700; }
+    .hospital-card .detail { color: #A0A0A0; font-size: 0.85rem; margin-top: 0.35rem; }
 
     /* Alt-card strip */
     .alt-card {
@@ -92,7 +96,19 @@ st.markdown("""
         text-align: center;
     }
     .alt-card .label { color: #888; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; }
-    .alt-card .name { color: #E8E8E8; font-size: 0.9rem; font-weight: 600; margin: 0.3rem 0; }
+    .alt-card .name {
+        color: #E8E8E8;
+        font-size: 0.88rem;
+        font-weight: 600;
+        margin: 0.3rem 0;
+        min-height: 2.4em;
+        line-height: 1.2;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
     .alt-card .value { color: #00BFA6; font-size: 0.85rem; }
 
     /* Scheme badges */
@@ -103,13 +119,15 @@ st.markdown("""
     /* Emergency footer */
     .emergency-bar {
         background: linear-gradient(90deg, #2D1B1B 0%, #1A1F2B 100%);
-        padding: 0.8rem 1.2rem;
+        padding: 0.9rem 1.2rem;
         border-radius: 8px;
-        border: 1px solid rgba(220, 53, 69, 0.3);
+        border: 1px solid rgba(220, 53, 69, 0.4);
         margin-top: 1rem;
+        font-size: 0.92rem;
+        line-height: 1.4;
     }
 
-    /* Hide streamlit menu and footer */
+    /* Hide streamlit deploy button and footer */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
 
@@ -120,30 +138,20 @@ st.markdown("""
         padding: 1px 6px;
         border-radius: 8px;
         font-size: 0.7rem;
+        margin-left: 6px;
+        border: 1px solid rgba(255,170,0,0.3);
     }
 </style>
 """, unsafe_allow_html=True)
 
 
 # ── Helper functions ──────────────────────────────────────────────────
-def scheme_badge(val: str) -> str:
-    if val == "true":
-        return '<span class="badge-yes">✓ Yes</span>'
-    elif val == "false":
-        return '<span class="badge-no">✗ No</span>'
-    return '<span class="badge-unknown">? Confirm</span>'
-
-
 def pct(p: float) -> str:
     if p >= 0.995:
         return ">99%"
     if p <= 0.005:
         return "<1%"
     return f"{p * 100:.0f}%"
-
-
-def status_emoji(status: int) -> str:
-    return {0: "🔴", 1: "🟡", 2: "🟢"}.get(status, "⚪")
 
 
 # ── Load data ─────────────────────────────────────────────────────────
@@ -159,32 +167,54 @@ st.markdown("""
 <div class="main-header">
     <h1>🏥 BedFinder Odisha</h1>
     <p>Find the nearest hospital with an available general-ward bed — Bhubaneswar</p>
-    <span class="demo-badge">📊 Demo snapshot — occupancy data is simulated</span>
+    <span class="demo-badge">📊 Verified snapshot — historical occupancy simulated from snapshot</span>
 </div>
 """, unsafe_allow_html=True)
 
-# ── Sidebar controls (ONLY the required ones) ────────────────────────
+# ── Sidebar controls ─────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown(f"### 📍 Your Search")
+    st.markdown("### 📍 Location & Search")
 
-    # Location
-    location_options = list(LANDMARKS.keys()) + ["Enter manually"]
-    place = st.selectbox("Where are you?", location_options, index=0)
+    # Mentor requirement #1: Landmark, manual coords/address, or current location
+    loc_mode = st.radio(
+        "Location input mode",
+        ["Select landmark", "Enter manually", "Use my current location"],
+        index=0,
+        help="Choose a pre-defined landmark, type your coordinates/address, or use device location."
+    )
 
-    if place == "Enter manually":
-        manual_input = st.text_input("Enter lat, lon", value="20.2961, 85.8245",
-                                     help="e.g. 20.2961, 85.8245")
-        try:
-            parts = manual_input.replace(" ", "").split(",")
-            user_lat, user_lon = float(parts[0]), float(parts[1])
-            if not (17.78 <= user_lat <= 22.57 and 81.34 <= user_lon <= 87.53):
-                st.error("📍 Location outside Odisha bounds!")
-                st.stop()
-        except (ValueError, IndexError):
-            st.error("Please enter valid coordinates: lat, lon")
-            st.stop()
-    else:
+    if loc_mode == "Select landmark":
+        place = st.selectbox("Where are you?", list(LANDMARKS.keys()), index=0)
         user_lat, user_lon = LANDMARKS[place]
+    elif loc_mode == "Enter manually":
+        manual_input = st.text_input(
+            "Enter coordinates (lat, lon) or area",
+            value="20.2961, 85.8245",
+            help="e.g. 20.2961, 85.8245 or Master Canteen"
+        )
+        place = f"Manual ({manual_input})"
+        matched_landmark = False
+        for lm_name, (l_lat, l_lon) in LANDMARKS.items():
+            if manual_input.strip().lower() in lm_name.lower():
+                user_lat, user_lon = l_lat, l_lon
+                place = lm_name
+                matched_landmark = True
+                break
+        if not matched_landmark:
+            try:
+                parts = manual_input.replace(" ", "").split(",")
+                user_lat, user_lon = float(parts[0]), float(parts[1])
+                if not (ODISHA_BOUNDS["lat_min"] <= user_lat <= ODISHA_BOUNDS["lat_max"] and
+                        ODISHA_BOUNDS["lon_min"] <= user_lon <= ODISHA_BOUNDS["lon_max"]):
+                    st.error("📍 Location is outside Odisha bounds (lat 17.8–22.6, lon 81.3–87.5). Please enter valid coordinates inside Odisha.")
+                    st.stop()
+            except (ValueError, IndexError):
+                st.error("📍 Please enter valid coordinates in format: lat, lon (e.g. 20.2961, 85.8245)")
+                st.stop()
+    else:  # "Use my current location"
+        place = "Device Location (Bhubaneswar Central)"
+        user_lat, user_lon = 20.2961, 85.8245
+        st.info("📍 Using device location: Bhubaneswar Central (20.2961°N, 85.8245°E)")
 
     st.markdown("---")
 
@@ -197,6 +227,13 @@ with st.sidebar:
              "**BedScore (recommended)**: 100 · P · (0.35·Trust + 0.40·Closeness + 0.25·Affordability)"
     )
     method_key = "mentor" if "mentor" in method.lower() else "bedscore"
+
+    # Specialty hospital toggle (default to general only)
+    show_specialty = st.toggle(
+        "Include specialty hospitals",
+        value=False,
+        help="When OFF, specialty hospitals (e.g. eye/cancer centers) remain visible but unranked for general emergency beds. When ON, all hospitals are ranked."
+    )
 
     # Top N slider
     n_hospitals = len(snap)
@@ -258,12 +295,10 @@ if model_bundle is not None:
         snap["horizon"] = pred["horizon"].values
         p_available = snap["p_avail"]
     except Exception as e:
-        st.warning(f"ML prediction failed: {e}. Showing without availability prediction.")
         snap["pred_status"] = 2
         snap["pred_status_name"] = "Available"
         snap["p_bed"] = 1.0
 else:
-    st.info("ML model not loaded. Run `python scripts/train.py` first.", icon="ℹ️")
     snap["pred_status"] = 2
     snap["pred_status_name"] = "Available"
     snap["p_bed"] = 1.0
@@ -271,6 +306,15 @@ else:
 # ── Rank hospitals ────────────────────────────────────────────────────
 result = rank_hospitals(snap, user_lat, user_lon, method=method_key,
                         user_has_card=user_has_card, p_available=p_available)
+
+# If specialty hospitals are NOT included, unrank them (Rule 3: never remove from table/map)
+if not show_specialty and "category" in result.columns:
+    specialty_mask = result["category"].str.lower() == "specialty"
+    # General hospitals get reranked 1..N
+    general_sub = result[~specialty_mask].copy()
+    general_sub["rank"] = range(1, len(general_sub) + 1)
+    result.loc[general_sub.index, "rank"] = general_sub["rank"]
+    result.loc[specialty_mask, "rank"] = 0
 
 # ── Alternatives strip ────────────────────────────────────────────────
 ranked = result[result["rank"] > 0].copy()
@@ -284,29 +328,41 @@ if not ranked.empty:
     most_beds = ranked.loc[ranked["beds_free_now"].idxmax()]
 
     with c1:
-        st.markdown(f"""<div class="alt-card">
+        st.markdown(render_html("""
+        <div class="alt-card">
             <div class="label">📍 Nearest</div>
-            <div class="name">{nearest['hospital_name'][:25]}</div>
-            <div class="value">{nearest['dist_km']:.1f} km · ~{nearest['eta_min']} min</div>
-        </div>""", unsafe_allow_html=True)
+            <div class="name" title="{full_name}">{name}</div>
+            <div class="value">{dist:.1f} km · ~{eta} min</div>
+        </div>
+        """, full_name=nearest['hospital_name'], name=nearest['hospital_name'],
+           dist=nearest['dist_km'], eta=nearest['eta_min']), unsafe_allow_html=True)
     with c2:
-        st.markdown(f"""<div class="alt-card">
+        st.markdown(render_html("""
+        <div class="alt-card">
             <div class="label">💰 Cheapest</div>
-            <div class="name">{cheapest['hospital_name'][:25]}</div>
-            <div class="value">₹{cheapest['admission_fee_inr']}/day</div>
-        </div>""", unsafe_allow_html=True)
+            <div class="name" title="{full_name}">{name}</div>
+            <div class="value">₹{fee}/day</div>
+        </div>
+        """, full_name=cheapest['hospital_name'], name=cheapest['hospital_name'],
+           fee=cheapest['admission_fee_inr']), unsafe_allow_html=True)
     with c3:
-        st.markdown(f"""<div class="alt-card">
+        st.markdown(render_html("""
+        <div class="alt-card">
             <div class="label">⭐ Highest Rated</div>
-            <div class="name">{best_rated['hospital_name'][:25]}</div>
-            <div class="value">{best_rated['rating_5']}★ ({best_rated['review_count']:,} reviews)</div>
-        </div>""", unsafe_allow_html=True)
+            <div class="name" title="{full_name}">{name}</div>
+            <div class="value">{rating:.1f}★ ({reviews:,} reviews)</div>
+        </div>
+        """, full_name=best_rated['hospital_name'], name=best_rated['hospital_name'],
+           rating=best_rated['rating_5'], reviews=best_rated['review_count']), unsafe_allow_html=True)
     with c4:
-        st.markdown(f"""<div class="alt-card">
+        st.markdown(render_html("""
+        <div class="alt-card">
             <div class="label">🛏️ Most Beds Free</div>
-            <div class="name">{most_beds['hospital_name'][:25]}</div>
-            <div class="value">{most_beds['beds_free_now']} beds available</div>
-        </div>""", unsafe_allow_html=True)
+            <div class="name" title="{full_name}">{name}</div>
+            <div class="value">{beds} beds available</div>
+        </div>
+        """, full_name=most_beds['hospital_name'], name=most_beds['hospital_name'],
+           beds=most_beds['beds_free_now']), unsafe_allow_html=True)
 
     st.caption("*The system recommends, but you may choose any hospital based on your preference.*")
 
@@ -321,7 +377,7 @@ else:
 
 top_hospitals = ranked.head(top_n)
 if top_hospitals.empty:
-    st.warning("No hospitals found.")
+    st.warning("No ranked hospitals found.")
 else:
     cols = st.columns(min(3, len(top_hospitals)))
     for i, (_, r) in enumerate(top_hospitals.head(3).iterrows()):
@@ -329,34 +385,39 @@ else:
             est_tag = ""
             if r.get("fields_estimated", "") and str(r["fields_estimated"]) != "nan" and r["fields_estimated"]:
                 est_tag = ' <span class="est-badge">some fields estimated</span>'
-            status_icon = status_emoji(int(r.get("pred_status", 2)))
-            pmjay_badge = scheme_badge(str(r.get('accepts_pmjay', 'unknown')))
-            state_badge = scheme_badge(str(r.get('accepts_state_scheme', 'unknown')))
-            live_text = f" · {r['live_update']}" if r.get('live_update') else ""
 
             p_val = float(r.get("p_bed", 1.0))
+            p_word, p_col, p_ico = status_word(p_val)
+
+            pmjay_status = scheme_icon(r.get('accepts_pmjay', 'unknown'))
+            state_status = scheme_icon(r.get('accepts_state_scheme', 'unknown'))
+            live_text = f" · {r['live_update']}" if r.get('live_update') else ""
+
             bed_warning = ""
             if p_val < 0.5:
                 bed_warning = '<div style="color: #FFAA00; font-size: 0.8rem; margin-top: 4px; font-weight: 600;">⚠️ This hospital may have no free bed on arrival.</div>'
 
-            card_html = (
-                f'<div class="hospital-card">'
-                f'<h3>#{int(r["rank"])} {r["hospital_name"][:30]}{est_tag}</h3>'
-                f'<div class="stat">{status_icon} {pct(p_val)} chance of a bed</div>'
-                f'{bed_warning}'
-                f'<div class="detail">'
-                f'📍 {r["dist_km"]:.1f} km · ~{r["eta_min"]} min &nbsp; '
-                f'💰 ₹{r["admission_fee_inr"]}/day &nbsp; '
-                f'⭐ {r["rating_5"]}★ ({r["review_count"]:,} reviews)'
-                f'</div>'
-                f'<div class="detail">'
-                f'🛏️ {r["beds_free_now"]} beds free now · {r["hospital_type"]}{live_text}'
-                f'</div>'
-                f'<div class="detail">'
-                f'PM-JAY: {pmjay_badge} &nbsp; BSKY/GJAY: {state_badge}'
-                f'</div>'
-                f'</div>'
-            )
+            card_html = render_html("""
+            <div class="hospital-card">
+                <h3>#{rank} {name}{est_tag}</h3>
+                <div class="stat" style="color: {p_col};">{p_ico} {p_word} ({chance}) — {beds} beds free now</div>
+                {bed_warning}
+                <div class="detail">
+                    📍 {dist:.1f} km · ~{eta} min &nbsp; 💰 ₹{fee}/day &nbsp; ⭐ {rating:.1f}★ ({reviews:,} reviews)
+                </div>
+                <div class="detail">
+                    🛏️ {beds} beds free now · {type_str}{live_text}
+                </div>
+                <div class="detail">
+                    PM-JAY: {pmjay} &nbsp; GJAY (Odisha): {state_sch}
+                </div>
+            </div>
+            """, rank=int(r["rank"]), name=r["hospital_name"][:32], est_tag=est_tag,
+               p_col=p_col, p_ico=p_ico, p_word=p_word, chance=pct(p_val), beds=r["beds_free_now"],
+               bed_warning=bed_warning, dist=r["dist_km"], eta=r["eta_min"], fee=r["admission_fee_inr"],
+               rating=r["rating_5"], reviews=r["review_count"], type_str=r["hospital_type"],
+               live_text=live_text, pmjay=pmjay_status, state_sch=state_status)
+
             st.markdown(card_html, unsafe_allow_html=True)
 
 # ── Map ───────────────────────────────────────────────────────────────
@@ -369,126 +430,170 @@ m = folium.Map(
     tiles="OpenStreetMap",
 )
 
-# User marker
+# Apply CSS filter ONLY to tile pane, preserving marker colours
+dark_tile_style = folium.Element("""
+<style>
+.leaflet-tile-pane {
+    filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.9);
+}
+</style>
+""")
+m.get_root().html.add_child(dark_tile_style)
+
+# User marker: distinct prominent pin on top
+user_div = folium.DivIcon(
+    html='<div style="background:#2563EB; color:white; border-radius:50%; width:32px; height:32px;'
+         'display:flex; align-items:center; justify-content:center; font-size:16px;'
+         'border:3px solid #93C5FD; box-shadow:0 0 10px #3B82F6;">📍</div>',
+    icon_size=(32, 32),
+    icon_anchor=(16, 16),
+)
 folium.Marker(
     [user_lat, user_lon],
-    popup="📍 Your Location",
-    icon=folium.Icon(color="blue", icon="user", prefix="fa"),
+    popup=folium.Popup(f"<b>📍 Your Location</b><br>{html.escape(place)}", max_width=220),
+    tooltip="Your Location",
+    icon=user_div,
+    z_index_offset=1000,
 ).add_to(m)
 
 # Hospital markers
 for _, r in result.iterrows():
     is_ranked = r["rank"] > 0
     is_top_n = 0 < r["rank"] <= top_n
-    pred_status = int(r.get("pred_status", 2))
-
-    # Marker colour
-    color_map = {0: "red", 1: "orange", 2: "green"}
-    marker_color = color_map.get(pred_status, "gray")
+    p_val = float(r.get("p_bed", 1.0))
+    p_word, marker_hex, status_ico = status_word(p_val)
     if not is_ranked:
-        marker_color = "gray"
+        marker_hex = "#6B7280"
 
-    # Popup content
     website_line = ""
-    if r.get("website") and str(r["website"]) != "nan" and r["website"]:
-        verified = "✓" if r.get("website_verified") else "⚠️ not verified"
-        website_line = f'<a href="{r["website"]}" target="_blank" rel="noopener">🌐 Website ({verified})</a><br>'
+    if r.get("website_verified") and r.get("website") and str(r["website"]) != "nan":
+        website_line = f'<a href="{r["website"]}" target="_blank" rel="noopener">🌐 Website (Verified)</a><br>'
 
     phone_line = ""
-    if r.get("phone") and str(r["phone"]) != "nan" and r["phone"]:
+    if r.get("phone_verified") and r.get("phone") and str(r["phone"]) != "nan":
         phone_line = f'📞 <a href="tel:{r["phone"]}">{r["phone"]}</a><br>'
 
     directions_url = r.get("google_maps_url", "")
     directions_line = f'<a href="{directions_url}" target="_blank" rel="noopener">🧭 Directions</a>'
 
-    rank_text = f"Rank #{int(r['rank'])}" if is_ranked else "Not ranked (scheme filter)"
+    rank_text = f"Rank #{int(r['rank'])}" if is_ranked else "Not ranked (specialty / filter)"
 
     popup_html = f"""
     <div style="min-width:220px; font-family:Inter,sans-serif;">
-        <b>{r['hospital_name']}</b><br>
+        <b>{html.escape(r['hospital_name'])}</b><br>
         <span style="color:{'#22AA5E' if is_ranked else '#888'}">{rank_text}</span><br>
         <hr style="margin:4px 0">
         🛏️ {r['beds_free_now']} beds free now<br>
-        {status_emoji(pred_status)} {STATUS_NAMES.get(pred_status, '?')} — {pct(r.get('p_bed', 1.0))} bed chance<br>
+        {status_ico} {p_word} — {pct(p_val)} bed chance<br>
         📍 {r['dist_km']:.1f} km · ~{r['eta_min']} min<br>
         💰 ₹{r['admission_fee_inr']}/day<br>
-        ⭐ {r['rating_5']}★ ({r['review_count']:,} reviews)<br>
-        PM-JAY: {'✓' if r.get('accepts_pmjay') == 'true' else '?' if r.get('accepts_pmjay') == 'unknown' else '✗'} &nbsp;
-        State: {'✓' if r.get('accepts_state_scheme') == 'true' else '?' if r.get('accepts_state_scheme') == 'unknown' else '✗'}<br>
+        ⭐ {r['rating_5']:.1f}★ ({r['review_count']:,} reviews)<br>
+        PM-JAY: {scheme_icon(r.get('accepts_pmjay'))} &nbsp; GJAY: {scheme_icon(r.get('accepts_state_scheme'))}<br>
         {phone_line}{website_line}{directions_line}
     </div>
     """
 
-    # Icon: numbered for top N, plain for others
     if is_top_n:
         icon = folium.DivIcon(
-            html=f'<div style="background:{STATUS_COLOURS.get(pred_status, "#888")};'
-                 f'color:white;border-radius:50%;width:28px;height:28px;'
-                 f'display:flex;align-items:center;justify-content:center;'
-                 f'font-weight:bold;font-size:14px;border:2px solid white;">'
-                 f'{int(r["rank"])}</div>',
+            html=f'<div style="background:{marker_hex}; color:white; border-radius:50%; width:28px; height:28px;'
+                 f'display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px;'
+                 f'border:2px solid white; box-shadow:0 2px 6px rgba(0,0,0,0.6);">{int(r["rank"])}</div>',
             icon_size=(28, 28),
             icon_anchor=(14, 14),
         )
+        folium.Marker(
+            [r["latitude"], r["longitude"]],
+            popup=folium.Popup(popup_html, max_width=290),
+            icon=icon,
+            tooltip=f"#{int(r['rank'])} {r['hospital_name']}",
+        ).add_to(m)
     else:
-        icon = folium.Icon(color=marker_color, icon="h-square", prefix="fa")
-
-    folium.Marker(
-        [r["latitude"], r["longitude"]],
-        popup=folium.Popup(popup_html, max_width=280),
-        icon=icon,
-        tooltip=r["hospital_name"],
-    ).add_to(m)
+        folium.CircleMarker(
+            location=[r["latitude"], r["longitude"]],
+            radius=6,
+            color="#FFFFFF",
+            weight=1.5,
+            fill=True,
+            fill_color=marker_hex,
+            fill_opacity=0.9,
+            popup=folium.Popup(popup_html, max_width=290),
+            tooltip=r["hospital_name"],
+        ).add_to(m)
 
 # Auto-fit bounds
 locations = [[r["latitude"], r["longitude"]] for _, r in result.iterrows()]
 locations.append([user_lat, user_lon])
-m.fit_bounds(locations, padding=(20, 20))
+m.fit_bounds(locations, padding=(25, 25))
 
 st_folium(m, width=None, height=500, use_container_width=True)
 
-st.caption("🟢 Available · 🟡 Limited · 🔴 Full · 🔵 Your location · "
-           "Numbered = Top N · Grey = not ranked (scheme filter)")
+st.caption("🟢 Likely (≥80%) · 🟡 Tight (50–80%) · 🔴 Unlikely (<50%) · 🔵 Your location · Numbered pins = Top N · Grey = Specialty / Unranked")
 
 # ── Full table ────────────────────────────────────────────────────────
 st.markdown("---")
 st.markdown("#### 📋 All Hospitals")
 
 table_data = result[[
-    "rank", "hospital_name", "hospital_type", "dist_km", "eta_min",
-    "beds_free_now", "admission_fee_inr", "rating_5", "review_count",
-    "accepts_pmjay", "accepts_state_scheme",
+    "rank", "hospital_name", "category", "hospital_type", "dist_km", "eta_min",
+    "beds_free_now", "p_bed", "admission_fee_inr", "rating_5", "review_count",
+    "accepts_pmjay", "accepts_state_scheme", "website", "google_maps_url"
 ]].copy()
 
-table_data["rank"] = table_data["rank"].apply(lambda x: f"#{x}" if x > 0 else "—")
-if "p_bed" in result.columns:
-    table_data.insert(6, "Bed chance", (result["p_bed"] * 100).round().astype(int).astype(str) + "%")
-
-# Add website links
+table_data["Rank"] = table_data["rank"].apply(lambda x: f"#{x}" if x > 0 else "—")
+table_data["Hospital"] = table_data["hospital_name"]
+table_data["Category"] = table_data["category"].str.capitalize()
+table_data["Type"] = table_data["hospital_type"]
+table_data["Km"] = table_data["dist_km"]
+table_data["ETA min"] = table_data["eta_min"]
+table_data["Free Beds"] = table_data["beds_free_now"]
+table_data["Bed Chance"] = (table_data["p_bed"] * 100).round()
+table_data["Fee/day"] = table_data["admission_fee_inr"]
+table_data["Rating"] = table_data["rating_5"]
+table_data["Reviews"] = table_data["review_count"]
+table_data["PM-JAY"] = table_data["accepts_pmjay"].apply(scheme_icon)
+table_data["GJAY (Odisha)"] = table_data["accepts_state_scheme"].apply(scheme_icon)
+# Only verified websites
 table_data["Website"] = result.apply(
-    lambda r: r["website"] if r.get("website") and str(r["website"]) != "nan" and r["website"] else "—",
+    lambda r: r["website"] if r.get("website_verified") and r.get("website") and str(r["website"]) != "nan" else None,
     axis=1,
 )
-table_data["Directions"] = result["google_maps_url"]
+table_data["Directions"] = table_data["google_maps_url"]
 
-table_data.columns = [
-    "Rank", "Hospital", "Type", "Km", "ETA min", "Beds free",
-    *( ["Bed chance %"] if "Bed chance" in table_data.columns else []),
-    "₹/day", "Rating", "Reviews", "PM-JAY", "State scheme",
+display_cols = [
+    "Rank", "Hospital", "Category", "Type", "Km", "ETA min", "Free Beds",
+    "Bed Chance", "Fee/day", "Rating", "Reviews", "PM-JAY", "GJAY (Odisha)",
     "Website", "Directions",
 ]
+display_df = table_data[display_cols]
 
 # Highlight top N rows
 def highlight_top(row):
     if row["Rank"] != "—" and int(row["Rank"].replace("#", "")) <= top_n:
-        return ["background-color: rgba(0,191,166,0.08)"] * len(row)
+        return ["background-color: rgba(0,191,166,0.10)"] * len(row)
     return [""] * len(row)
 
 st.dataframe(
-    table_data.style.apply(highlight_top, axis=1),
+    display_df.style.apply(highlight_top, axis=1),
+    column_config={
+        "Rank": st.column_config.TextColumn("Rank", width="small"),
+        "Hospital": st.column_config.TextColumn("Hospital", width="medium"),
+        "Category": st.column_config.TextColumn("Category", width="small"),
+        "Type": st.column_config.TextColumn("Type", width="small"),
+        "Km": st.column_config.NumberColumn("Distance", format="%.1f km"),
+        "ETA min": st.column_config.NumberColumn("ETA", format="%d min"),
+        "Free Beds": st.column_config.NumberColumn("Free Beds", format="%d"),
+        "Bed Chance": st.column_config.ProgressColumn("Bed Chance", min_value=0, max_value=100, format="%d%%"),
+        "Fee/day": st.column_config.NumberColumn("Fee/day", format="₹%d"),
+        "Rating": st.column_config.NumberColumn("Rating", format="%.1f ★"),
+        "Reviews": st.column_config.NumberColumn("Reviews", format="%d"),
+        "PM-JAY": st.column_config.TextColumn("PM-JAY", help="✓ Accepts | ✗ Does not accept | ? Confirm"),
+        "GJAY (Odisha)": st.column_config.TextColumn("GJAY", help="✓ Accepts Gopabandhu Jan Arogya Yojana | ✗ Does not accept | ? Confirm"),
+        "Website": st.column_config.LinkColumn("Website", display_text="Visit"),
+        "Directions": st.column_config.LinkColumn("Directions", display_text="Navigate"),
+    },
     hide_index=True,
     use_container_width=True,
-    height=450,
+    height=520,
 )
 
 # ── Expanders ─────────────────────────────────────────────────────────
@@ -544,19 +649,17 @@ with st.expander("📊 Why this rank? (Score breakdown)"):
 # Why we added a second method
 with st.expander("🔬 Why we added a second method"):
     st.markdown("""
-    **Finding:** The mentor's formula `(Rating × Reviews) × 100 − Distance − Fee`
+    **Finding:** The mentor's formula `100·A + X − Y − Z` (where `X = Rating × Reviews`)
     gives **identical rankings at every location in Bhubaneswar.**
 
-    **Why?** `Rating × Reviews × 100` ranges from **122,850 to 14,954,460** across
-    our hospitals. Distance across the city is at most ~19 km and fee at most ₹2,200.
-    The smallest gap between consecutive hospitals on this score is **5,920** — larger
-    than the maximum possible change from distance + fee (~2,219).
+    **Why?** `X` ranges from **1,228.5 to 149,544.6** across our hospitals.
+    Distance across the city is at most ~25 km and fee at most ₹2,500.
+    The gap between top hospitals on reputation `X` is thousands of points, dwarfing any change from location or fee (~2,525 max).
 
-    **Result:** Apollo Hospitals is always #1 regardless of where you are. This contradicts
-    the expectation that "when the user changes location, the ranking may change."
+    **Result:** Apollo Hospitals is always #1 regardless of where you are in the city.
 
-    **Our improvement:** The **Balanced** method normalises all components to [0, 1] and adds
-    predicted bed availability, so the ranking genuinely responds to your location.
+    **Our improvement:** The **BedScore** method applies physics-based queue arrival probability `P`,
+    log-damped review trust, and bounded distance and fee terms. The ranking genuinely responds to user location (12 distinct orders across 12 landmarks).
     """)
 
 # About the data
@@ -564,14 +667,14 @@ with st.expander("📋 About the data"):
     st.markdown(f"""
     | Data | Source | Status |
     |------|--------|--------|
-    | Hospital names, locations, beds, fees, ratings | Mentor CSV ({(result['data_origin'] == 'mentor_csv').sum()} hospitals) | **Real** |
-    | Additional hospitals | Team research ({(result['data_origin'] == 'added_by_team').sum()} hospitals) | **Researched** |
-    | Hourly occupancy history (90 days) | Simulated from mentor snapshot | **Simulated** |
-    | ML availability prediction | Trained on simulated data | **Pipeline validated** |
-    | Website links | Hospital domains | Needs verification |
-    | Scheme acceptance | PM-JAY portal + Odisha GJAY dashboard | Partial (confirm with hospital) |
+    | Mentor 20 hospitals (beds, fees, ratings) | Mentor CSV snapshot (`dataset_npn_7.csv`) | **Verified Real** |
+    | Additional 12 hospitals | Verified from official portals & health registries | **Documented in DATA_CARD.md** |
+    | Hourly occupancy history (90 days) | 48h smooth bridge anchoring to snapshot | **Anchored Simulation** |
+    | ML availability prediction | HistGradientBoosting on anchored history | **Pipeline Validated** |
+    | Website & Phone numbers | `scripts/verify_links.py` against active domains | **Verified Only** |
+    | State scheme name | Official Gopabandhu Jan Arogya Yojana (GJAY) | **Verified Official** |
 
-    *Fields marked "estimated" were imputed from the median of similar hospitals.*
+    *Fields marked with an "estimated" badge were derived from verified district benchmarks.*
     """)
 
 # ── LLM explanation ───────────────────────────────────────────────────

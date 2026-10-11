@@ -55,20 +55,20 @@
 ---
 
 ## Phase 3: Front End Overhaul & Playwright Testing
-- [ ] Location: Mentor requirement #1 - Implement **"Enter manually"** (address or `lat, lon`, validated inside Odisha with friendly error) and **"Use my current location"** alongside landmark dropdown.
-- [ ] Dark map: OpenStreetMap with CSS invert applied to tile layer ONLY (`.leaflet-tile-pane` or `.leaflet-tile`), preserving marker colours.
-- [ ] Markers: Small CircleMarkers with white outline, colour = P (green ≥0.8, amber 0.5-0.8, red <0.5). Top N get numbered pin at hospital. User marker is larger, always on top, distinct shape. Fit map bounds to hospitals + user.
-- [ ] Card headlines: Colour follows status, includes word "Likely / Tight / Unlikely" + beds free now. Show P < 0.5 warning when applicable.
-- [ ] Quick picks: Wrap hospital names onto two lines or use short display name with full name in tooltip.
-- [ ] Table formatting: Numeric columns stay numeric (Km 1 dec, ETA whole min, Rating 1 dec, Fee with ₹, Bed chance as number/progress bar). Scheme columns show ✓ / ✗ / ? icons with tooltip. Website and Directions as link columns. Hide technical columns. Show ≥12 rows without scrolling. Top N highlighted, none hidden.
-- [ ] Emergency banner: Render bold properly via HTML (no raw `**`), verified wording for 108 and 112, cite source.
-- [ ] Icon fixes: Windows-compatible / Material icons for "Explain this ranking" and controls.
-- [ ] HTML safety: Implement `render_html()` helper with dedent and `html.escape` on dynamic user input.
-- [ ] Plotly charts: `plotly_dark` template, transparent background, status colours. Show BedScore breakdown (`explain_terms`) AND Mentor method breakdown.
-- [ ] Automated Playwright screenshots: install Playwright + chromium, capture at 1366×768 (desktop) and 390×844 (mobile phone) covering: default view, Top N=1, Top N=all, card toggle on, invalid manual location, BedScore method, what-if expander, phone width.
-- [ ] Add UI tests in `tests/test_ui.py`.
-- [ ] Run full test suite from project root.
-- [ ] Commit to git: `phase 3: frontend overhaul`.
+- [x] Location: Mentor requirement #1 - Implement **"Enter manually"** (address or `lat, lon`, validated inside Odisha with friendly error) and **"Use my current location"** alongside landmark dropdown.
+- [x] Dark map: OpenStreetMap with CSS invert applied to tile layer ONLY (`.leaflet-tile-pane` or `.leaflet-tile`), preserving marker colours.
+- [x] Markers: Small CircleMarkers with white outline, colour = P (green ≥0.8, amber 0.5-0.8, red <0.5). Top N get numbered pin at hospital. User marker is larger, always on top, distinct shape. Fit map bounds to hospitals + user.
+- [x] Card headlines: Colour follows status, includes word "Likely / Tight / Unlikely" + beds free now. Show P < 0.5 warning when applicable.
+- [x] Quick picks: Wrap hospital names onto two lines or use short display name with full name in tooltip.
+- [x] Table formatting: Numeric columns stay numeric (Km 1 dec, ETA whole min, Rating 1 dec, Fee with ₹, Bed chance as number/progress bar). Scheme columns show ✓ / ✗ / ? icons with tooltip. Website and Directions as link columns. Hide technical columns. Show ≥12 rows without scrolling. Top N highlighted, none hidden.
+- [x] Emergency banner: Render bold properly via HTML (no raw `**`), verified wording for 108 and 112, cite source.
+- [x] Icon fixes: Windows-compatible / Material icons for "Explain this ranking" and controls.
+- [x] HTML safety: Implement `render_html()` helper with dedent and `html.escape` on dynamic user input.
+- [x] Plotly charts: `plotly_dark` template, transparent background, status colours. Show BedScore breakdown (`explain_terms`) AND Mentor method breakdown.
+- [x] Automated Playwright screenshots: install Playwright + chromium, capture at 1366×768 (desktop) and 390×844 (mobile phone) covering: default view, Top N=1, Top N=all, card toggle on, invalid manual location, BedScore method, what-if expander, phone width.
+- [x] Add UI tests in `tests/test_ui.py`.
+- [x] Run full test suite from project root.
+- [x] Commit to git: `phase 3: frontend overhaul`.
 
 ---
 

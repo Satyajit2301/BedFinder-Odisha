@@ -92,6 +92,9 @@ def p_bed(free_beds, total_beds, eta_min, alos_days: float = ALOS_DAYS) -> np.nd
     return np.array([0.5 * (1.0 + erf(float(zi) / sqrt(2.0))) for zi in np.atleast_1d(z)])
 
 
+p_bed_arrival = p_bed  # Alias for explicit naming
+
+
 def trust(rating, reviews) -> np.ndarray:
     """Mentor's X = rating x reviews, log-damped so review count does not dominate."""
     r = np.asarray(rating, float)
