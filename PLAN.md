@@ -132,7 +132,7 @@
   - Report honest horizon results: ML comparable overall, slightly worse at +1h, better at +4h to +6h.
   - Unit test: `p_bed(free=1, total=50, eta=10) > p_bed(free=1, total=50, eta=120)`.
   - Commit: `C6: reconcile ml reporting, honest horizon breakdown and eta decay table`.
-- [ ] **C7 — Docs sync, `formula_text()` helper & strict doc tests**:
+- [x] **C7 — Docs sync, `formula_text()` helper & strict doc tests**:
   - Implement `src/scoring.py::formula_text()`.
   - Update `docs/QA_PREP.md`, `docs/DEMO_SCRIPT.md` (remove AMRI, correct A = availability %, sync BedScore weights).
   - Sync all file names to match `docs/TREE.txt` exactly.

@@ -18,6 +18,7 @@ docs/QA_PREP.md
 docs/TREE.txt
 docs/VERIFICATION.md
 docs/llm_proof.json
+docs/scoring_sensitivity.txt
 docs/screenshots/01_default_view_1366x768.png
 docs/screenshots/02_top_n_1_1366x768.png
 docs/screenshots/03_top_n_all_1366x768.png
@@ -52,6 +53,7 @@ tests/__init__.py
 tests/test_app.py
 tests/test_bedscore.py
 tests/test_data.py
+tests/test_llm.py
 tests/test_ml.py
 tests/test_scoring.py
 tests/test_ui.py

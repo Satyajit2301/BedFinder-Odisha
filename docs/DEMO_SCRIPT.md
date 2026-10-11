@@ -1,4 +1,4 @@
-# BedFinder Odisha v2.2 — Presentation Demo Script (3-5 Minutes)
+# BedFinder Odisha v2.3 — Presentation Demo Script (3-5 Minutes)
 
 Launch offline with a single click: double-click `run_demo.bat` or run `streamlit run app.py`.
 
@@ -15,8 +15,8 @@ Launch offline with a single click: double-click `run_demo.bat` or run `streamli
 - Point out that **"Mentor formula (as given)"** is selected as the default method.
 - Show the displayed ranking: Apollo Hospitals is #1, followed by Manipal Hospital.
 - Point out the active formula shown right under the ranking:
-  $$\text{Weight Score} = 100 \times A + X - Y - Z$$
-  Where $A = \text{general ward free beds}$, $X = \text{rating} \times \text{reviews}$, $Y = \text{distance (km)}$, $Z = \text{fee (INR)}$.
+  $$\text{Score} = 100 \times A + X - Y - Z$$
+  Where $A = \text{bed availability \%}$ ($\text{free} / \text{total}$), $X = \text{rating} \times \text{reviews}$, $Y = \text{distance (km)}$, $Z = \text{fee (INR)}$.
 - Point out the official confirmation note: *"Confirm cashless acceptance and bed status with the hospital before travelling."*
 - Highlight the **Quick Picks** strip: Nearest, Cheapest, Best Rated, and Most Beds Free.
 
@@ -35,9 +35,9 @@ Launch offline with a single click: double-click `run_demo.bat` or run `streamli
 - Switch the ranking radio to **"BedScore (recommended)"**.
 - Notice how rankings immediately respond to patient location:
   - At **Patia / KIIT Square**, KIMS Hospital moves to #1 (closer, high trust, available beds).
-  - At **Khandagiri Square**, AMRI Hospital rises to the top.
+  - At **Khandagiri Square**, SUM Ultimate Medicare rises to #1.
 - Open the **"Why this rank? (Score Breakdown)"** expander:
-  - Show the dark-themed Plotly horizontal breakdown chart visualizing the four normalized components: Trust (Bayesian rating), Closeness, Affordability, and Arrival Bed Chance.
+  - Show the dark-themed Plotly horizontal breakdown chart visualizing the four normalized components: Trust (log-damped rating), Closeness, Affordability, and Arrival Bed Chance.
 
 ---
 

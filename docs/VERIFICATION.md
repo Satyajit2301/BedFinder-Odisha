@@ -12,7 +12,7 @@ This document records the exact commands run, their raw outputs, and PASS / FAIL
 | C4 | Conservative trust penalty for estimated rating & data disclosure | `src/scoring.py`, `app.py`, `docs/DATA_CARD.md`, `tests/test_scoring.py` | PASS |
 | C5 | Scheme toggle effective fee Rs 0 (no +10% boost) | `src/scoring.py`, `tests/test_bedscore.py`, `tests/test_scoring.py` | PASS |
 | C6 | Reconcile ML reporting, honest horizon breakdown & ETA decay table | `docs/ML_REPORT.md`, `scripts/audit_ml.py`, `tests/test_ml.py` | PASS |
-| C7 | `formula_text` helper, TREE sync & strict doc tests | `src/scoring.py`, `docs/TREE.txt`, `tests/test_docs.py` | PENDING |
+| C7 | `formula_text` helper, TREE sync & strict doc tests | `src/scoring.py`, `docs/TREE.txt`, `tests/test_docs.py` | PASS |
 | C8 | Real link verification logs & added hospitals evidence CSV | `scripts/verify_links.py`, `docs/verify_links_output.txt`, `docs/ADDED_HOSPITALS_EVIDENCE.csv` | PENDING |
 | C9 | High contrast error style, quick picks rankable & full-page screenshots | `app.py`, `scripts/capture_screenshots.py`, `docs/screenshots/` | PENDING |
 | C10 | Honest BLOCKED log, verification markdown & grounded reporting | `docs/BLOCKED.md`, `docs/VERIFICATION.md`, final report | PENDING |
@@ -166,6 +166,22 @@ Evaluating ETA sensitivity on forced tight capacity cases...
 [ok] Saved docs\ML_REPORT.md successfully!
 ```
 **Verdict:** PASS. Reconciled ML documentation and code: clearly documented that closed-form physics birth-death model `p_bed` drives trip arrival bed chance, while the 3-class ML model provides forward horizon predictions (+1h..+6h); clarified that Brier score (0.0654 vs 0.1256) measures multiclass probability calibration, not `p_bed`; replaced ETA sensitivity table with forced tight cases (1, 2, 3, 5, 10 beds across 10, 30, 60, 120 min) exhibiting genuine queue decay; honestly reported that ML is slightly worse than persistence at +1h (0.8576 vs 0.8636) and superior at +4h to +6h (0.6947 vs 0.6610). Unit test in `tests/test_ml.py` passed.
+
+### C7: `formula_text` Helper, TREE Sync & Strict Doc Tests
+
+**Command:** `pytest tests/test_docs.py -v`
+```text
+tests/test_docs.py::TestDocIntegrity::test_no_forbidden_stale_tokens[doc_path0] PASSED [ 14%]
+tests/test_docs.py::TestDocIntegrity::test_no_forbidden_stale_tokens[doc_path1] PASSED [ 28%]
+tests/test_docs.py::TestDocIntegrity::test_no_forbidden_stale_tokens[doc_path2] PASSED [ 42%]
+tests/test_docs.py::TestDocIntegrity::test_no_forbidden_stale_tokens[doc_path3] PASSED [ 57%]
+tests/test_docs.py::TestDocIntegrity::test_formula_text_matches_constants PASSED [ 71%]
+tests/test_docs.py::TestDocIntegrity::test_qa_prep_formula_constants_consistency PASSED [ 85%]
+tests/test_docs.py::TestDocIntegrity::test_tree_txt_matches_git_ls_files PASSED [100%]
+============================== 7 passed in 0.47s ==============================
+```
+**Verdict:** PASS. Added `src/scoring.py::formula_text()` used across UI and docs; updated `docs/QA_PREP.md` with canonical BedScore formula (0.35 Trust, 0.40 Closeness, 0.25 Affordability, log-damped trust, exp(-km/8), ALOS 4.0, 22 km/h, 1.35 tortuosity); updated `docs/DEMO_SCRIPT.md` correcting A = bed availability % and replacing AMRI with SUM Ultimate Medicare; generated canonical `docs/TREE.txt` from `git ls-files`; all 7 doc integrity tests passed with zero occurrences of "AMRI", "m=500", or "+10%".
+
 
 
 
