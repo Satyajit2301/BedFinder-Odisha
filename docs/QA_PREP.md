@@ -30,7 +30,8 @@ We honored the mentor specification by keeping this formula as the exact default
 - Features include current occupancy ratio, hour of day, day of week, hospital capacity, and cyclic time embeddings.
 - We evaluated the model across 5 distinct random seeds on 341,248 simulated hourly samples.
 - The model achieves a Macro-F1 of **0.7710 ± 0.0006**, compared to **0.7626** for a persistence baseline.
-- We report honestly in `docs/ML_REPORT.md` that model performance is *comparable to the persistence baseline*, because occupancy changes slowly over short travel horizons. However, the model supplies calibrated class probabilities ($p_{\text{bed\_arrival}}$) that integrate into BedScore."
+- We report honestly in `docs/ML_REPORT.md` that ML is comparable overall, slightly worse at +1h (0.8576 vs 0.8636), and better at +4h to +6h (0.6947 vs 0.6610). Short-term occupancy is dominated by inertia.
+- **Important Distinction:** The 3-class ML model predicts forward horizons (+1h..+6h) with Brier score 0.0654. For real-time arrival bed probability during the ambulance trip ($p_{\text{bed\_arrival}}$), `src/scoring.py` uses the closed-form **physics queue birth-death model**, guaranteeing strict monotonicity with trip ETA and free beds."
 
 ---
 
@@ -43,12 +44,12 @@ We honored the mentor specification by keeping this formula as the exact default
 ## 5. "What is BedScore and why is it better?"
 **Answer:**
 "BedScore calculates:
-$$\text{BedScore} = 0.35 \times \text{Closeness} + 0.40 \times \text{BayesianTrust} + 0.25 \times \text{Affordability}$$
-Multiplied by $p_{\text{bed\_arrival}}$:
-- **Closeness:** Decreases smoothly with travel time and distance ($e^{-\lambda \cdot \text{ETA}}$).
-- **Bayesian Trust:** $\frac{v}{v+m} \cdot R + \frac{m}{v+m} \cdot C$ (with prior $m=500, C=4.0$). This rewards genuine excellence while preventing a hospital with 2 reviews from dominating, and prevents Apollo's 31,818 reviews from overwhelming location.
-- **Affordability:** Normalized scale where free government care scores 1.0 and private charges scale down.
-- **Bed Gating:** Multiplied by $p_{\text{bed\_arrival}}$ so a full hospital drops in rank.
+$$\text{Score} = 100 \cdot P \cdot (0.35 \cdot \text{Trust} + 0.40 \cdot \text{Closeness} + 0.25 \cdot \text{Affordability})$$
+Where:
+- **$P$ (Arrival Probability):** Closed-form physics queue birth-death model $\Phi\left(\frac{\text{free} - 0.5}{\sigma}\right)$ where $\sigma = \sqrt{2 \cdot \frac{\text{occupied}}{\text{ALOS} \times 24} \cdot \text{ETA}_h}$ (ALOS = 4.0 days). Ensures strict monotonicity in free beds and trip ETA.
+- **Trust (0.35):** Log-damped rating and reviews: $\frac{R \cdot \ln(1 + V)}{5.0 \cdot \ln(1 + 10{,}000)}$. Log-damping rewards proven excellence while preventing Apollo's 31,818 reviews from overwhelming location. Estimated ratings receive a 50% review penalty.
+- **Closeness (0.40):** Exponential distance decay: $\exp(-\text{km} / 8.0)$ (using road tortuosity factor 1.35 and city transit speed 22.0 km/h).
+- **Affordability (0.25):** $\max\left(0, 1 - \frac{\text{fee}_{\text{eff}}}{3{,}000}\right)$. Verified cashless scheme cardholders pay effective fee ₹0.
 Across 12 locations in Bhubaneswar, BedScore produces 12 distinct rankings and 9 distinct Rank #1 recommendations."
 
 ---

@@ -126,7 +126,7 @@
   - Remove all mentions of "+10% boost" across code, docs, tests.
   - Tests: toggle alters Affordability only for True rows; row count unchanged (nothing hidden).
   - Commit: `C5: scheme toggle effective fee zero instead of arbitrary boost`.
-- [ ] **C6 — Reconcile ML reporting, honest horizon breakdown & ETA decay table**:
+- [x] **C6 — Reconcile ML reporting, honest horizon breakdown & ETA decay table**:
   - Check `src/scoring.py` and confirm `p_bed` vs ML probability; align `ML_REPORT`, `QA_PREP`, and final report.
   - Replace ETA table with 3 hospitals at free beds = 1, 2, 3, 5, 10 across 10, 30, 60, 120 min showing real decay.
   - Report honest horizon results: ML comparable overall, slightly worse at +1h, better at +4h to +6h.

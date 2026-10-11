@@ -127,22 +127,27 @@ def evaluate_horizons(test: pd.DataFrame, model):
     return pd.DataFrame(records)
 
 
-def evaluate_eta_sensitivity(hosp: pd.DataFrame):
-    """Evaluate p_bed across ETAs."""
+def evaluate_eta_sensitivity():
+    """Evaluate p_bed across forced free beds and ETAs for representative hospitals."""
+    hospitals = [
+        {"name": "Neelachal Hospital Pvt. Ltd.", "total_beds": 47},
+        {"name": "Apollo Hospitals Bhubaneswar", "total_beds": 300},
+        {"name": "PGIMER & Capital Hospital", "total_beds": 720},
+    ]
+    free_levels = [1, 2, 3, 5, 10]
     etas = [10, 30, 60, 120]
     records = []
-    for _, r in hosp.iterrows():
-        free = float(r["general_ward_available_beds"])
-        tot = float(r["general_ward_total_beds"])
-        rec = {
-            "hospital_name": r["hospital_name"],
-            "free_beds": free,
-            "total_beds": tot,
-        }
-        for eta in etas:
-            p = float(p_bed([free], [tot], [eta], alos_days=ALOS_DAYS)[0])
-            rec[f"p_{eta}m"] = round(p, 4)
-        records.append(rec)
+    for h in hospitals:
+        for free in free_levels:
+            rec = {
+                "hospital_name": h["name"],
+                "total_beds": h["total_beds"],
+                "free_beds": free,
+            }
+            for eta in etas:
+                p = float(p_bed([free], [h["total_beds"]], [eta], alos_days=ALOS_DAYS)[0])
+                rec[f"p_{eta}m"] = round(p, 4)
+            records.append(rec)
     return pd.DataFrame(records)
 
 
@@ -159,8 +164,8 @@ def main():
     horizon_df = evaluate_horizons(test, model)
     print(horizon_df.to_string(index=False))
 
-    print("Evaluating ETA sensitivity...")
-    eta_df = evaluate_eta_sensitivity(hosp)
+    print("Evaluating ETA sensitivity on forced tight capacity cases...")
+    eta_df = evaluate_eta_sensitivity()
 
     mean_m_f1 = seed_df["model_macro_f1"].mean()
     std_m_f1 = seed_df["model_macro_f1"].std()
@@ -168,7 +173,7 @@ def main():
     std_b_f1 = seed_df["baseline_macro_f1"].std()
     mean_brier = seed_df["brier_model"].mean()
 
-    report_md = f"""# ML Evaluation and Calibration Report (BedFinder Odisha v2.2)
+    report_md = f"""# ML Evaluation and Calibration Report (BedFinder Odisha v2.3)
 
 > **Evaluation Date:** 2026-10-11  
 > **Dataset:** `data/history.csv` (69,120 hourly snapshots, 90 days, anchored to mentor snapshot)  
@@ -182,7 +187,7 @@ def main():
 The machine learning classification model achieves a mean Macro-F1 of **{mean_m_f1:.4f} ± {std_m_f1:.4f}** across 5 independent seeds.
 In comparison, the simple **persistence baseline** (predicting that the hospital's availability class stays unchanged over the travel horizon) achieves a mean Macro-F1 of **{mean_b_f1:.4f} ± {std_b_f1:.4f}**.
 
-**Verdict:** The model performance is **comparable to the persistence baseline** (within normal statistical variation). This is an expected and honest characteristic of short-horizon emergency bed occupancy: occupancy changes smoothly over hours rather than abruptly, making recent occupancy the strongest single predictor.
+**Honest Assessment:** ML is comparable overall, slightly worse at +1h (0.8576 vs 0.8636), and better at +4h to +6h (0.6947 vs 0.6610). Short-term occupancy is dominated by strong inertia, making persistence a strong benchmark for immediate triage.
 
 ---
 
@@ -221,35 +226,40 @@ Available (2)     {avg_cm[2, 0]:8.1f}      {avg_cm[2, 1]:8.1f}      {avg_cm[2, 2
         report_md += f"| +{int(r['horizon_hours'])}h | {r['model_macro_f1']:.4f} | {r['model_acc']:.4f} | {r['baseline_macro_f1']:.4f} | {r['baseline_acc']:.4f} |\n"
 
     report_md += """
----
-
-## 5. Arrival Probability Comparison: Physics Queue vs ML
-
-### Probability Selection for `p_bed_arrival`
-- **Physics Queue Model (`p_bed`):** Transparent Poisson/normal arrival queue model derived directly from real-time free beds, total beds, and trip ETA:
-  `p = 0.5 * (1 + erf((free - 0.5) / (sd * sqrt(2))))` where `sd = sqrt(2 * (total - free) / (alos_days * 24) * eta_h)`.
-- **ML Model Output:** HistGradientBoosting class probabilities.
-- **Decision:** In production, **Physics Queue Model `p_bed` is selected as the primary driver for `p_bed_arrival`** in scoring because:
-  1. It guarantees strict monotonicity: fewer beds or longer transit times strictly decrease arrival probability.
-  2. It immediately responds to live bed updates and "what-if" simulations without requiring model retraining.
-  3. The 3-class ML tag (`Available`, `Limited`, `Full`) is preserved as the classification badge.
+**Horizon Analysis:**
+- At **+1h**, persistence is slightly superior (0.8636 vs 0.8576 Macro-F1) because occupancy rarely shifts across class boundaries within 60 minutes.
+- At **+4h to +6h**, the ML model demonstrates superiority (0.6947 vs 0.6610 Macro-F1 at +6h) as diurnal discharge patterns and admissions overtake simple persistence.
 
 ---
 
-## 6. ETA Sensitivity Across All 32 Hospitals
+## 5. Arrival Probability: Physics Queue Model vs ML
 
-Probability `p_bed` evaluated at 10, 30, 60, and 120 minutes:
+### Clarification of Metrics & Implementation
+- **Which Model Drives `p_bed_arrival`:** `src/scoring.py` strictly uses the **Physics Queue Model (`p_bed`)** derived from Poisson birth-death queue dynamics:
+  $$P = \\Phi\\left(\\frac{\\text{free} - 0.5}{\\sigma}\\right), \\quad \\sigma = \\sqrt{2 \\cdot \\frac{\\text{occupied}}{\\text{ALOS} \\times 24} \\cdot \\text{ETA}_h}$$
+- **Why Physics is Used for Trip Arrival:**
+  1. Guaranteed strict monotonicity: fewer beds or longer transit times strictly decrease arrival probability.
+  2. Instantaneous responsiveness: reacts immediately to live bed updates and "What-If" simulation without retraining.
+  3. No historical distribution shift vulnerability.
+- **What the Brier Score (0.0654 vs 0.1256) Measures:**
+  The Brier score measures the probabilistic calibration of the **3-class ML classifier** (`Available`, `Limited`, `Full`) across future horizons. It is **not** used to compute or justify the physics arrival probability `p_bed`.
 
-| Hospital Name | Free Beds | Total Beds | P (10 min) | P (30 min) | P (60 min) | P (120 min) |
+---
+
+## 6. ETA Sensitivity on Tight Capacity Hospitals
+
+To demonstrate genuine queue risk decay, we evaluate arrival probability $P$ across forced free beds (1, 2, 3, 5, 10) at ETAs of 10, 30, 60, and 120 minutes for three representative hospital sizes:
+
+| Hospital | Total Beds | Free Beds | P (10 min) | P (30 min) | P (60 min) | P (120 min) |
 |---|---|---|---|---|---|---|
 """
     for _, r in eta_df.iterrows():
-        report_md += f"| {r['hospital_name'][:30]} | {int(r['free_beds'])} | {int(r['total_beds'])} | {r['p_10m']:.3f} | {r['p_30m']:.3f} | {r['p_60m']:.3f} | {r['p_120m']:.3f} |\n"
+        report_md += f"| {r['hospital_name']} | {int(r['total_beds'])} | {int(r['free_beds'])} | {r['p_10m']:.4f} | {r['p_30m']:.4f} | {r['p_60m']:.4f} | {r['p_120m']:.4f} |\n"
 
     report_md += """
-### Finding on ETA Sensitivity
-When a hospital has ample beds (e.g. >10 free beds), `p_bed` remains high (~0.99+) across typical urban trip durations (10–60 minutes).
-However, for tight hospitals (e.g. 1–3 free beds), `p_bed` exhibits noticeable decay as travel time increases from 10 min to 120 min, accurately capturing queue risk for an emergency patient.
+### Key Finding on ETA Decay
+- For **ample beds (10 free beds)**, arrival probability remains near 1.000 across urban trip durations.
+- For **tight beds (1–2 free beds)**, arrival probability shows pronounced, realistic decay as travel time increases (e.g. for Apollo at 1 free bed, $P$ falls from 0.6882 at 10 min to 0.5563 at 120 min; for Neelachal at 1 free bed, $P$ drops from 0.8945 at 10 min to 0.6410 at 120 min).
 """
 
     out_file = Path("docs/ML_REPORT.md")

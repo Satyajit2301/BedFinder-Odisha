@@ -11,7 +11,7 @@ This document records the exact commands run, their raw outputs, and PASS / FAIL
 | C3 | Unified `rankable(df, include_specialty)` across all consumers | `src/scoring.py`, `scripts/formula_sensitivity.py`, `tests/test_scoring.py` | PASS |
 | C4 | Conservative trust penalty for estimated rating & data disclosure | `src/scoring.py`, `app.py`, `docs/DATA_CARD.md`, `tests/test_scoring.py` | PASS |
 | C5 | Scheme toggle effective fee Rs 0 (no +10% boost) | `src/scoring.py`, `tests/test_bedscore.py`, `tests/test_scoring.py` | PASS |
-| C6 | Reconcile ML reporting, honest horizon breakdown & ETA decay table | `docs/ML_REPORT.md`, `scripts/audit_ml.py`, `tests/test_ml.py` | PENDING |
+| C6 | Reconcile ML reporting, honest horizon breakdown & ETA decay table | `docs/ML_REPORT.md`, `scripts/audit_ml.py`, `tests/test_ml.py` | PASS |
 | C7 | `formula_text` helper, TREE sync & strict doc tests | `src/scoring.py`, `docs/TREE.txt`, `tests/test_docs.py` | PENDING |
 | C8 | Real link verification logs & added hospitals evidence CSV | `scripts/verify_links.py`, `docs/verify_links_output.txt`, `docs/ADDED_HOSPITALS_EVIDENCE.csv` | PENDING |
 | C9 | High contrast error style, quick picks rankable & full-page screenshots | `app.py`, `scripts/capture_screenshots.py`, `docs/screenshots/` | PENDING |
@@ -144,5 +144,28 @@ tests/test_bedscore.py::TestSchemeCardToggle::test_scheme_card_keeps_all_rows_an
 ====================== 1 passed, 11 deselected in 0.44s =======================
 ```
 **Verdict:** PASS. When card toggle is active, `effective_fee` is set to ₹0.0 strictly for hospitals with verified cashless scheme acceptance (`flag == True`), which flows naturally into the Affordability score term. Hospitals with `flag == False` or unknown retain their listed fees. Total hospital count remains 32 (never hidden). All mentions of arbitrary "+10%" boost removed from all docs, tests, and decisions.
+
+### C6: Reconcile ML Reporting, Honest Horizon Breakdown & ETA Decay Table
+
+**Command:** `pytest tests/test_ml.py -k test_p_bed_strict_decay_tight_capacity -v`
+```text
+tests/test_ml.py::test_p_bed_strict_decay_tight_capacity PASSED          [100%]
+====================== 1 passed, 3 deselected in 0.43s ========================
+```
+
+**Command:** `python scripts/audit_ml.py`
+```text
+Evaluating horizons...
+ horizon_hours  model_macro_f1  model_acc  baseline_macro_f1  baseline_acc
+             1        0.857634   0.859046           0.863604      0.864754
+             2        0.805835   0.807438           0.805211      0.805971
+             3        0.764818   0.767059           0.759563      0.760882
+             4        0.730960   0.733933           0.722306      0.723541
+             6        0.694685   0.697941           0.660969      0.662026
+Evaluating ETA sensitivity on forced tight capacity cases...
+[ok] Saved docs\ML_REPORT.md successfully!
+```
+**Verdict:** PASS. Reconciled ML documentation and code: clearly documented that closed-form physics birth-death model `p_bed` drives trip arrival bed chance, while the 3-class ML model provides forward horizon predictions (+1h..+6h); clarified that Brier score (0.0654 vs 0.1256) measures multiclass probability calibration, not `p_bed`; replaced ETA sensitivity table with forced tight cases (1, 2, 3, 5, 10 beds across 10, 30, 60, 120 min) exhibiting genuine queue decay; honestly reported that ML is slightly worse than persistence at +1h (0.8576 vs 0.8636) and superior at +4h to +6h (0.6947 vs 0.6610). Unit test in `tests/test_ml.py` passed.
+
 
 

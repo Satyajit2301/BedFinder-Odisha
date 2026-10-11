@@ -47,3 +47,11 @@ def test_model_bundle_prediction_keys():
     assert "pred_status" in pred.columns
     assert "pred_status_name" in pred.columns
     assert len(pred) == 2
+
+
+def test_p_bed_strict_decay_tight_capacity():
+    """C6: For tight capacity (1 free bed), arrival probability strictly decays with trip ETA."""
+    p_10 = float(p_bed_arrival(free_beds=1, total_beds=50, eta_min=10)[0])
+    p_120 = float(p_bed_arrival(free_beds=1, total_beds=50, eta_min=120)[0])
+    assert p_10 > p_120, f"Expected p_bed(free=1, total=50, eta=10) ({p_10}) > p_bed(eta=120) ({p_120})"
+
