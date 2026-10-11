@@ -102,6 +102,7 @@ ML_FEATURES = [
 # ── Scheme labels (Official verified naming) ──────────────────────────
 SCHEME_PMJAY = "Ayushman Bharat (PM-JAY)"
 SCHEME_STATE = "Gopabandhu Jan Arogya Yojana (GJAY)"
+SCHEME_TOGGLE_LABEL = "I have an Ayushman / Odisha scheme card"
 
 # ── Map settings ──────────────────────────────────────────────────────
 MAP_CENTRE = (20.2961, 85.8245)   # approx Bhubaneswar centre

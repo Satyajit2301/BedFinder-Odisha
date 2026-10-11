@@ -19,6 +19,7 @@ from streamlit_folium import st_folium
 from src.config import (
     ACCENT, EMERGENCY_TEXT, LANDMARKS, MAP_CENTRE, MAP_ZOOM,
     ODISHA_BOUNDS, STATUS_COLOURS, STATUS_NAMES, SCHEME_PMJAY, SCHEME_STATE,
+    SCHEME_TOGGLE_LABEL,
     W_TRUST, W_CLOSE, W_FEE,
 )
 from src.data import build_snapshot, load_history_snapshot, load_hospitals, load_ml_model
@@ -275,7 +276,7 @@ with st.sidebar:
 
     # Scheme toggle: card-holder toggle replaces dropdown
     user_has_card = st.toggle(
-        "I have an Ayushman / Odisha scheme card",
+        SCHEME_TOGGLE_LABEL,
         value=False,
         help="Hospitals with verified cashless acceptance get effective fee Rs 0. Non-accepting hospitals remain visible and ranked at listed fee."
     )

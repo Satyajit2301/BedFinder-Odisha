@@ -26,7 +26,8 @@ Launch offline with a single click: double-click `run_demo.bat` or run `streamli
 - Switch location from **Bhubaneswar Railway Station** to **Khandagiri Square**, then **Patia / KIIT Square**.
 - **The observation:** The ranking remains unchanged across Bhubaneswar!
 - Open the **"Why we added BedScore (Formula Sensitivity)"** expander:
-  - *"We proved mathematically why this happens: Apollo has 31,818 reviews ($X \times 100 \approx 14,954,460$). Moving across Bhubaneswar changes distance by at most 19 km and fees vary by 2,200 INR. Because review counts differ by thousands, distance and fee can never flip a ranking pair."*
+  - *"We proved mathematically why this happens: Apollo has 31,818 reviews and 4.7 rating ($X \approx 149,545$). Moving the user changes each score only by the change in distance (tens of points at most), while hospitals differ by hundreds or thousands of points, so in our 12 test locations no pair of hospitals swapped places."*
+  - *"Across 276 pairs of general hospitals evaluated across the 12 landmarks, exactly 0 pairs are flippable (base score gap < max distance difference change) and 0 pairs actually swapped places."*
   - Show the 12-location sensitivity table proving Apollo is #1 at every single location under the raw mentor formula.
 
 ---
@@ -42,9 +43,9 @@ Launch offline with a single click: double-click `run_demo.bat` or run `streamli
 ---
 
 ## 5. Scheme Acceptance & Interactive Dark Map (45 seconds)
-- Turn on the toggle: **"I have a PM-JAY / State Scheme card"**.
+- Turn on the toggle: **"I have an Ayushman / Odisha scheme card"**.
 - Explain:
-  - *"Instead of filtering out non-participating hospitals, participating cashless hospitals have effective fee ₹0 (maximizing their Affordability score). Hospitals without verified coverage remain fully visible on the map and table with a question mark (?) badge."*
+  - *"Instead of filtering out non-participating hospitals, participating cashless hospitals have effective fee ₹0 (maximizing their Affordability score). Hospitals without verified coverage remain fully visible on the map and table with listed fee."*
   - Point out the caption: *"Confirm cashless acceptance with the hospital before travelling."*
 - Click a hospital pin on the Leaflet dark map:
   - Demonstrate that only the map tile layer is darkened via CSS; hospital pins and rank badges retain their distinct colors.
@@ -65,8 +66,8 @@ Launch offline with a single click: double-click `run_demo.bat` or run `streamli
 ## 7. Data Honesty & Conclusion (30 seconds)
 - Point to the **Data Card**:
   - All 20 mentor CSV hospitals match the snapshot available beds 100%.
-  - 12 added hospitals include field-level audit (`docs/ADDED_HOSPITALS_EVIDENCE.csv`): added hospitals: NOT independently verified - team to confirm.
-  - 3 specialty hospitals (Sadguru Eye, Acharya Harihar Cancer, Hemalata Cancer) are tagged and unranked for general emergency beds.
+  - Added hospitals: audited by the team on Google Maps on 2026-10-11 (5 kept, 7 unconfirmed/mislocated removed; 25 total).
+  - 1 specialty hospital (Hemalata Cancer Hospital) is tagged and excluded by default from general emergency bed ranking.
   - ML performance is honestly reported: HistGradientBoosting achieves Macro-F1 0.7710 vs 0.7626 persistence baseline ("comparable to the baseline").
 - Point to the banner:
   - *"In a medical emergency, call 108 (free ambulance) or 112 (unified emergency) — Department of Health & Family Welfare, Government of Odisha."*

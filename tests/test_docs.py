@@ -14,14 +14,32 @@ ACTIVE_DOCS = [
 ]
 
 
+FORBIDDEN_TOKENS = [
+    "hospital_data.csv",
+    "verified hospital registries",
+    "only confirmed official domains",
+    "Verified directory",
+    "domain verified manually",
+    "AMRI",
+    "+10%",
+    "m=500",
+    "never flip",
+]
+
+
 class TestDocIntegrity:
     @pytest.mark.parametrize("doc_path", ACTIVE_DOCS)
     def test_no_forbidden_stale_tokens(self, doc_path):
-        """C7: Active docs must not contain stale tokens 'AMRI', 'm=500', or '+10%'."""
+        """D6: Active docs must not contain stale or ungrounded forbidden tokens."""
         content = doc_path.read_text(encoding="utf-8")
-        assert "AMRI" not in content, f"Stale token 'AMRI' found in {doc_path.name}"
-        assert "m=500" not in content, f"Stale token 'm=500' found in {doc_path.name}"
-        assert "+10%" not in content, f"Stale token '+10%' found in {doc_path.name}"
+        for token in FORBIDDEN_TOKENS:
+            assert token not in content, f"Forbidden token '{token}' found in {doc_path.name}"
+
+    def test_demo_script_toggle_matches_config(self):
+        """D6: Toggle label in DEMO_SCRIPT matches SCHEME_TOGGLE_LABEL from src/config.py."""
+        from src.config import SCHEME_TOGGLE_LABEL
+        demo_text = (DOCS_DIR / "DEMO_SCRIPT.md").read_text(encoding="utf-8")
+        assert SCHEME_TOGGLE_LABEL in demo_text, f"Label '{SCHEME_TOGGLE_LABEL}' not found in DEMO_SCRIPT.md"
 
     def test_formula_text_matches_constants(self):
         """C7: formula_text helper matches canonical weights."""

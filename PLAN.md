@@ -183,7 +183,7 @@
   - Assert `page.inner_text("body")` contains no `<span`, `&lt;`, or `est-badge` before saving.
   - Regenerate screenshots via `capture_screenshots.py`.
   - Commit: `D5: purge stale screenshots and assert clean dom rendering`.
-- [ ] **D6 — Docs sync, sensitivity flippable pairs analysis & forbidden tokens**:
+- [x] **D6 — Docs sync, sensitivity flippable pairs analysis & forbidden tokens**:
   - Fix QA_PREP Q2/Q5 and DEMO_SCRIPT wording (base score gap vs distance difference).
   - Calculate and report flippable pairs in `formula_sensitivity.py`.
   - Sync DEMO formula text and toggle label.
