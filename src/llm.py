@@ -21,6 +21,7 @@ _cache: dict[str, str] = {}
 SYSTEM_PROMPT = """You are a hospital recommendation assistant for Bhubaneswar, Odisha.
 Rules:
 - Use ONLY the facts provided in the JSON. Never invent facts or numbers.
+- Distinguish between 'bed_chance_on_arrival' (probability P of getting a bed after travel) and 'bed_availability_pct' (% of beds currently free).
 - Say "unknown" when a fact is missing.
 - No medical advice.
 - Mention which ranking method was used and that bed occupancy is a demo snapshot.
@@ -65,8 +66,8 @@ def _template_fallback(facts: dict, language: str = "en") -> str:
             f"**{h1.get('name', '?')}** ranks #1 "
             f"(Score = 100 · P · [0.35·Trust + 0.40·Closeness + 0.25·Affordability]). "
             f"Distance: {h1.get('distance', '?')} km, Fee: Rs {h1.get('fee', '?')}/day, "
-            f"Rating: {h1.get('rating', '?')}★, arrival bed chance: {h1.get('availability', '?')} "
-            f"with {h1.get('beds_free', '?')} beds free now."
+            f"Rating: {h1.get('rating', '?')}★, arrival bed chance: {h1.get('bed_chance_on_arrival', '?')} "
+            f"with {h1.get('beds_free', '?')} of {h1.get('beds_total', '?')} beds free ({h1.get('bed_availability_pct', '?')}% available)."
         )
         lines.append("")
         lines.append(
@@ -91,9 +92,13 @@ def build_facts(df_ranked, method: str, location_name: str, top_n: int = 3) -> d
     """Build grounded input facts dictionary from ranked hospital DataFrame."""
     top_facts = []
     avail_col = "general_ward_available_beds" if "general_ward_available_beds" in df_ranked.columns else "beds_free_now"
+    tot_col = "general_ward_total_beds" if "general_ward_total_beds" in df_ranked.columns else "general_beds"
     for _, r in df_ranked.head(top_n).iterrows():
         p_val = float(r.get("p_bed", 1.0))
         p_pct = f"{int(round(p_val * 100))}%"
+        free_b = int(r[avail_col])
+        tot_b = int(r[tot_col])
+        avail_pct = round(100.0 * free_b / max(tot_b, 1), 1)
         top_facts.append({
             "name": str(r["hospital_name"]),
             "rank": int(r["rank"]),
@@ -102,8 +107,10 @@ def build_facts(df_ranked, method: str, location_name: str, top_n: int = 3) -> d
             "fee": int(r["admission_fee_inr"]),
             "rating": round(float(r["rating_5"]), 1),
             "reviews": int(r["review_count"]),
-            "availability": p_pct,
-            "beds_free": int(r[avail_col]),
+            "bed_chance_on_arrival": p_pct,
+            "beds_free": free_b,
+            "beds_total": tot_b,
+            "bed_availability_pct": avail_pct,
         })
     return {
         "method": method,
@@ -122,7 +129,9 @@ def post_check_numbers(response: str, facts: dict) -> bool:
     """
     facts_str = json.dumps(facts)
     numbers_in_response = set(re.findall(r'\b\d+(?:\.\d+)?\b', response))
-    numbers_in_facts = set(re.findall(r'\b\d+(?:\.\d+)?\b', facts_str))
+    raw_facts_nums = set(re.findall(r'\b\d+(?:\.\d+)?\b', facts_str))
+    int_parts = {n.split('.')[0] for n in raw_facts_nums if '.' in n}
+    numbers_in_facts = raw_facts_nums | int_parts
     allowed_structural = {
         '0', '1', '2', '3', '4', '5', '10', '100', '108', '112',
         '20', '25', '30', '35', '40', '0.20', '0.25', '0.30', '0.35', '0.40'
@@ -135,7 +144,9 @@ def inspect_numbers(response: str, facts: dict) -> dict:
     """Return detailed breakdown of extracted vs allowed numbers."""
     facts_str = json.dumps(facts)
     numbers_in_response = set(re.findall(r'\b\d+(?:\.\d+)?\b', response))
-    numbers_in_facts = set(re.findall(r'\b\d+(?:\.\d+)?\b', facts_str))
+    raw_facts_nums = set(re.findall(r'\b\d+(?:\.\d+)?\b', facts_str))
+    int_parts = {n.split('.')[0] for n in raw_facts_nums if '.' in n}
+    numbers_in_facts = raw_facts_nums | int_parts
     allowed_structural = {
         '0', '1', '2', '3', '4', '5', '10', '100', '108', '112',
         '20', '25', '30', '35', '40', '0.20', '0.25', '0.30', '0.35', '0.40'

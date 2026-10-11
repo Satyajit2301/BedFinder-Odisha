@@ -189,7 +189,7 @@
   - Sync DEMO formula text and toggle label.
   - Expand forbidden tokens in `test_docs.py` and delete `PROMPT_fix_v2.2.md`.
   - Commit: `D6: docs reconciliation, flippable pairs analysis and strict forbidden tokens`.
-- [ ] **D7 — LLM input schema fix & bed chance vs availability**:
+- [x] **D7 — LLM input schema fix & bed chance vs availability**:
   - Rename `availability` to `bed_chance_on_arrival`; add `beds_free`, `beds_total`, `bed_availability_pct`.
   - Update prompt, number check allow-list, live call proof, and test against `availability` key.
   - Commit: `D7: llm schema fix distinguishing bed chance from availability`.

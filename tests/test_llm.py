@@ -26,6 +26,26 @@ def test_input_facts_grounded_in_dataframe():
         assert h["rating"] == round(float(expected_row["rating_5"]), 1)
         assert h["reviews"] == int(expected_row["review_count"])
         assert h["distance"] == round(float(expected_row["dist_km"]), 1)
+        assert "bed_chance_on_arrival" in h
+        assert "beds_free" in h
+        assert "beds_total" in h
+        assert "bed_availability_pct" in h
+        assert "availability" not in h
+
+
+def test_facts_never_contain_availability_key():
+    """D7: Facts must distinguish bed chance from availability and never contain key 'availability'."""
+    hospitals = load_hospitals()
+    for method in ["mentor", "bedscore"]:
+        ranked = rank_hospitals(hospitals, 20.2687, 85.8427, method=method)
+        facts = build_facts(ranked, method=method, location_name="Test Loc", top_n=5)
+        assert "availability" not in facts
+        for h in facts["top_hospitals"]:
+            assert "availability" not in h, f"Key 'availability' found in hospital facts for {h['name']}"
+            assert "bed_chance_on_arrival" in h
+            assert "beds_free" in h
+            assert "beds_total" in h
+            assert "bed_availability_pct" in h
 
 
 def test_number_checker_rejects_hallucination():
