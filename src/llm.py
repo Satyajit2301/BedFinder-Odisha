@@ -1,31 +1,32 @@
 """LLM explainer — explains a ranking in plain English / Odia / Hindi.
 
-Uses only already-computed facts. Falls back to a deterministic template
-when there is no key, no network, a timeout, or a failed post-check.
+Calls Groq directly (no langchain-groq). Uses only already-computed facts.
+Falls back to a deterministic template when there is no key, no network,
+a timeout (8s), or a failed numeric post-check.
 """
 import hashlib
 import json
 import os
+import re
 import time
-from functools import lru_cache
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
-LLM_PROVIDER = os.getenv("LLM_PROVIDER", "none").lower()
-LLM_TIMEOUT = 8  # seconds
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "groq" if os.getenv("GROQ_API_KEY") else "none").lower()
+LLM_TIMEOUT = 8  # seconds timeout
 _cache: dict[str, str] = {}
 
 SYSTEM_PROMPT = """You are a hospital recommendation assistant for Bhubaneswar, Odisha.
 Rules:
-- Use ONLY the facts provided in the JSON. Never invent facts.
+- Use ONLY the facts provided in the JSON. Never invent facts or numbers.
 - Say "unknown" when a fact is missing.
 - No medical advice.
-- Mention which ranking method was used and that data is a demo snapshot.
+- Mention which ranking method was used and that bed occupancy is a demo snapshot.
 - Maximum 120 words.
 - Language: {language} (en=English, or=Odia, hi=Hindi).
-- Label your response as "machine-generated"."""
+- Label your response as "[machine-generated]"."""
 
 
 def _hash_facts(facts: dict) -> str:
@@ -34,7 +35,7 @@ def _hash_facts(facts: dict) -> str:
 
 def _template_fallback(facts: dict, language: str = "en") -> str:
     """Deterministic f-string fallback — always works, no network needed."""
-    method = facts.get("method", "Mentor formula")
+    method = facts.get("method", "Mentor formula (as given)")
     top = facts.get("top_hospitals", [])
     location = facts.get("location_name", "your location")
 
@@ -44,32 +45,33 @@ def _template_fallback(facts: dict, language: str = "en") -> str:
     h1 = top[0] if len(top) > 0 else {}
     lines = [f"📊 **Ranking Explanation** ({method})", ""]
 
-    if method == "Mentor formula":
+    if "mentor" in method.lower():
         lines.append(
-            f"Using the mentor's formula: `Score = (Rating × Reviews) × 100 − Distance − Fee`, "
+            f"Using the mentor's formula `Score = 100·A + X − Y − Z` "
+            f"(where A is bed availability %, X is rating × reviews, Y is distance, Z is fee), "
             f"**{h1.get('name', '?')}** ranks #1 from {location} with a score of "
-            f"{h1.get('score', '?'):,.0f} "
-            f"(rating {h1.get('rating', '?')}, {h1.get('reviews', '?'):,} reviews, "
-            f"Rs {h1.get('fee', '?')}/day, {h1.get('distance', '?')} km away)."
+            f"{h1.get('score', 0):,.1f} "
+            f"({h1.get('beds_free', '?')} beds free now, {h1.get('distance', '?')} km away, "
+            f"Rs {h1.get('fee', '?')}/day, rating {h1.get('rating', '?')}★ with {h1.get('reviews', '?'):,} reviews)."
         )
         lines.append("")
         lines.append(
-            "⚠️ Note: This formula is dominated by rating × reviews. Distance and fee "
-            "have minimal impact on the ranking. Try the **Balanced** method for "
-            "location-aware recommendations."
+            "⚠️ Note: Review volume (X) reaches up to 149,545 and dominates the calculation. "
+            "Switch to the **BedScore (recommended)** method to see location and live bed availability influence the rank."
         )
     else:
         lines.append(
-            f"Using the **Balanced** method from {location}: "
+            f"Using **BedScore (recommended)** from {location}: "
             f"**{h1.get('name', '?')}** ranks #1 "
-            f"({h1.get('distance', '?')} km, Rs {h1.get('fee', '?')}/day, "
-            f"rating {h1.get('rating', '?')}, "
-            f"bed availability: {h1.get('availability', '?')})."
+            f"(Score = 100 · P · [0.35·Trust + 0.40·Closeness + 0.25·Affordability]). "
+            f"Distance: {h1.get('distance', '?')} km, Fee: Rs {h1.get('fee', '?')}/day, "
+            f"Rating: {h1.get('rating', '?')}★, arrival bed chance: {h1.get('availability', '?')} "
+            f"with {h1.get('beds_free', '?')} beds free now."
         )
         lines.append("")
         lines.append(
-            "This score balances rating (25%), distance (30%), fee (20%), and "
-            "predicted bed availability (25%)."
+            "BedScore balances reputation trust, travel closeness, and affordability, "
+            "multiplying by arrival bed probability P so low-bed hospitals drop in rank."
         )
 
     if len(top) > 1:
@@ -84,63 +86,33 @@ def _template_fallback(facts: dict, language: str = "en") -> str:
     return "\n".join(lines)
 
 
-def _post_check(response: str, facts: dict) -> bool:
-    """Verify every number in the LLM response appears in the input facts."""
-    import re
+# ── Strict Number Verification Check ───────────────────────────────────
+def post_check_numbers(response: str, facts: dict) -> bool:
+    """Verify that every number in the LLM response appears in the input facts.
+    
+    Prevents hallucinated bed counts, distances, fees, and ratings.
+    Allows only standard rank numbers (1..3), formula weights (25, 35, 40, 100),
+    and verified emergency numbers (108, 112).
+    """
     facts_str = json.dumps(facts)
-    numbers_in_response = set(re.findall(r'\d+\.?\d*', response))
-    numbers_in_facts = set(re.findall(r'\d+\.?\d*', facts_str))
-    # Allow common numbers like 1, 2, 3 and percentages
-    suspicious = numbers_in_response - numbers_in_facts - {'0', '1', '2', '3', '100', '25', '30', '20'}
+    numbers_in_response = set(re.findall(r'\b\d+(?:\.\d+)?\b', response))
+    numbers_in_facts = set(re.findall(r'\b\d+(?:\.\d+)?\b', facts_str))
+    allowed_structural = {
+        '0', '1', '2', '3', '100', '108', '112',
+        '25', '35', '40', '0.25', '0.35', '0.40', '0.20', '0.30'
+    }
+    suspicious = numbers_in_response - numbers_in_facts - allowed_structural
     return len(suspicious) == 0
 
 
-def _call_gemini(facts: dict, language: str) -> str | None:
-    """Call Gemini API. Returns None on failure."""
-    try:
-        import google.generativeai as genai
-        api_key = os.getenv("GEMINI_API_KEY", "")
-        if not api_key:
-            return None
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-2.0-flash")
-        prompt = SYSTEM_PROMPT.format(language=language) + f"\n\nFacts:\n```json\n{json.dumps(facts, indent=2)}\n```"
-        response = model.generate_content(prompt)
-        return response.text
-    except Exception:
-        return None
-
-
-def _call_openai(facts: dict, language: str) -> str | None:
-    """Call OpenAI API. Returns None on failure."""
-    try:
-        from openai import OpenAI
-        api_key = os.getenv("OPENAI_API_KEY", "")
-        if not api_key:
-            return None
-        client = OpenAI(api_key=api_key)
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT.format(language=language)},
-                {"role": "user", "content": f"Facts:\n{json.dumps(facts, indent=2)}"},
-            ],
-            max_tokens=300,
-            timeout=LLM_TIMEOUT,
-        )
-        return response.choices[0].message.content
-    except Exception:
-        return None
-
-
 def _call_groq(facts: dict, language: str) -> str | None:
-    """Call Groq API (free, fast). Uses OpenAI-compatible format."""
+    """Call Groq API directly without langchain-groq."""
     try:
         from groq import Groq
         api_key = os.getenv("GROQ_API_KEY", "")
         if not api_key:
             return None
-        client = Groq(api_key=api_key)
+        client = Groq(api_key=api_key, timeout=LLM_TIMEOUT)
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
@@ -148,7 +120,7 @@ def _call_groq(facts: dict, language: str) -> str | None:
                 {"role": "user", "content": f"Facts:\n{json.dumps(facts, indent=2)}"},
             ],
             max_tokens=300,
-            temperature=0.3,
+            temperature=0.2,
         )
         return response.choices[0].message.content
     except Exception:
@@ -157,15 +129,10 @@ def _call_groq(facts: dict, language: str) -> str | None:
 
 def explain(facts: dict, language: str = "en") -> str:
     """Generate a plain-language explanation of the ranking.
-
-    Parameters
-    ----------
-    facts : dict with keys like method, location_name, top_hospitals (list of dicts)
-    language : "en", "or", or "hi"
-
-    Returns
-    -------
-    str : explanation text (always returns something, never blocks)
+    
+    Tries configured LLM provider (Groq) with timeout.
+    Validates numbers via post_check_numbers before returning.
+    Falls back to deterministic template on any failure.
     """
     key = _hash_facts(facts) + language
     if key in _cache:
@@ -175,14 +142,10 @@ def explain(facts: dict, language: str = "en") -> str:
 
     if LLM_PROVIDER == "groq":
         result = _call_groq(facts, language)
-    elif LLM_PROVIDER == "gemini":
-        result = _call_gemini(facts, language)
-    elif LLM_PROVIDER == "openai":
-        result = _call_openai(facts, language)
 
-    # Post-check: verify no fabricated numbers
-    if result and not _post_check(result, facts):
-        result = None  # discard, use template
+    # Validate numbers: discard hallucinated responses
+    if result and not post_check_numbers(result, facts):
+        result = None
 
     if result is None:
         result = _template_fallback(facts, language)

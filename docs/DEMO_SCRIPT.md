@@ -1,46 +1,82 @@
-# Demo Script (3-5 minutes)
+# BedFinder Odisha v2.2 — Presentation Demo Script (3-5 Minutes)
 
-## 1. The Problem (30s)
-"Patients in Bhubaneswar often drive from hospital to hospital hoping to find a bed. They don't know which hospital has beds available, which accepts their Ayushman card, or which is cheapest. We built BedFinder to solve this."
-
-## 2. Default View — Mentor Formula (45s)
-- Show the app at **Bhubaneswar Railway Station** with **Mentor formula** selected
-- Point out the **Quick Picks** strip: Nearest, Cheapest, Best Rated, Most Beds Free
-- Show the **Top 3 cards** with bed availability prediction, distance, fee, ratings
-- Show the **map** with numbered rank badges and colour-coded availability
-- Show the **full table** with all 32 hospitals — "nothing is hidden, we recommend but never restrict"
-
-## 3. The Sensitivity Finding (30s)
-- Change location to **Khandagiri** — ranking doesn't change!
-- Open **"Why we added a second method"** expander
-- Explain: "The mentor formula is dominated by rating × reviews. Distance and fee can't change the order."
-
-## 4. Switch to Balanced (45s)
-- Toggle to **Balanced** method
-- Rankings now change when you move locations
-- Open **"Why this rank?"** — show the stacked bar chart
-- "Our method balances rating (25%), distance (30%), fee (20%), and predicted bed availability (25%)"
-
-## 5. Unique Features (45s)
-- **Scheme toggle**: Select "PM-JAY" — non-accepting hospitals get "—" rank but stay visible
-- **Click a hospital on the map**: Show popup with website, directions, phone, scheme badges
-- **"Explain this ranking"** button: Show the LLM/template explanation
-- Point out **estimated badges** on some hospitals
-
-## 6. Data Honesty (30s)
-- Open **"About the data"** expander
-- "We're honest about what's real and what's simulated"
-- "In production, hospitals push live bed counts through the API"
-- Show the ML model performance: "Our classifier beats the persistence baseline, especially at 4-6 hour horizons"
-
-## 7. Close (15s)
-- "In an emergency, call 108 for a free ambulance or 112"
-- "The path to real data: hospital portals, government APIs, crowd updates"
+Launch offline with a single click: double-click `run_demo.bat` or run `streamlit run app.py`.
 
 ---
 
-## Key talking points for Q&A
-- Why two methods? → The mentor formula doesn't respond to location (proven with analysis)
-- Why ML? → A bed free now may be gone when you arrive. We predict status 1-6 hours ahead
-- Why simulated data? → No public live bed feed exists. Our pipeline is ready for real data
-- What makes this different? → Scheme acceptance, Bayesian ratings, honest data labelling
+## 1. Problem & Context (30 seconds)
+> "In acute emergencies in Bhubaneswar, families scramble from hospital to hospital not knowing where general ward beds are available, which hospitals accept PM-JAY or state schemes, or what emergency charges to expect. We built BedFinder Odisha to solve this."
+> 
+> "Our core architectural principle: **It recommends; it never restricts.** Every hospital remains visible on the map and data table so patients never lose options."
+
+---
+
+## 2. Default View: Mentor Formula (45 seconds)
+- Point out that **"Mentor formula (as given)"** is selected as the default method.
+- Show the displayed ranking: Apollo Hospitals is #1, followed by Manipal Hospital.
+- Point out the active formula shown right under the ranking:
+  $$\text{Weight Score} = 100 \times A + X - Y - Z$$
+  Where $A = \text{general ward free beds}$, $X = \text{rating} \times \text{reviews}$, $Y = \text{distance (km)}$, $Z = \text{fee (INR)}$.
+- Point out the official confirmation note: *"Confirm cashless acceptance and bed status with the hospital before travelling."*
+- Highlight the **Quick Picks** strip: Nearest, Cheapest, Best Rated, and Most Beds Free.
+
+---
+
+## 3. The Sensitivity Finding (45 seconds)
+- Switch location from **Bhubaneswar Railway Station** to **Khandagiri Square**, then **Patia / KIIT Square**.
+- **The observation:** The ranking remains unchanged across Bhubaneswar!
+- Open the **"Why we added BedScore (Formula Sensitivity)"** expander:
+  - *"We proved mathematically why this happens: Apollo has 31,818 reviews ($X \times 100 \approx 14,954,460$). Moving across Bhubaneswar changes distance by at most 19 km and fees vary by 2,200 INR. Because review counts differ by thousands, distance and fee can never flip a ranking pair."*
+  - Show the 12-location sensitivity table proving Apollo is #1 at every single location under the raw mentor formula.
+
+---
+
+## 4. BedScore (Recommended) & Plotly Breakdown (60 seconds)
+- Switch the ranking radio to **"BedScore (recommended)"**.
+- Notice how rankings immediately respond to patient location:
+  - At **Patia / KIIT Square**, KIMS Hospital moves to #1 (closer, high trust, available beds).
+  - At **Khandagiri Square**, AMRI Hospital rises to the top.
+- Open the **"Why this rank? (Score Breakdown)"** expander:
+  - Show the dark-themed Plotly horizontal breakdown chart visualizing the four normalized components: Trust (Bayesian rating), Closeness, Affordability, and Arrival Bed Chance.
+
+---
+
+## 5. Scheme Acceptance & Interactive Dark Map (45 seconds)
+- Turn on the toggle: **"I have a PM-JAY / State Scheme card"**.
+- Explain:
+  - *"Instead of filtering out non-participating hospitals, participating hospitals receive a +10% boost. Hospitals without verified coverage remain fully visible on the map and table with a question mark (?) badge."*
+  - Point out the caption: *"Confirm cashless acceptance with the hospital before travelling."*
+- Click a hospital pin on the Leaflet dark map:
+  - Demonstrate that only the map tile layer is darkened via CSS; hospital pins and rank badges retain their distinct colors.
+  - Point out the popup with verified hospital website, telephone link, directions, and bed counts.
+
+---
+
+## 6. What-If Simulation: A Hospital Filling Up (45 seconds)
+- Open the expander: **"Simulate a hospital filling up (What-If Analysis)"**.
+- Select the top-ranked hospital and drag free beds down to 0.
+- Point out:
+  - The bed chance drops below 0.5.
+  - An orange/red warning badge appears: `⚠️ P(bed arrival) < 50%`.
+  - The hospital drops down in BedScore rank to prevent sending patients to a full facility.
+
+---
+
+## 7. Data Honesty & Conclusion (30 seconds)
+- Point to the **Data Card**:
+  - All 20 mentor CSV hospitals match the snapshot available beds 100%.
+  - 12 added hospitals are curated with verified official domains and phone numbers.
+  - 3 specialty hospitals (Sadguru Eye, Acharya Harihar Cancer, Hemalata Cancer) are tagged and unranked for general emergency beds.
+  - ML performance is honestly reported: HistGradientBoosting achieves Macro-F1 0.7710 vs 0.7626 persistence baseline ("comparable to the baseline").
+- Point to the banner:
+  - *"In a medical emergency, call 108 (free ambulance) or 112 (unified emergency) — Department of Health & Family Welfare, Government of Odisha."*
+
+---
+
+## Quick Q&A Reference
+- **Q: Why didn't you just fix the mentor formula?**  
+  *A: We kept the mentor formula untouched as the default to honor the specification, and provided BedScore as an opt-in balanced alternative.*
+- **Q: Why does the ML model use simulated data?**  
+  *A: Odisha currently lacks a public real-time hospital occupancy API. We synthesized 90-day history with a 48-hour smooth bridge anchored to the mentor's snapshot. The ML inference pipeline is fully functional and ready to ingest live feeds.*
+- **Q: Why not use LLM for ranking?**  
+  *A: LLMs are non-deterministic and can hallucinate numbers. We use deterministic algorithms for scoring, and use direct Groq LLM with regex numerical validation strictly for explaining rankings.*

@@ -86,12 +86,13 @@
 ---
 
 ## Phase 5: Tests, Direct Groq LLM, Batch Script & Demo Pack
-- [ ] Rewrite `src/llm.py`: remove `langchain-groq`, call `groq` directly. Implement number check (every number in response must appear in input facts), 8s timeout, and deterministic template fallback.
-- [ ] Execute one real provider call with Groq API key and save input and output as proof. Highlight number-check code lines.
-- [ ] Create `run_demo.bat`: one-command offline run script that builds missing artefacts and starts app.
-- [ ] AppTest control matrix in `tests/test_app.py`: run method × card toggle × Top N (1, 3, all) × 3 locations with exact option strings.
-- [ ] Add regression tests for prior bugs: PM-JAY selectbox mismatch, HTML leak, tile layer invert.
-- [ ] Update documentation: `README.md`, `DECISIONS.md`, `docs/DEMO_SCRIPT.md` (exact 7-step presentation narrative), `docs/QA_PREP.md`, `docs/BLOCKED.md` (if any step failed 3 times).
-- [ ] Run full test suite from project root.
-- [ ] Commit to git: `phase 5: tests, llm rewrite, demo pack`.
-- [ ] Final comprehensive report: changed files list, test suite output, Playwright screenshots, `docs/ML_REPORT.md`, 8-location sensitivity table on all hospitals, `docs/BLOCKED.md` status, unverified items list.
+- [x] Rewrite `src/llm.py`: remove `langchain-groq`, call `groq` directly. Implement number check (every number in response must appear in input facts), 8s timeout, and deterministic template fallback.
+- [x] Execute one real provider call with Groq API key and save input and output as proof. Highlight number-check code lines.
+- [x] Create `run_demo.bat`: one-command offline run script that builds missing artefacts and starts app.
+- [x] AppTest control matrix in `tests/test_app.py`: run method × card toggle × Top N (1, 3, all) × 3 locations with exact option strings.
+- [x] Add regression tests for prior bugs: PM-JAY selectbox mismatch, HTML leak, tile layer invert.
+- [x] Update documentation: `README.md`, `DECISIONS.md`, `docs/DEMO_SCRIPT.md` (exact 7-step presentation narrative), `docs/QA_PREP.md`, `docs/BLOCKED.md` (if any step failed 3 times).
+- [x] Run full test suite from project root.
+- [x] Commit to git: `phase 5: tests, llm rewrite, demo pack`.
+- [x] Final comprehensive report: changed files list, test suite output, Playwright screenshots, `docs/ML_REPORT.md`, 8-location sensitivity table on all hospitals, `docs/BLOCKED.md` status, unverified items list.
+

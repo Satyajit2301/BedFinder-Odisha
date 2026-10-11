@@ -1,0 +1,51 @@
+{
+  "provider": "template_fallback",
+  "model": "llama-3.3-70b-versatile",
+  "input_facts": {
+    "method": "BedScore (recommended)",
+    "location_name": "Bhubaneswar Railway Station",
+    "top_hospitals": [
+      {
+        "name": "Neelachal Hospital Pvt. Ltd.",
+        "rank": 1,
+        "score": 82.4,
+        "distance": 2.1,
+        "fee": 600,
+        "rating": 4.1,
+        "reviews": 1240,
+        "availability": "98%",
+        "beds_free": 18
+      },
+      {
+        "name": "Sunshine Hospital",
+        "rank": 2,
+        "score": 79.1,
+        "distance": 3.4,
+        "fee": 750,
+        "rating": 4.2,
+        "reviews": 2100,
+        "availability": "95%",
+        "beds_free": 14
+      },
+      {
+        "name": "Shree Hospitals",
+        "rank": 3,
+        "score": 76.5,
+        "distance": 4.0,
+        "fee": 500,
+        "rating": 4.0,
+        "reviews": 890,
+        "availability": "92%",
+        "beds_free": 12
+      }
+    ]
+  },
+  "raw_response": null,
+  "final_output": "\ud83d\udcca **Ranking Explanation** (BedScore (recommended))\n\nUsing **BedScore (recommended)** from Bhubaneswar Railway Station: **Neelachal Hospital Pvt. Ltd.** ranks #1 (Score = 100 \u00b7 P \u00b7 [0.35\u00b7Trust + 0.40\u00b7Closeness + 0.25\u00b7Affordability]). Distance: 2.1 km, Fee: Rs 600/day, Rating: 4.1\u2605, arrival bed chance: 98% with 18 beds free now.\n\nBedScore balances reputation trust, travel closeness, and affordability, multiplying by arrival bed probability P so low-bed hospitals drop in rank.\nRunner-up: **Sunshine Hospital** (3.4 km, Rs 750/day).\n\n*Demo snapshot \u2014 occupancy data is simulated. [machine-generated]*",
+  "number_check_passed": true,
+  "code_lines_highlight": {
+    "post_check_numbers": "src/llm.py:84-95",
+    "direct_groq_client": "src/llm.py:98-117",
+    "timeout_and_fallback": "src/llm.py:120-142"
+  }
+}

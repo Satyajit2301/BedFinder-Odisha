@@ -96,6 +96,55 @@ The app is fully functional with LLM disabled. Template fallback is always ready
 
 ## D9: Emergency numbers verified
 
-**What:** Showing "In an emergency call 108 (free ambulance) or 112" in the footer.
+**What:** Showing "In an emergency call 108 (free ambulance) or 112" in the footer and banner citing Odisha Health & Family Welfare Department.
 
-**Evidence to verify:** 108 is the pan-India emergency ambulance number, operated by state governments. In Odisha, 108 ambulance service is run by Ziqitza Healthcare. 112 is the unified emergency number (police/fire/ambulance). Both are current and free.
+**Evidence to verify:** 108 is the pan-India emergency ambulance number operated in Odisha by Ziqitza Healthcare under NHM. 112 is the unified emergency helpline (police, fire, medical ambulance). Both are verified, active, and toll-free.
+
+---
+
+## D10: PM-JAY selectbox bug diagnosis and toggle migration
+
+**What:** Diagnosed why `test_browser_audit.py` crashed on PM-JAY selection and migrated UI to a clean checkbox/toggle.
+
+**Diagnosis:** The original selectbox in `app.py` had options `["All", "Yes", "No"]`, but the test script searched for `"PM-JAY Accepted"`, throwing a `TimeoutError`. Furthermore, filtering by selectbox completely removed hospitals from the map and table, violating the core design principle "Recommend, never restrict". We migrated the control to a toggle: `"I have a PM-JAY / State Scheme card"` with the explicit caveat `"Confirm cashless acceptance with the hospital before travelling."` Non-participating hospitals remain fully visible on the map and table, while participating hospitals receive a +10% score boost in BedScore mode.
+
+---
+
+## D11: Specialty hospital curation (Eye and Cancer hospitals)
+
+**What:** Identified 3 specialty hospitals: `Sadguru Netra Chikitsalaya` (ophthalmology), `Acharya Harihar Post Graduate Institute of Cancer` (oncology), and `Hemalata Hospitals and Research Centre` (oncology).
+
+**Action:** Kept all 3 on the map and data table so users can discover them if they need specialty care. When recommending beds for general medical emergencies, these hospitals are not ranked for general ward acute beds (`rank = 0` / tag `Specialty`) unless the user explicitly toggles on specialty facilities.
+
+---
+
+## D12: 48h smooth bridge anchoring for occupancy simulation and model retraining
+
+**What:** Re-simulated the 90-day hospital occupancy history using a 48-hour spline transition so that simulated occupancy at $T=0$ aligns exactly with the mentor's snapshot available bed counts.
+
+**Why:** In earlier builds, the ML classifier predicted arrival availability based on unanchored synthetic history, resulting in discrepancies where a hospital displayed 14 available beds on screen while the ML model predicted "Full (<5% free)". With the 48h bridge, the model was retrained so that the displayed beds, snapshot occupancy, and ML predictions are mathematically consistent.
+
+---
+
+## D13: Leaflet tile-pane CSS inversion only for dark mode
+
+**What:** Applied dark theme filter `filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.9);` strictly to `.leaflet-tile-pane`.
+
+**Why:** Applying the CSS inversion filter to the whole `.folium-map` container inverted custom marker pins and circle colors (e.g. green markers became purple/magenta, user location pin inverted). Restricting the style to `.leaflet-tile-pane` darkens the OpenStreetMap cartography while leaving marker pins, rank badges, and legend overlays completely intact with true colors.
+
+---
+
+## D14: ML evaluation: Brier score and honest reporting vs persistence baseline
+
+**What:** Evaluated HistGradientBoosting over 5 seeds (42, 101, 2024, 777, 999) on 341,248 samples. Reported honest results: Macro-F1 0.7710 ± 0.0006 vs persistence baseline 0.7626.
+
+**Why:** Hospital occupancy changes slowly over 1 to 4 hour intervals; a persistence model ("occupancy stays what it is now") achieves 0.7626 F1. The ML model provides modest gains (+0.0084 F1) and calibrated probabilities ($p_{\text{bed\_arrival}}$ with Brier score 0.0654). Per instructions, we explicitly describe performance as "comparable to the persistence baseline" rather than claiming artificial superiority.
+
+---
+
+## D15: Direct Groq client and numerical hallucination safeguard
+
+**What:** Rewrote `src/llm.py` to use `groq.Groq` directly without `langchain-groq` or langchain abstractions. Added strict regex-based numerical verification (`post_check_numbers`).
+
+**Why:** Direct SDK usage avoids heavy langchain dependencies, reduces import latency, and allows fine-grained error handling. The post-check regex extracts every number from the LLM output and validates that each number was present in the hospital's provided data payload (with an explicit whitelist for formula weights like 0.35, 0.40, 0.25 and rank indices). If hallucinated figures appear, the system automatically falls back to deterministic template rendering.
+
