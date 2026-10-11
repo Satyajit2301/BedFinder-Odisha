@@ -278,3 +278,41 @@ class TestQuickPicks:
             assert p not in specialty_ids, f"Specialty hospital {p} selected in Quick Picks"
 
 
+class TestBedscoreRegressionG1:
+    def test_bedscore_at_least_6_distinct_top3_sets_across_12_landmarks(self):
+        """G1 regression test (b): across 12 landmarks, BedScore gives >= 6 distinct top-3 sets."""
+        from src.config import ENRICHED_CSV, LANDMARKS
+        from src.scoring import rank_hospitals
+        df = pd.read_csv(ENRICHED_CSV)
+
+        top3_sets = set()
+        for lm, (lat, lon) in LANDMARKS.items():
+            ranked = rank_hospitals(df, lat, lon, method="bedscore", include_specialty=False)
+            top3 = tuple(ranked[ranked["rank"] > 0].head(3)["hospital_name"].tolist())
+            top3_sets.add(top3)
+
+        assert len(top3_sets) >= 6, f"Expected at least 6 distinct top-3 sets across 12 landmarks, got {len(top3_sets)}"
+
+    def test_moving_user_10km_changes_dist_and_closeness_for_every_hospital(self):
+        """G1 regression test (c): moving user 10 km changes dist_km and t_close for every hospital."""
+        from src.config import ENRICHED_CSV
+        from src.scoring import rank_hospitals
+        df = pd.read_csv(ENRICHED_CSV)
+
+        lat1, lon1 = 20.2666, 85.8434  # Railway Station
+        lat2, lon2 = lat1 + 0.09, lon1  # ~10 km north
+
+        r1 = rank_hospitals(df, lat1, lon1, method="bedscore")
+        r2 = rank_hospitals(df, lat2, lon2, method="bedscore")
+
+        m = pd.merge(
+            r1[["hospital_id", "dist_km", "t_close"]],
+            r2[["hospital_id", "dist_km", "t_close"]],
+            on="hospital_id",
+            suffixes=("_1", "_2")
+        )
+
+        assert (m["dist_km_1"] != m["dist_km_2"]).all(), "dist_km must change for all hospitals when user moves 10 km"
+        assert (abs(m["t_close_1"] - m["t_close_2"]) > 1e-4).all(), "t_close must change for all hospitals when user moves 10 km"
+
+

@@ -98,3 +98,37 @@ def test_no_raw_html_leaking_in_markdown(top_n):
         assert "&lt;div" not in val, f"Found &lt;div in markdown: {val}"
         assert "&lt;span class=&quot;est-badge&quot;&gt;" not in val
 
+
+def test_g1_bedscore_ui_matches_rank_hospitals_for_6_landmarks():
+    """G1 regression test (a): for 6 landmarks, UI top-3 names equal rank_hospitals(...) top-3 names."""
+    import pandas as pd
+    from src.config import ENRICHED_CSV, LANDMARKS
+    from src.scoring import rank_hospitals
+    df = pd.read_csv(ENRICHED_CSV)
+
+    landmarks_to_test = [
+        "Bhubaneswar Railway Station",
+        "Patia / KIIT Square",
+        "Khandagiri Square",
+        "Rasulgarh Square",
+        "Jaydev Vihar Square",
+        "Nayapalli",
+    ]
+
+    at = AppTest.from_file("app.py", default_timeout=30).run()
+    assert not at.exception
+    if len(at.sidebar.radio) > 1:
+        at.sidebar.radio[1].set_value("BedScore (recommended)").run()
+
+    for lm in landmarks_to_test:
+        at.sidebar.selectbox[0].select(lm).run()
+        assert not at.exception
+        ui_df = at.dataframe[0].value
+        ui_top3 = ui_df[ui_df["Rank"].str.startswith("#")].head(3)["Hospital"].tolist()
+
+        lat, lon = LANDMARKS[lm]
+        fn_df = rank_hospitals(df, lat, lon, method="bedscore", include_specialty=False)
+        fn_top3 = fn_df[fn_df["rank"] > 0].head(3)["hospital_name"].tolist()
+
+        assert ui_top3 == fn_top3, f"Mismatch at {lm}: UI={ui_top3} vs Fn={fn_top3}"
+

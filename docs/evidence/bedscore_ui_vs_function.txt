@@ -1,0 +1,57 @@
+================================================================================
+BEDSCORE UI VS FUNCTION COMPARISON ACROSS 12 LANDMARKS (G1 EVIDENCE)
+================================================================================
+
+--- PART 1: 12 LANDMARKS TOP-3 COMPARISON (UI vs DIRECT FUNCTION) ---
+Landmark                         | UI Top-3 (AppTest)                            | Direct rank_hospitals Top-3
+------------------------------------------------------------------------------------------------------------------------
+Bhubaneswar Railway Station      | Neelachal Hos, Sunshine Hosp, Shree Hospita   | Neelachal Hos, Sunshine Hosp, Shree Hospita
+Biju Patnaik Airport             | Shree Hospita, Vivekanand Ho, Neelachal Hos   | Shree Hospita, Vivekanand Ho, Neelachal Hos
+Master Canteen Square            | Neelachal Hos, Shree Hospita, Sunshine Hosp   | Neelachal Hos, Shree Hospita, Sunshine Hosp
+Jaydev Vihar Square              | Apollo Hospit, Vivekanand Ho, PGIMER & Capi   | Apollo Hospit, Vivekanand Ho, PGIMER & Capi
+Patia / KIIT Square              | Kalinga Insti, UTKAL HOSPITA, CARE Hospital   | Kalinga Insti, UTKAL HOSPITA, CARE Hospital
+Khandagiri Square                | SUM Ultimate , IGKC Multispe, Manipal Hospi   | SUM Ultimate , IGKC Multispe, Manipal Hospi
+Nayapalli                        | Vivekanand Ho, Usthi Hospita, Health Villag   | Vivekanand Ho, Usthi Hospita, Health Villag
+Rasulgarh Square                 | Hi-Tech Medic, Blue Wheel Ho, Sparsh Hospit   | Hi-Tech Medic, Blue Wheel Ho, Sparsh Hospit
+Vani Vihar / Utkal University    | PGIMER & Capi, Sparsh Hospit, Kar Clinic &    | PGIMER & Capi, Sparsh Hospit, Kar Clinic & 
+Saheed Nagar                     | Sparsh Hospit, PGIMER & Capi, Jagannath Hos   | Sparsh Hospit, PGIMER & Capi, Jagannath Hos
+Baramunda Bus Stand              | Vivekanand Ho, Health Villag, Shree Hospita   | Vivekanand Ho, Health Villag, Shree Hospita
+Kalinga Nagar / Ghatikia         | SUM Ultimate , IGKC Multispe, Vivekanand Ho   | SUM Ultimate , IGKC Multispe, Vivekanand Ho
+
+================================================================================
+--- PART 2: SCORE COMPONENT BREAKDOWN (RAILWAY STATION VS PATIA) ---
+================================================================================
+
+Landmark: Bhubaneswar Railway Station (Lat: 20.2666, Lon: 85.8434)
+ rank                         hospital_name  dist_km  eta_min  p_bed  t_trust  t_close  t_afford     score
+    1          Neelachal Hospital Pvt. Ltd. 0.948534        3    1.0 0.757450 0.888193      0.80 82.038457
+    2                     Sunshine Hospital 1.275083        3    1.0 0.859728 0.852668      0.64 80.197181
+    3                       Shree Hospitals 1.357334        4    1.0 0.776505 0.843946      0.70 78.435525
+    4                 Kar Clinic & Hospital 2.187888        6    1.0 0.730926 0.760723      0.74 74.511323
+    5 PGIMER & Capital Hospital Bhubaneswar 3.104427        8    1.0 0.572353 0.678376      1.00 72.167389
+
+Landmark: Patia / KIIT Square (Lat: 20.354, Lon: 85.819)
+ rank                                hospital_name   dist_km  eta_min  p_bed  t_trust  t_close  t_afford     score
+    1 Kalinga Institute of Medical Sciences (KIMS)  0.105079        3    1.0 0.779012 0.986951      0.28 73.743472
+    2                               UTKAL HOSPITAL  3.749513       10    1.0 0.907561 0.625822      0.60 71.797522
+    3                  CARE Hospitals, Bhubaneswar  3.779981       10    1.0 0.863412 0.623443      0.28 62.157136
+    4                             Kalinga Hospital  3.045324        8    1.0 0.736183 0.683406      0.36 62.102666
+    5              Vivekanand Hospital Bhubaneswar 11.721574       32    1.0 0.848346 0.231033      0.72 56.933401
+
+================================================================================
+--- PART 3: ROOT CAUSE ANALYSIS & DIAGNOSTIC AUDIT ---
+================================================================================
+Root Cause:
+In app.py line 359, rank_hospitals was invoked with p_available=p_available (passing the ML 3-class classifier's p_avail probability of >15% free beds), which overrode the closed-form Poisson queue model p_bed as the score multiplier, crushing 22 out of 25 hospitals (whose occupancy is 5-15% Limited, p_avail ~ 0.001) to near-zero scores and artificially freezing Neelachal, Jagannath, and Kar Clinic (the only hospitals with >15% free beds) as the top 3 across all 12 locations.
+
+Diagnostic Checklist:
+(a) Is p_bed really the queue formula or a free/total or ML-class value?
+    -> p_bed in src/scoring.py is the genuine Poisson queue birth-death formula.
+       However, src/scoring.py line 312 supported overriding p_bed with p_available.
+       app.py was passing snap['p_avail'] (ML class probability), which broke location sensitivity.
+(b) Is st.cache_data / st.cache_resource / session_state keyed without lat/lon?
+    -> No. rank_hospitals is called dynamically on every run with user_lat and user_lon.
+(c) Are lat/lon swapped or taken from the default landmark?
+    -> No. user_lat and user_lon are correctly extracted from LANDMARKS[place].
+(d) Does the table/cards use a different DataFrame than the scorer?
+    -> No. Both cards and st.dataframe consume the ranked DataFrame returned by rank_hospitals.

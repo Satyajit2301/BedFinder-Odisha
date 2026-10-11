@@ -34,7 +34,7 @@ BEDFINDER ODISHA — FORMULA SENSITIVITY ANALYSIS (25 HOSPITALS)
   Kalinga Nagar / Ghatikia      : #1 SUM Ultimate Medicare      #2 IGKC Multispeciality Hospi #3 Vivekanand Hospital Bhuban
 
   >>> Distinct full rank orders: 12 across 12 locations
-  >>> Distinct Rank-1 hospitals: 9 (Neelachal Hospital P, Hi-Tech Medical Coll, PGIMER & Capital Hos, Apollo Hospitals Bhu, Sparsh Hospitals & C, Shree Hospitals, Kalinga Institute of, SUM Ultimate Medicar, Vivekanand Hospital )
+  >>> Distinct Rank-1 hospitals: 9 (SUM Ultimate Medicar, Kalinga Institute of, Neelachal Hospital P, Sparsh Hospitals & C, Shree Hospitals, PGIMER & Capital Hos, Vivekanand Hospital , Apollo Hospitals Bhu, Hi-Tech Medical Coll)
   >>> Ranking dynamically responds to user location: True
 
 --- 3. WHY MENTOR FORMULA DOES NOT RESPOND TO LOCATION ---

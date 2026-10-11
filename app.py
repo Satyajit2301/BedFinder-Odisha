@@ -356,7 +356,7 @@ else:
 
 # ── Rank hospitals ────────────────────────────────────────────────────
 result = rank_hospitals(snap, user_lat, user_lon, method=method_key,
-                        user_has_card=user_has_card, p_available=p_available,
+                        user_has_card=user_has_card, p_available=None,
                         include_specialty=show_specialty)
 
 # ── Alternatives strip ────────────────────────────────────────────────
