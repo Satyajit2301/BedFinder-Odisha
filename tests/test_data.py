@@ -79,3 +79,29 @@ def test_history_final_timestamp_matches_snapshot(enriched):
         expected_free = int(row["general_ward_available_beds"])
         hist_free = int(last_hist.loc[hid, "beds_free"])
         assert hist_free == expected_free, f"{hid}: history end {hist_free} != {expected_free}"
+
+
+def test_added_hospitals_evidence_csv():
+    """docs/ADDED_HOSPITALS_EVIDENCE.csv must audit all 12 added hospitals with honest status."""
+    from pathlib import Path
+    evidence_path = Path(__file__).resolve().parent.parent / "docs" / "ADDED_HOSPITALS_EVIDENCE.csv"
+    assert evidence_path.exists(), "ADDED_HOSPITALS_EVIDENCE.csv must exist"
+    
+    ev_df = pd.read_csv(evidence_path)
+    assert set(ev_df["status"].unique()).issubset({"verified", "estimated", "unknown"})
+    assert set(ev_df["hospital_id"].unique()) == {f"BBSR{i:03d}" for i in range(21, 33)}
+    
+    # Rows without source URL must never be marked verified
+    no_url = ev_df[ev_df["source_url"].isna() | (ev_df["source_url"] == "")]
+    assert not (no_url["status"] == "verified").any(), "Rows without source URL cannot be verified"
+
+
+def test_verify_links_output_exists():
+    """docs/verify_links_output.txt must exist and contain verification results."""
+    from pathlib import Path
+    output_path = Path(__file__).resolve().parent.parent / "docs" / "verify_links_output.txt"
+    assert output_path.exists(), "verify_links_output.txt must exist"
+    content = output_path.read_text(encoding="utf-8")
+    assert "Verification Summary:" in content
+    assert "Total Hospitals Evaluated: 32" in content
+

@@ -65,7 +65,7 @@ Launch offline with a single click: double-click `run_demo.bat` or run `streamli
 ## 7. Data Honesty & Conclusion (30 seconds)
 - Point to the **Data Card**:
   - All 20 mentor CSV hospitals match the snapshot available beds 100%.
-  - 12 added hospitals are curated with verified official domains and phone numbers.
+  - 12 added hospitals include field-level audit (`docs/ADDED_HOSPITALS_EVIDENCE.csv`): added hospitals: NOT independently verified - team to confirm.
   - 3 specialty hospitals (Sadguru Eye, Acharya Harihar Cancer, Hemalata Cancer) are tagged and unranked for general emergency beds.
   - ML performance is honestly reported: HistGradientBoosting achieves Macro-F1 0.7710 vs 0.7626 persistence baseline ("comparable to the baseline").
 - Point to the banner:

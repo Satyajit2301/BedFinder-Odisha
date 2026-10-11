@@ -138,7 +138,7 @@
   - Sync all file names to match `docs/TREE.txt` exactly.
   - Add `tests/test_docs.py` asserting no forbidden tokens ("AMRI", "m=500", "+10%") and consistent constants.
   - Commit: `C7: formula_text helper, tree sync and strict doc tests`.
-- [ ] **C8 — Real link verification logs & added hospitals evidence CSV**:
+- [x] **C8 — Real link verification logs & added hospitals evidence CSV**:
   - Run `scripts/verify_links.py` saving stdout to `docs/verify_links_output.txt`.
   - Generate `docs/ADDED_HOSPITALS_EVIDENCE.csv` with per-field source URL, retrieval date, and status.
   - Use "verified" only with verified proof; soften unverified claims.

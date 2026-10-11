@@ -12,13 +12,14 @@
 | **Added Hospitals (12)** | Public hospital directories & team research | **RESEARCHED / ESTIMATED** | Added notable Bhubaneswar medical facilities to reflect city-wide healthcare options. |
 | **Occupancy History** | Simulated generator (`scripts/generate_history.py`) | **SIMULATED** | 90 days of hourly occupancy (69,120 rows) incorporating diurnal cycles, weekly seasonality, monsoon dengue surges, and AR(1) noise. |
 | **Scheme Acceptance** | PM-JAY Empanelment Registry & Odisha GJAY Portal | **PARTIAL / THREE-STATE** | Verified empanelled hospitals marked `true`; non-accepting marked `false`; others marked `unknown`. |
-| **Websites & Phones** | Official registry verification (`scripts/verify_links.py`) | **VERIFIED** | 15 official domains and 12 phone numbers verified. Unverified entries are omitted from UI. |
+| **Websites & Phones** | Directory & HTTP probe (`scripts/verify_links.py`) | **AUDITED & LOGGED** | 12 phone numbers verified against Bhubaneswar BSNL/hospital directories. 3 hospital websites return HTTP 200 live; major corporate portals (Apollo, KIMS, Max, Kalinga) trigger Cloudflare 403 on automated probes; state domains require internal intranet resolution. Full raw probe output logged in `docs/verify_links_output.txt`. |
 
 ---
 
 ## 2. Review and Categorization of the 12 Added Hospitals
 
 To prevent specialized clinics (e.g. eye hospitals, cancer institutes) from being recommended for general medical emergencies, every added hospital is classified as either `general` or `specialty`.
+> **Data Status Note:** Added hospitals: **NOT independently verified — team to confirm**. Full field-by-field audit trail with source URLs and estimation status is documented in `docs/ADDED_HOSPITALS_EVIDENCE.csv`.
 
 | ID | Hospital Name | Category | Decision & Rationale |
 |---|---|---|---|
@@ -41,8 +42,9 @@ To prevent specialized clinics (e.g. eye hospitals, cancer institutes) from bein
 
 1. **Snapshot Anchoring:** For all 20 mentor hospitals, `beds_free_now` displayed in the app equals `general_ward_available_beds` from the mentor CSV exactly.
 2. **Re-anchored History:** `scripts/generate_history.py` simulates past occupancy such that the final timestamp matches `general_ward_occupancy_pct / 100.0` and `general_ward_available_beds` exactly.
-3. **Official Scheme Naming:** Verified state health scheme is **Gopabandhu Jan Arogya Yojana (GJAY)** (Odisha's state health insurance program, integrating Ayushman Bharat PM-JAY).
-4. **Estimated Fields Provenance & Treatment:** Every added hospital with imputed bed numbers or fees lists those specific fields in `fields_estimated`. In the UI, hospitals with estimated attributes carry an amber `some fields estimated` badge.
+3. **State Scheme Naming:** Reported as **Gopabandhu Jan Arogya Yojana (GJAY)** (Odisha's state health insurance program, transitioning from BSKY, integrating Ayushman Bharat PM-JAY. Source: Odisha Health & Family Welfare Department public notifications, pending automated API confirmation).
+4. **Emergency Helplines:** 108 (State Ambulance) / 112 (National Emergency Response): Reported as official public emergency response helplines per Odisha Department of Health & Family Welfare.
+5. **Estimated Fields Provenance & Treatment:** Every added hospital with imputed bed numbers or fees lists those specific fields in `fields_estimated`. In the UI, hospitals with estimated attributes carry an amber `some fields estimated` badge.
 
 ---
 
