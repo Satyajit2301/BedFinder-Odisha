@@ -116,7 +116,7 @@
   - Re-run `scripts/formula_sensitivity.py` and compute new distinct orders / rank-1 counts.
   - Unit test in `tests/test_scoring.py`: for all 12 landmarks, no specialty hospital ranked when toggle off.
   - Commit: `C3: unified rankable filter for specialty hospitals and regenerated sensitivity`.
-- [ ] **C4 — Estimated-data trust penalty & disclosure**:
+- [x] **C4 — Estimated-data trust penalty & disclosure**:
   - Check Ayush Hospital estimated fields. Apply conservative trust discount (reviews * 0.5) if rating/reviews estimated, so guessed data cannot elevate it to top 3.
   - Card disclosure: "Some data estimated - confirm by phone". Document decision in DATA_CARD.
   - Unit test: estimated-rating hospital never outranks identical real hospital.

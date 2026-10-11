@@ -42,4 +42,18 @@ To prevent specialized clinics (e.g. eye hospitals, cancer institutes) from bein
 1. **Snapshot Anchoring:** For all 20 mentor hospitals, `beds_free_now` displayed in the app equals `general_ward_available_beds` from the mentor CSV exactly.
 2. **Re-anchored History:** `scripts/generate_history.py` simulates past occupancy such that the final timestamp matches `general_ward_occupancy_pct / 100.0` and `general_ward_available_beds` exactly.
 3. **Official Scheme Naming:** Verified state health scheme is **Gopabandhu Jan Arogya Yojana (GJAY)** (Odisha's state health insurance program, integrating Ayushman Bharat PM-JAY).
-4. **Estimated Fields Provenance:** Every added hospital with imputed bed numbers or fees lists those specific fields in `fields_estimated`. In the UI, hospitals with estimated attributes carry an amber `some fields estimated` badge.
+4. **Estimated Fields Provenance & Treatment:** Every added hospital with imputed bed numbers or fees lists those specific fields in `fields_estimated`. In the UI, hospitals with estimated attributes carry an amber `some fields estimated` badge.
+
+---
+
+## 4. Decision on Estimated Data Handling & Ayush Hospital (C4)
+
+- **Audit Finding on Ayush Hospital (`BBSR031`):**
+  - Ayush Hospital's estimated fields are strictly: `general_ward_total_beds`, `general_ward_available_beds`, `general_ward_occupancy_pct`, and `admission_fee_inr`.
+  - Its rating (**4.1★**) and review count (**380**) are real public listings, not estimated.
+- **Conservative Trust Discount Rule:**
+  - If a hospital has estimated rating or review counts, `src/scoring.py::trust()` applies a conservative 50% discount to effective review volume (`reviews * 0.5`). This ensures imputed or guessed reputation cannot elevate a facility into the Top 3 over genuine facilities.
+- **Card Disclosure:**
+  - For hospitals where only beds or fee are estimated (such as Ayush Hospital), the badge `some fields estimated` is retained and a prominent disclosure is rendered on the hospital card:
+    `ℹ️ Some data estimated — confirm by phone`
+  - This informs the user to verify bed availability directly with the facility before dispatching an ambulance or traveling.
