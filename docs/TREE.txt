@@ -9,6 +9,7 @@ bedscore_reference.py
 data/history.csv
 data/hospitals_enriched.csv
 data/raw/dataset_npn_7.csv
+docs/ADDED_HOSPITALS_EVIDENCE.csv
 docs/BLOCKED.md
 docs/DATA_CARD.md
 docs/DEMO_SCRIPT.md
@@ -20,13 +21,22 @@ docs/VERIFICATION.md
 docs/llm_proof.json
 docs/scoring_sensitivity.txt
 docs/screenshots/01_default_view_1366x768.png
+docs/screenshots/01_full_page_desktop_1440.png
+docs/screenshots/02_closeup_emergency_banner.png
 docs/screenshots/02_top_n_1_1366x768.png
+docs/screenshots/03_closeup_data_table.png
 docs/screenshots/03_top_n_all_1366x768.png
 docs/screenshots/04_card_toggle_on_1366x768.png
+docs/screenshots/04_closeup_map_markers.png
+docs/screenshots/05_closeup_plotly_breakdown.png
 docs/screenshots/05_invalid_manual_location_1366x768.png
 docs/screenshots/06_bedscore_method_1366x768.png
+docs/screenshots/06_closeup_simulate_0_beds_warning.png
+docs/screenshots/07_closeup_invalid_location_contrast.png
 docs/screenshots/07_whatif_expander_1366x768.png
+docs/screenshots/08_full_page_mobile_390.png
 docs/screenshots/08_mobile_view_390x844.png
+docs/verify_links_output.txt
 models/bed_model.joblib
 models/model_metadata.json
 pytest.ini
@@ -36,6 +46,7 @@ scripts/audit_ml.py
 scripts/capture_screenshots.py
 scripts/enrich_data.py
 scripts/formula_sensitivity.py
+scripts/generate_added_hospitals_evidence.py
 scripts/generate_history.py
 scripts/test_llm_call.py
 scripts/train.py
@@ -53,6 +64,7 @@ tests/__init__.py
 tests/test_app.py
 tests/test_bedscore.py
 tests/test_data.py
+tests/test_docs.py
 tests/test_llm.py
 tests/test_ml.py
 tests/test_scoring.py

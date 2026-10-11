@@ -148,7 +148,7 @@
   - Quick Picks uses `rankable()`.
   - Playwright captures full-page (desktop 1440px, mobile 390px) + close-ups (map, table, Plotly chart, emergency banner, What-If expander).
   - Commit: `C9: high contrast error styling, quick picks consistency and full-page screenshots`.
-- [ ] **C10 — Honest BLOCKED log, verification markdown & grounded reporting**:
+- [x] **C10 — Honest BLOCKED log, verification markdown & grounded reporting**:
   - Rewrite `docs/BLOCKED.md` with problems hit & resolved, plus unverified items (live LLM, external sources).
   - Update `docs/VERIFICATION.md` with complete command logs and PASS/FAIL table.
   - Deliver grounded final report with markdown file links.
