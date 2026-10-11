@@ -73,15 +73,15 @@
 ---
 
 ## Phase 4: ML Re-Audit & Calibration
-- [ ] Fix audit script path (`data/history.csv`) and produce `docs/ML_REPORT.md`.
-- [ ] Train across 5 seeds: calculate macro-F1 mean and standard deviation for persistence baseline and model. Per-horizon table, confusion matrix.
-- [ ] Compare physics probability `p_bed` with ML probability using Brier score on holdout test set. Pick whichever is better as `p_bed_arrival` and document the selection.
-- [ ] Keep 3-class label (Full / Limited / Available) derived from `p_bed_arrival`, and show as tag.
-- [ ] Use honest wording: If model is within noise of baseline, use "comparable to the persistence baseline" everywhere, never "beats".
-- [ ] Print `p_bed_arrival` for all hospitals at ETAs 10, 30, 60, 120 minutes and state whether it is nearly constant.
-- [ ] Unit tests in `tests/test_ml.py`.
-- [ ] Run full test suite from project root.
-- [ ] Commit to git: `phase 4: ml re-audit and calibration`.
+- [x] Fix audit script path (`data/history.csv`) and produce `docs/ML_REPORT.md`.
+- [x] Train across 5 seeds: calculate macro-F1 mean and standard deviation for persistence baseline and model. Per-horizon table, confusion matrix.
+- [x] Compare physics probability `p_bed` with ML probability using Brier score on holdout test set. Pick whichever is better as `p_bed_arrival` and document the selection.
+- [x] Keep 3-class label (Full / Limited / Available) derived from `p_bed_arrival`, and show as tag.
+- [x] Use honest wording: If model is within noise of baseline, use "comparable to the persistence baseline" everywhere, never "beats".
+- [x] Print `p_bed_arrival` for all hospitals at ETAs 10, 30, 60, 120 minutes and state whether it is nearly constant.
+- [x] Unit tests in `tests/test_ml.py`.
+- [x] Run full test suite from project root.
+- [x] Commit to git: `phase 4: ml re-audit and calibration`.
 
 ---
 
