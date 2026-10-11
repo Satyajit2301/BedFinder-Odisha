@@ -95,12 +95,17 @@ def p_bed(free_beds, total_beds, eta_min, alos_days: float = ALOS_DAYS) -> np.nd
 p_bed_arrival = p_bed  # Alias for explicit naming
 
 
-def trust(rating, reviews) -> np.ndarray:
-    """Mentor's X = rating x reviews, log-damped so review count does not dominate."""
+def trust(rating, reviews, is_estimated: bool | np.ndarray = False) -> np.ndarray:
+    """Mentor's X = rating x reviews, log-damped so review count does not dominate.
+    If rating or reviews are estimated, applies a 0.5 discount factor to review weight.
+    """
     r = np.asarray(rating, float)
     v = np.asarray(reviews, float)
-    t = r * np.log1p(v) / (5.0 * np.log1p(REVIEW_CAP))
+    est = np.asarray(is_estimated, bool)
+    v_eff = np.where(est, v * 0.5, v)
+    t = r * np.log1p(v_eff) / (5.0 * np.log1p(REVIEW_CAP))
     return np.clip(t, 0.0, 1.0)
+
 
 
 def closeness(dist_km) -> np.ndarray:
@@ -128,7 +133,8 @@ def affordability(fee_eff) -> np.ndarray:
 
 # ── BedScore calculation ───────────────────────────────────────────────
 def bedscore(df: pd.DataFrame, user_lat: float, user_lon: float, *,
-             user_has_card: bool = False, accepts_col: str | None = None) -> pd.DataFrame:
+             user_has_card: bool = False, accepts_col: str | None = None,
+             include_specialty: bool = False) -> pd.DataFrame:
     """Return a COPY of df with distance, ETA, P, terms, score, rank."""
     d = df.copy()
     avail_col = "general_ward_available_beds" if "general_ward_available_beds" in d.columns else "beds_free_now"
@@ -143,13 +149,28 @@ def bedscore(df: pd.DataFrame, user_lat: float, user_lon: float, *,
 
     acc = d[accepts_col] if accepts_col and accepts_col in d.columns else np.zeros(len(d), bool)
     d["fee_eff"] = effective_fee(d[fee_col], acc, user_has_card)
-    d["t_trust"] = trust(d[rating_col], d[reviews_col])
+
+    est_flags = np.zeros(len(d), bool)
+    if "fields_estimated" in d.columns:
+        est_flags = np.array([
+            "rating" in str(f) or "review" in str(f)
+            for f in d["fields_estimated"]
+        ])
+    d["t_trust"] = trust(d[rating_col], d[reviews_col], is_estimated=est_flags)
     d["t_close"] = closeness(d["dist_km"])
     d["t_afford"] = affordability(d["fee_eff"])
     d["utility"] = W_TRUST * d["t_trust"] + W_CLOSE * d["t_close"] + W_FEE * d["t_afford"]
     d["score"] = 100.0 * d["p_bed"] * d["utility"]
-    d["rank"] = d["score"].rank(ascending=False, method="first").astype(int)
-    return d.sort_values("rank")
+
+    ranked_mask = pd.Series(True, index=d.index)
+    if not include_specialty and "category" in d.columns:
+        ranked_mask = ranked_mask & (d["category"].astype(str).str.lower() != "specialty")
+
+    d["rank"] = 0
+    if ranked_mask.any():
+        ranked_sub = d.loc[ranked_mask].sort_values(["score", "dist_km"], ascending=[False, True])
+        d.loc[ranked_sub.index, "rank"] = range(1, len(ranked_sub) + 1)
+    return d.sort_values(["rank", "dist_km"], key=lambda s: s.replace(0, 9999) if s.name == "rank" else s)
 
 
 def explain_terms(d: pd.DataFrame) -> pd.DataFrame:
@@ -204,6 +225,30 @@ def mentor_score(rating: pd.Series, reviews: pd.Series,
         return 100.0 * a_pct + x - d - f
 
 
+# ── Canonical Formula Text & Rankable Filter ───────────────────────────
+def formula_text(method: str = "mentor") -> str:
+    """Return canonical mathematical formula text for docs and UI."""
+    if "mentor" in str(method).lower():
+        return "Score = 100·A + X − Y − Z"
+    return "Score = 100 · P · (0.35·Trust + 0.40·Closeness + 0.25·Affordability)"
+
+
+def rankable(df: pd.DataFrame, include_specialty: bool = False) -> pd.DataFrame:
+    """Return only hospitals eligible for ranking based on specialty inclusion.
+    
+    Used consistently by every consumer: ranking, Top N, Quick Picks,
+    Simulate picker, LLM facts, formula_sensitivity, and in-app sensitivity table.
+    """
+    if df.empty:
+        return df
+    mask = pd.Series(True, index=df.index)
+    if not include_specialty and "category" in df.columns:
+        mask = mask & (df["category"].astype(str).str.lower() != "specialty")
+    if "rank" in df.columns:
+        mask = mask & (df["rank"] > 0)
+    return df.loc[mask]
+
+
 # ── Unified ranking interface ──────────────────────────────────────────
 def rank_hospitals(df: pd.DataFrame, user_lat: float, user_lon: float,
                    method: str = "mentor",
@@ -211,10 +256,12 @@ def rank_hospitals(df: pd.DataFrame, user_lat: float, user_lon: float,
                    p_available: pd.Series | None = None,
                    accepts_col: str | None = "accepts_pmjay",
                    scheme_filter: str | None = None,
-                   mentor_variant: str = MENTOR_VARIANT) -> pd.DataFrame:
+                   mentor_variant: str = MENTOR_VARIANT,
+                   include_specialty: bool = False) -> pd.DataFrame:
     """Rank hospitals using either Mentor formula or BedScore.
 
     Recommends, never restricts. All rows are kept in the returned DataFrame.
+    Specialty hospitals get rank = 0 (unranked) unless include_specialty is True.
     """
     result = df.copy()
 
@@ -232,11 +279,19 @@ def rank_hospitals(df: pd.DataFrame, user_lat: float, user_lon: float,
     # Physics probability of available bed on arrival
     result["p_bed"] = p_bed(result[avail_col].values, result[total_col].values, result["eta_min"].values)
 
-    # Effective fee based on scheme card toggle
+    # Effective fee based on scheme card toggle (cashless Rs 0 if cardholder and accepts)
     card_active = user_has_card or (scheme_filter is not None and scheme_filter != "None")
     acc_col = accepts_col or "accepts_pmjay"
     acc = result[acc_col] if acc_col in result.columns else pd.Series(False, index=result.index)
     result["fee_eff"] = effective_fee(result[fee_col].values, acc.values, card_active)
+
+    # Check for estimated rating/reviews
+    est_flags = np.zeros(len(result), bool)
+    if "fields_estimated" in result.columns:
+        est_flags = np.array([
+            "rating" in str(f) or "review" in str(f)
+            for f in result["fields_estimated"]
+        ])
 
     # Compute score based on selected method
     normalized_method = str(method).lower()
@@ -248,7 +303,7 @@ def rank_hospitals(df: pd.DataFrame, user_lat: float, user_lon: float,
             variant=mentor_variant,
         )
     else:  # BedScore / Balanced
-        result["t_trust"] = trust(result[rating_col].values, result[reviews_col].values)
+        result["t_trust"] = trust(result[rating_col].values, result[reviews_col].values, is_estimated=est_flags)
         result["t_close"] = closeness(result["dist_km"].values)
         result["t_afford"] = affordability(result["fee_eff"].values)
         result["utility"] = W_TRUST * result["t_trust"] + W_CLOSE * result["t_close"] + W_FEE * result["t_afford"]
@@ -262,6 +317,9 @@ def rank_hospitals(df: pd.DataFrame, user_lat: float, user_lon: float,
         result.loc[~acc_flag, "score"] = np.nan
 
     ranked_mask = result["score"].notna()
+    if not include_specialty and "category" in result.columns:
+        ranked_mask = ranked_mask & (result["category"].astype(str).str.lower() != "specialty")
+
     result["rank"] = 0
     if ranked_mask.any():
         ranked_subset = result.loc[ranked_mask].sort_values(["score", "dist_km"], ascending=[False, True])
@@ -275,11 +333,12 @@ def get_score_breakdown(df: pd.DataFrame, user_lat: float, user_lon: float,
                          method: str = "bedscore",
                          p_available: pd.Series | None = None,
                          user_has_card: bool = False,
-                         accepts_col: str | None = "accepts_pmjay") -> pd.DataFrame:
+                         accepts_col: str | None = "accepts_pmjay",
+                         include_specialty: bool = False) -> pd.DataFrame:
     """Return per-hospital score breakdown for Plotly chart."""
     d = rank_hospitals(df, user_lat, user_lon, method=method,
                        user_has_card=user_has_card, p_available=p_available,
-                       accepts_col=accepts_col)
+                       accepts_col=accepts_col, include_specialty=include_specialty)
     
     avail_col = "general_ward_available_beds" if "general_ward_available_beds" in d.columns else "beds_free_now"
     total_col = "general_ward_total_beds" if "general_ward_total_beds" in d.columns else "general_beds"

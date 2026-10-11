@@ -6,7 +6,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import numpy as np
 import pandas as pd
 import pytest
-from src.scoring import mentor_score, balanced_score, bayesian_rating, rank_hospitals
+from src.scoring import mentor_score, balanced_score, bayesian_rating, rank_hospitals, rankable
 
 
 @pytest.fixture
@@ -132,3 +132,91 @@ class TestBayesianRating:
         assert adj_gap < raw_gap * 0.05, (
             f"Bayesian gap ({adj_gap:.4f}) should be < 5% of raw gap ({raw_gap})"
         )
+
+
+class TestSpecialtyRanking:
+    def test_specialty_unranked_for_all_landmarks_when_toggle_off(self):
+        """C3: For all 12 landmarks, with toggle off, no specialty hospital has rank > 0 in any method."""
+        from src.config import ENRICHED_CSV, LANDMARKS
+        hosp = pd.read_csv(ENRICHED_CSV)
+        specialty_ids = set(hosp.loc[hosp["category"].str.lower() == "specialty", "hospital_id"])
+        assert len(specialty_ids) > 0, "Dataset must have specialty hospitals"
+
+        for method in ["mentor", "bedscore"]:
+            for name, (lat, lon) in LANDMARKS.items():
+                res = rank_hospitals(hosp, lat, lon, method=method, include_specialty=False)
+                specialty_rows = res[res["hospital_id"].isin(specialty_ids)]
+                assert (specialty_rows["rank"] == 0).all(), (
+                    f"Specialty hospital ranked under {method} at {name}"
+                )
+                # Ensure rankable() excludes them
+                eligible = rankable(res, include_specialty=False)
+                assert not any(eligible["hospital_id"].isin(specialty_ids))
+
+    def test_specialty_ranked_when_toggle_on(self):
+        """C3: When toggle is on, specialty hospitals get rank > 0."""
+        from src.config import ENRICHED_CSV, LANDMARKS
+        hosp = pd.read_csv(ENRICHED_CSV)
+        lat, lon = LANDMARKS["Jaydev Vihar Square"]
+        res = rank_hospitals(hosp, lat, lon, method="bedscore", include_specialty=True)
+        spec = res[res["category"].str.lower() == "specialty"]
+        assert (spec["rank"] > 0).all(), "Specialty hospitals must have rank > 0 when include_specialty=True"
+
+
+class TestEstimatedDataTrustPenalty:
+    def test_estimated_rating_never_outranks_identical_real_rating(self):
+        """C4: An estimated-rating hospital never outranks an otherwise identical hospital with real rating data."""
+        df = pd.DataFrame({
+            "hospital_id": ["H_REAL", "H_EST"],
+            "hospital_name": ["Hospital Real", "Hospital Estimated"],
+            "hospital_type": ["Private", "Private"],
+            "category": ["general", "general"],
+            "latitude": [20.2966, 20.2966],
+            "longitude": [85.823, 85.823],
+            "rating_5": [4.5, 4.5],
+            "review_count": [1000, 1000],
+            "admission_fee_inr": [500, 500],
+            "general_ward_total_beds": [100, 100],
+            "general_ward_available_beds": [10, 10],
+            "accepts_pmjay": [False, False],
+            "accepts_state_scheme": [False, False],
+            "fields_estimated": ["", "rating_5;review_count"],
+        })
+        res = rank_hospitals(df, 20.2966, 85.823, method="bedscore")
+        real_row = res[res["hospital_id"] == "H_REAL"].iloc[0]
+        est_row = res[res["hospital_id"] == "H_EST"].iloc[0]
+
+        assert real_row["t_trust"] > est_row["t_trust"], "Trust must be strictly higher for real ratings"
+        assert real_row["score"] > est_row["score"], "Score must be higher for real rating"
+        assert real_row["rank"] < est_row["rank"], "Real hospital must outrank estimated hospital"
+
+
+class TestSchemeCardToggleAffordability:
+    def test_scheme_toggle_affects_only_accepting_rows(self):
+        """C5: Toggle on sets effective fee = 0 only for flag==True rows; false/unknown unchanged; row count identical."""
+        from src.config import ENRICHED_CSV, LANDMARKS
+        hosp = pd.read_csv(ENRICHED_CSV)
+        lat, lon = LANDMARKS["Bhubaneswar Railway Station"]
+
+        res_off = rank_hospitals(hosp, lat, lon, method="bedscore", user_has_card=False)
+        res_on = rank_hospitals(hosp, lat, lon, method="bedscore", user_has_card=True)
+
+        assert len(res_off) == len(hosp) == len(res_on) == 32, "Row count must remain identical (32)"
+
+        # Check accepts == True
+        acc_mask = hosp["accepts_pmjay"].astype(str).str.lower().isin(["true", "1"])
+        for idx in hosp[acc_mask].index:
+            row_off = res_off.loc[idx]
+            row_on = res_on.loc[idx]
+            if row_off["admission_fee_inr"] > 0:
+                assert row_on["fee_eff"] == 0.0
+                assert row_on["t_afford"] > row_off["t_afford"]
+
+        # Check accepts == False or unknown
+        non_acc_mask = ~acc_mask
+        for idx in hosp[non_acc_mask].index:
+            row_off = res_off.loc[idx]
+            row_on = res_on.loc[idx]
+            assert row_on["fee_eff"] == row_off["fee_eff"], "Fee must be unchanged for non-accepting"
+            assert row_on["t_afford"] == row_off["t_afford"], "Affordability must be unchanged for non-accepting"
+

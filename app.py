@@ -25,7 +25,7 @@ from src.data import build_snapshot, load_history_snapshot, load_hospitals, load
 from src.geo import road_distance_km, eta_minutes
 from src.llm import build_facts, explain
 from src.ml import predict_availability
-from src.scoring import get_score_breakdown, rank_hospitals
+from src.scoring import formula_text, get_score_breakdown, rank_hospitals, rankable
 from src.ui_utils import render_html, safe_html, scheme_icon, status_word
 
 # ── Page config ───────────────────────────────────────────────────────
@@ -254,7 +254,7 @@ with st.sidebar:
     # Simulate hospital filling up (session-only override)
     with st.expander("🧪 Simulate a hospital filling up", expanded=False):
         st.caption("Override available beds for this session only to demonstrate the bed gate. Never writes to disk.")
-        hosp_names = sorted(snap["hospital_name"].unique())
+        hosp_names = sorted(rankable(snap, show_specialty)["hospital_name"].unique())
         sim_hosp = st.selectbox("Select hospital", hosp_names, key="sim_hosp_select")
         h_row = snap[snap["hospital_name"] == sim_hosp].iloc[0]
         cur_free = int(h_row.get("general_ward_available_beds", h_row.get("beds_free_now", 20)))
@@ -305,19 +305,11 @@ else:
 
 # ── Rank hospitals ────────────────────────────────────────────────────
 result = rank_hospitals(snap, user_lat, user_lon, method=method_key,
-                        user_has_card=user_has_card, p_available=p_available)
-
-# If specialty hospitals are NOT included, unrank them (Rule 3: never remove from table/map)
-if not show_specialty and "category" in result.columns:
-    specialty_mask = result["category"].str.lower() == "specialty"
-    # General hospitals get reranked 1..N
-    general_sub = result[~specialty_mask].copy()
-    general_sub["rank"] = range(1, len(general_sub) + 1)
-    result.loc[general_sub.index, "rank"] = general_sub["rank"]
-    result.loc[specialty_mask, "rank"] = 0
+                        user_has_card=user_has_card, p_available=p_available,
+                        include_specialty=show_specialty)
 
 # ── Alternatives strip ────────────────────────────────────────────────
-ranked = result[result["rank"] > 0].copy()
+ranked = rankable(result, show_specialty).copy()
 if not ranked.empty:
     st.markdown("#### 🏆 Quick Picks")
     c1, c2, c3, c4 = st.columns(4)
@@ -370,10 +362,7 @@ if not ranked.empty:
 st.markdown("---")
 st.markdown(f"#### 🏅 Top {min(top_n, len(ranked))} Hospitals ({method})")
 
-if "mentor" in method_key:
-    st.caption("📐 Active formula: **Score = 100·A + X − Y − Z** (A = Bed Availability %, X = Rating × Reviews, Y = Road Dist km, Z = Admission Fee ₹)")
-else:
-    st.caption("📐 Active formula: **Score = 100 · P · (0.35·Trust + 0.40·Closeness + 0.25·Affordability)** (P = arrival bed chance)")
+st.caption(f"📐 Active formula: **{formula_text(method)}**")
 
 top_hospitals = ranked.head(top_n)
 if top_hospitals.empty:
@@ -388,6 +377,10 @@ else:
                 est_tag = safe_html(' <span class="est-badge">some fields estimated</span>')
                 est_disclosure = safe_html('<div class="detail" style="color: #FBBF24; font-size: 0.78rem;">ℹ️ Some data estimated — confirm by phone</div>')
 
+            spec_tag = ""
+            if show_specialty and str(r.get("category", "")).lower() == "specialty":
+                spec_tag = safe_html(' <span class="est-badge" style="background:rgba(139,92,246,0.25);color:#C4B5FD;border-color:rgba(139,92,246,0.5);">Specialty</span>')
+
             p_val = float(r.get("p_bed", 1.0))
             p_word, p_col, p_ico = status_word(p_val)
 
@@ -401,7 +394,7 @@ else:
 
             card_html = render_html("""
             <div class="hospital-card">
-                <h3>#{rank} {name}{est_tag}</h3>
+                <h3>#{rank} {name}{spec_tag}{est_tag}</h3>
                 <div class="stat" style="color: {p_col};">{p_ico} {p_word} ({chance}) — {beds} beds free now</div>
                 {bed_warning}
                 {est_disclosure}
@@ -415,7 +408,7 @@ else:
                     PM-JAY: {pmjay} &nbsp; GJAY (Odisha): {state_sch}
                 </div>
             </div>
-            """, rank=int(r["rank"]), name=r["hospital_name"][:32], est_tag=est_tag,
+            """, rank=int(r["rank"]), name=r["hospital_name"][:32], spec_tag=spec_tag, est_tag=est_tag,
                est_disclosure=est_disclosure,
                p_col=p_col, p_ico=p_ico, p_word=p_word, chance=pct(p_val), beds=r["beds_free_now"],
                bed_warning=bed_warning, dist=r["dist_km"], eta=r["eta_min"], fee=r["admission_fee_inr"],
@@ -480,7 +473,12 @@ for _, r in result.iterrows():
     directions_url = r.get("google_maps_url", "")
     directions_line = f'<a href="{directions_url}" target="_blank" rel="noopener">🧭 Directions</a>'
 
-    rank_text = f"Rank #{int(r['rank'])}" if is_ranked else "Not ranked (specialty / filter)"
+    if is_ranked:
+        rank_text = f"Rank #{int(r['rank'])}"
+    elif str(r.get("category", "")).lower() == "specialty":
+        rank_text = "Specialty — not ranked"
+    else:
+        rank_text = "Not ranked"
 
     popup_html = f"""
     <div style="min-width:220px; font-family:Inter,sans-serif;">
@@ -543,7 +541,14 @@ table_data = result[[
     "accepts_pmjay", "accepts_state_scheme", "website", "google_maps_url"
 ]].copy()
 
-table_data["Rank"] = table_data["rank"].apply(lambda x: f"#{x}" if x > 0 else "—")
+def format_table_rank(r):
+    if r["rank"] > 0:
+        return f"#{int(r['rank'])}"
+    if str(r.get("category", "")).lower() == "specialty":
+        return "Specialty — not ranked"
+    return "—"
+
+table_data["Rank"] = result.apply(format_table_rank, axis=1)
 table_data["Hospital"] = table_data["hospital_name"]
 table_data["Category"] = table_data["category"].str.capitalize()
 table_data["Type"] = table_data["hospital_type"]
@@ -572,14 +577,15 @@ display_df = table_data[display_cols]
 
 # Highlight top N rows
 def highlight_top(row):
-    if row["Rank"] != "—" and int(row["Rank"].replace("#", "")) <= top_n:
+    val = str(row["Rank"])
+    if val.startswith("#") and int(val[1:]) <= top_n:
         return ["background-color: rgba(0,191,166,0.10)"] * len(row)
     return [""] * len(row)
 
 st.dataframe(
     display_df.style.apply(highlight_top, axis=1),
     column_config={
-        "Rank": st.column_config.TextColumn("Rank", width="small"),
+        "Rank": st.column_config.TextColumn("Rank", width="medium"),
         "Hospital": st.column_config.TextColumn("Hospital", width="medium"),
         "Category": st.column_config.TextColumn("Category", width="small"),
         "Type": st.column_config.TextColumn("Type", width="small"),
@@ -606,7 +612,8 @@ st.dataframe(
 with st.expander("📊 Why this rank? (Score breakdown)"):
     if not ranked.empty:
         breakdown = get_score_breakdown(ranked, user_lat, user_lon, method=method_key,
-                                        p_available=p_available, user_has_card=user_has_card)
+                                        p_available=p_available, user_has_card=user_has_card,
+                                        include_specialty=show_specialty)
         fig = go.Figure()
         if "mentor" in method_key:
             comps = [

@@ -110,7 +110,7 @@
   - `html.escape()` dynamic text only (name, address), append trusted badge markup, render with `unsafe_allow_html=True`.
   - AppTest checks across Top N 1, 3, 10, 32 that no rendered markdown leaks `<span class=` or `&lt;span` as visible text. Capture screenshot.
   - Commit: `C2: fix html escaping leak in badges across cards and tables`.
-- [ ] **C3 — Specialty hospitals ranking exclusion**:
+- [x] **C3 — Specialty hospitals ranking exclusion**:
   - Implement single `rankable(df, include_specialty)` in `src/scoring.py` used by ALL consumers (ranking, Top N, Quick Picks, Simulate picker, LLM, sensitivity scripts/tables).
   - Default: specialty unranked (`rank = 0`, badge "Specialty - not ranked"). If toggled on: ranked with badge.
   - Re-run `scripts/formula_sensitivity.py` and compute new distinct orders / rank-1 counts.
