@@ -97,7 +97,7 @@ for _, h in hosp.iterrows():
         f"{h['hospital_id']}: final beds_free {final_free} != target {target_free}"
     )
 
-print("[ok] All 32 hospitals verified: final timestamp in history matches mentor snapshot EXACTLY")
+print(f"[ok] All {len(hosp)} hospitals verified: final timestamp in history matches mentor snapshot EXACTLY")
 
 HISTORY_CSV.parent.mkdir(parents=True, exist_ok=True)
 hist.to_csv(HISTORY_CSV, index=False)

@@ -58,14 +58,19 @@ def test_snapshot_anchored_to_mentor_beds(raw_mentor, enriched):
 
 
 def test_specialty_categorization(enriched):
-    """Added hospitals must have valid category and eye hospital must be specialty."""
+    """Added hospitals must have valid category and Hemalata must be specialty while dropped ones are absent."""
     assert "category" in enriched.columns, "Category column must exist"
     assert set(enriched["category"].unique()).issubset({"general", "specialty"})
 
-    # Eye hospital must be marked specialty
-    eye_hosp = enriched[enriched["hospital_name"].str.contains("Netra", case=False)]
-    assert not eye_hosp.empty
-    assert (eye_hosp["category"] == "specialty").all(), "Netra Chikitsalaya must be specialty"
+    # Hemalata specialty hospital must be marked specialty
+    spec = enriched[enriched["category"] == "specialty"]
+    assert len(spec) == 1
+    assert "Hemalata" in spec.iloc[0]["hospital_name"]
+
+    # Dropped hospitals must NOT exist in enriched data per Rule D1
+    assert enriched[enriched["hospital_name"].str.contains("Netra", case=False)].empty
+    assert enriched[enriched["hospital_name"].str.contains("Fakir Mohan", case=False)].empty
+    assert enriched[enriched["hospital_name"].str.contains("Acharya Harihar", case=False)].empty
 
 
 def test_history_final_timestamp_matches_snapshot(enriched):

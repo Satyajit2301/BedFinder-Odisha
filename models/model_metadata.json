@@ -25,6 +25,6 @@
     4,
     6
   ],
-  "train_rows": 272320,
-  "test_rows": 67968
+  "train_rows": 212750,
+  "test_rows": 53100
 }

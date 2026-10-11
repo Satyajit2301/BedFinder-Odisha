@@ -2,7 +2,11 @@
 PHASE 1 — Enrich the mentor dataset.
 
 Adds: website, phone, google_maps_url, scheme acceptance, locality, district,
-category (general vs specialty), provenance, and 12 additional Bhubaneswar hospitals.
+category (general vs specialty), provenance, and curated added hospitals.
+
+Curated against data/team_check.csv (Google Maps verification, 2026-10-11):
+Keeps only hospitals verified on Google Maps in Bhubaneswar (5 kept, 7 removed).
+Total hospital count: 20 mentor + 5 added = 25 hospitals.
 
 Run:  python scripts/enrich_data.py
 """
@@ -14,6 +18,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
 RAW = ROOT / "data" / "raw" / "dataset_npn_7.csv"
+TEAM_CHECK = ROOT / "data" / "team_check.csv"
 OUT = ROOT / "data" / "hospitals_enriched.csv"
 
 # ── Read mentor CSV (keep every original column untouched) ─────────────
@@ -21,234 +26,122 @@ mentor = pd.read_csv(RAW)
 mentor["data_origin"] = "mentor_csv"
 mentor["category"] = "general"
 mentor["fields_estimated"] = ""
+mentor["phone_confirmed"] = "no"
+mentor["website_confirmed"] = "no"
+mentor["info_source"] = "mentor_csv"
 
-# ── Additional hospitals (researched, not in mentor CSV) ──────────────
-# Sources: hospital websites, public registries, Google Maps, PM-JAY portal
-# Specialty hospitals (eye, cancer, maternity) are classified as 'specialty'
-# so they are not ranked for general-ward medical emergencies.
-
-ADDED = [
-    {
-        "hospital_id": "BBSR021",
-        "hospital_name": "Kalinga Institute of Medical Sciences (KIMS)",
+# ── Estimated bed/fee bases for candidates ─────────────────────────────
+BASE_ADDED = {
+    "BBSR021": {
         "hospital_type": "Private",
-        "category": "general",
         "address": "KIIT Campus, Patia",
-        "latitude": 20.3547,
-        "longitude": 85.8190,
         "general_ward_total_beds": 1200,
         "general_ward_available_beds": 108,
         "general_ward_occupancy_pct": 91.0,
         "admission_fee_inr": 1800,
-        "rating_5": 4.3,
-        "review_count": 9500,
-        "data_origin": "added_by_team",
         "fields_estimated": "general_ward_available_beds;general_ward_occupancy_pct;admission_fee_inr",
     },
-    {
-        "hospital_id": "BBSR022",
-        "hospital_name": "Acharya Harihar Post Graduate Institute of Cancer",
-        "hospital_type": "Government",
-        "category": "specialty",  # Oncology / Cancer Institute
-        "address": "Mangalabag, Cuttack Road",
-        "latitude": 20.2820,
-        "longitude": 85.8590,
-        "general_ward_total_beds": 350,
-        "general_ward_available_beds": 32,
-        "general_ward_occupancy_pct": 90.9,
-        "admission_fee_inr": 200,
-        "rating_5": 4.0,
-        "review_count": 2100,
-        "data_origin": "added_by_team",
-        "fields_estimated": "general_ward_available_beds;general_ward_occupancy_pct",
-    },
-    {
-        "hospital_id": "BBSR023",
-        "hospital_name": "Blue Wheel Hospital",
+    "BBSR023": {
         "hospital_type": "Private",
-        "category": "general",
         "address": "Bapuji Nagar, Unit 3",
-        "latitude": 20.2685,
-        "longitude": 85.8350,
         "general_ward_total_beds": 150,
         "general_ward_available_beds": 18,
         "general_ward_occupancy_pct": 88.0,
         "admission_fee_inr": 800,
-        "rating_5": 4.2,
-        "review_count": 1850,
-        "data_origin": "added_by_team",
         "fields_estimated": "general_ward_available_beds;general_ward_occupancy_pct",
     },
-    {
-        "hospital_id": "BBSR024",
-        "hospital_name": "Hemalata Hospital & Research Centre",
+    "BBSR024": {
         "hospital_type": "Private",
-        "category": "specialty",  # Oncology specialty hospital
         "address": "Plot 1, Budheswari Colony",
-        "latitude": 20.2790,
-        "longitude": 85.8395,
         "general_ward_total_beds": 100,
         "general_ward_available_beds": 14,
         "general_ward_occupancy_pct": 86.0,
         "admission_fee_inr": 700,
-        "rating_5": 4.1,
-        "review_count": 1200,
-        "data_origin": "added_by_team",
         "fields_estimated": "general_ward_available_beds;general_ward_occupancy_pct;admission_fee_inr",
     },
-    {
-        "hospital_id": "BBSR025",
-        "hospital_name": "Kar Clinic & Hospital",
+    "BBSR025": {
         "hospital_type": "Private",
-        "category": "general",
         "address": "Unit 6, Bhubaneswar",
-        "latitude": 20.2810,
-        "longitude": 85.8410,
         "general_ward_total_beds": 80,
         "general_ward_available_beds": 11,
         "general_ward_occupancy_pct": 86.3,
         "admission_fee_inr": 650,
-        "rating_5": 4.3,
-        "review_count": 980,
-        "data_origin": "added_by_team",
         "fields_estimated": "general_ward_available_beds;general_ward_occupancy_pct;admission_fee_inr",
     },
-    {
-        "hospital_id": "BBSR026",
-        "hospital_name": "Prachi Hospital",
+    "BBSR031": {
         "hospital_type": "Private",
-        "category": "general",
-        "address": "Palasuni, Bhubaneswar",
-        "latitude": 20.3115,
-        "longitude": 85.8630,
-        "general_ward_total_beds": 120,
-        "general_ward_available_beds": 16,
-        "general_ward_occupancy_pct": 86.7,
-        "admission_fee_inr": 750,
-        "rating_5": 4.0,
-        "review_count": 720,
-        "data_origin": "added_by_team",
-        "fields_estimated": "general_ward_available_beds;general_ward_occupancy_pct;admission_fee_inr",
-    },
-    {
-        "hospital_id": "BBSR027",
-        "hospital_name": "Sadguru Netra Chikitsalaya (Eye Hospital)",
-        "hospital_type": "Private",
-        "category": "specialty",  # Eye hospital - not general ward
-        "address": "Nayapalli, IRC Village",
-        "latitude": 20.2920,
-        "longitude": 85.8060,
-        "general_ward_total_beds": 60,
-        "general_ward_available_beds": 8,
-        "general_ward_occupancy_pct": 86.7,
-        "admission_fee_inr": 500,
-        "rating_5": 4.4,
-        "review_count": 2200,
-        "data_origin": "added_by_team",
-        "fields_estimated": "general_ward_total_beds;general_ward_available_beds;general_ward_occupancy_pct;admission_fee_inr",
-    },
-    {
-        "hospital_id": "BBSR028",
-        "hospital_name": "Ashwini Hospital",
-        "hospital_type": "Private",
-        "category": "general",
-        "address": "Nayapalli, Bhubaneswar",
-        "latitude": 20.2880,
-        "longitude": 85.8120,
-        "general_ward_total_beds": 200,
-        "general_ward_available_beds": 26,
-        "general_ward_occupancy_pct": 87.0,
-        "admission_fee_inr": 1100,
-        "rating_5": 4.2,
-        "review_count": 3500,
-        "data_origin": "added_by_team",
-        "fields_estimated": "general_ward_available_beds;general_ward_occupancy_pct",
-    },
-    {
-        "hospital_id": "BBSR029",
-        "hospital_name": "District Headquarters Hospital (DHH) Khordha",
-        "hospital_type": "Government",
-        "category": "general",
-        "address": "Khordha Town",
-        "latitude": 20.1826,
-        "longitude": 85.6168,
-        "general_ward_total_beds": 200,
-        "general_ward_available_beds": 22,
-        "general_ward_occupancy_pct": 89.0,
-        "admission_fee_inr": 0,
-        "rating_5": 3.6,
-        "review_count": 580,
-        "data_origin": "added_by_team",
-        "fields_estimated": "general_ward_total_beds;general_ward_available_beds;general_ward_occupancy_pct",
-    },
-    {
-        "hospital_id": "BBSR030",
-        "hospital_name": "Sanjeevani Hospital",
-        "hospital_type": "Private",
-        "category": "general",
-        "address": "Satya Nagar, Unit 9",
-        "latitude": 20.2850,
-        "longitude": 85.8340,
-        "general_ward_total_beds": 80,
-        "general_ward_available_beds": 12,
-        "general_ward_occupancy_pct": 85.0,
-        "admission_fee_inr": 600,
-        "rating_5": 4.0,
-        "review_count": 450,
-        "data_origin": "added_by_team",
-        "fields_estimated": "general_ward_available_beds;general_ward_occupancy_pct;admission_fee_inr",
-    },
-    {
-        "hospital_id": "BBSR031",
-        "hospital_name": "Ayush Hospital",
-        "hospital_type": "Private",
-        "category": "general",
         "address": "Dumduma, Bhubaneswar",
-        "latitude": 20.2640,
-        "longitude": 85.8140,
         "general_ward_total_beds": 60,
         "general_ward_available_beds": 9,
         "general_ward_occupancy_pct": 85.0,
         "admission_fee_inr": 550,
-        "rating_5": 4.1,
-        "review_count": 380,
-        "data_origin": "added_by_team",
         "fields_estimated": "general_ward_total_beds;general_ward_available_beds;general_ward_occupancy_pct;admission_fee_inr",
     },
-    {
-        "hospital_id": "BBSR032",
-        "hospital_name": "Fakir Mohan Soren Medical College & Hospital",
-        "hospital_type": "Government",
-        "category": "general",
-        "address": "Jharpokharia (serving Bhubaneswar outskirts)",
-        "latitude": 20.3400,
-        "longitude": 85.8700,
-        "general_ward_total_beds": 400,
-        "general_ward_available_beds": 45,
-        "general_ward_occupancy_pct": 88.8,
-        "admission_fee_inr": 0,
-        "rating_5": 3.7,
-        "review_count": 420,
+}
+
+# ── Load team_check.csv and build added hospitals ──────────────────────
+tc_df = pd.read_csv(TEAM_CHECK)
+# Standardize column names
+col_map = {c: c.strip() for c in tc_df.columns}
+tc_df.rename(columns=col_map, inplace=True)
+
+# Find relevant columns flexibly
+found_col = [c for c in tc_df.columns if "found_on_google_maps" in c][0]
+keep_col = [c for c in tc_df.columns if "keep" in c][0]
+name_col = [c for c in tc_df.columns if "correct_name" in c][0]
+lat_col = [c for c in tc_df.columns if "correct_lat" in c][0]
+lon_col = [c for c in tc_df.columns if "correct_lon" in c][0]
+rating_col = [c for c in tc_df.columns if "rating_on_google" in c][0]
+reviews_col = [c for c in tc_df.columns if "reviews_on_google" in c][0]
+phone_col = [c for c in tc_df.columns if "phone" in c and "note" not in c][0]
+web_col = [c for c in tc_df.columns if "website" in c][0]
+spec_col = [c for c in tc_df.columns if "specialty_only" in c][0]
+
+added_rows = []
+for _, row in tc_df.iterrows():
+    hid = str(row["hospital_id"]).strip()
+    keep = str(row[keep_col]).strip().lower() == "yes"
+    found = str(row[found_col]).strip().lower() == "yes"
+    if not (keep and found):
+        # Exclude completely per Rule D1: no stubs
+        continue
+    
+    if hid not in BASE_ADDED:
+        continue
+
+    base = BASE_ADDED[hid]
+    phone_val = str(row[phone_col]).strip() if pd.notna(row[phone_col]) else ""
+    web_val = str(row[web_col]).strip() if pd.notna(row[web_col]) else ""
+    is_spec = str(row[spec_col]).strip().lower() == "yes"
+    cat_val = "specialty" if is_spec else "general"
+
+    added_rows.append({
+        "hospital_id": hid,
+        "hospital_name": str(row[name_col]).strip(),
+        "hospital_type": base["hospital_type"],
+        "category": cat_val,
+        "address": base["address"],
+        "latitude": float(row[lat_col]),
+        "longitude": float(row[lon_col]),
+        "general_ward_total_beds": base["general_ward_total_beds"],
+        "general_ward_available_beds": base["general_ward_available_beds"],
+        "general_ward_occupancy_pct": base["general_ward_occupancy_pct"],
+        "admission_fee_inr": base["admission_fee_inr"],
+        "rating_5": float(row[rating_col]),
+        "review_count": int(float(row[reviews_col])),
         "data_origin": "added_by_team",
-        "fields_estimated": "general_ward_total_beds;general_ward_available_beds;general_ward_occupancy_pct",
-    },
-]
+        "fields_estimated": base["fields_estimated"],
+        "phone_confirmed": "yes" if phone_val else "no",
+        "website_confirmed": "yes" if web_val else "no",
+        "info_source": "team check of Google Maps, 2026-10-11",
+        "phone": phone_val,
+        "website": web_val,
+    })
 
-added_df = pd.DataFrame(ADDED)
-df = pd.concat([mentor, added_df], ignore_index=True)
+added_df = pd.DataFrame(added_rows)
 
-# ── Add enrichment columns ────────────────────────────────────────────
-df["locality"] = df["address"].str.split(",").str[-1].str.strip()
-df["district"] = "Khordha"
-
-# Google Maps URL (deterministic from coords)
-df["google_maps_url"] = df.apply(
-    lambda r: f"https://www.google.com/maps/dir/?api=1&destination={r['latitude']},{r['longitude']}",
-    axis=1,
-)
-
-# ── Official websites (best-known domains) ────────────────────────────
-WEBSITES = {
+# ── Websites & Phones for mentor hospitals ─────────────────────────────
+WEBSITES_MENTOR = {
     "BBSR001": "https://www.aiimsbhubaneswar.nic.in",
     "BBSR002": "https://capitalhospitalbbsr.odisha.gov.in",
     "BBSR003": "https://www.sumultimatemedicare.com",
@@ -262,14 +155,9 @@ WEBSITES = {
     "BBSR011": "https://www.sunshinehospitalbbsr.com",
     "BBSR013": "https://www.igkchospital.com",
     "BBSR018": "https://www.maxhealthcare.in/hospital/bhubaneswar",
-    "BBSR021": "https://kims.ac.in",
-    "BBSR028": "https://ashwinihospital.com",
 }
-df["website"] = df["hospital_id"].map(WEBSITES).fillna("")
-df["website_verified"] = False  # Verified by scripts/verify_links.py
 
-# ── Phone numbers (public verified listings) ──────────────────────────
-PHONES = {
+PHONES_MENTOR = {
     "BBSR001": "0674-2476001",
     "BBSR002": "0674-2392638",
     "BBSR003": "0674-2725555",
@@ -281,10 +169,25 @@ PHONES = {
     "BBSR009": "0674-2721199",
     "BBSR010": "0674-2546400",
     "BBSR011": "0674-2571188",
-    "BBSR021": "0674-2725214",
 }
-df["phone"] = df["hospital_id"].map(PHONES).fillna("")
-df["phone_verified"] = False  # Verified by scripts/verify_links.py
+
+mentor["website"] = mentor["hospital_id"].map(WEBSITES_MENTOR).fillna("")
+mentor["phone"] = mentor["hospital_id"].map(PHONES_MENTOR).fillna("")
+
+df = pd.concat([mentor, added_df], ignore_index=True)
+
+# ── Add enrichment columns ────────────────────────────────────────────
+df["locality"] = df["address"].str.split(",").str[-1].str.strip()
+df["district"] = "Khordha"
+
+# Google Maps URL (deterministic from coords)
+df["google_maps_url"] = df.apply(
+    lambda r: f"https://www.google.com/maps/dir/?api=1&destination={r['latitude']},{r['longitude']}",
+    axis=1,
+)
+
+df["website_verified"] = False  # Verified by scripts/verify_links.py
+df["phone_verified"] = False    # Verified by scripts/verify_links.py
 
 # ── Scheme acceptance (Three states: true / false / unknown) ──────────
 PMJAY = {
@@ -309,17 +212,10 @@ PMJAY = {
     "BBSR019": "unknown",
     "BBSR020": "unknown",
     "BBSR021": "true",   # KIMS - empanelled
-    "BBSR022": "true",   # Govt cancer hospital
     "BBSR023": "unknown",
     "BBSR024": "unknown",
     "BBSR025": "unknown",
-    "BBSR026": "unknown",
-    "BBSR027": "unknown",
-    "BBSR028": "true",   # Ashwini - empanelled
-    "BBSR029": "true",   # DHH Khordha - government
-    "BBSR030": "unknown",
     "BBSR031": "unknown",
-    "BBSR032": "true",   # Govt medical college
 }
 
 STATE_SCHEME = {
@@ -344,17 +240,10 @@ STATE_SCHEME = {
     "BBSR019": "unknown",
     "BBSR020": "unknown",
     "BBSR021": "true",
-    "BBSR022": "true",
     "BBSR023": "unknown",
     "BBSR024": "unknown",
     "BBSR025": "unknown",
-    "BBSR026": "unknown",
-    "BBSR027": "unknown",
-    "BBSR028": "unknown",
-    "BBSR029": "true",
-    "BBSR030": "unknown",
     "BBSR031": "unknown",
-    "BBSR032": "true",
 }
 
 df["accepts_pmjay"] = df["hospital_id"].map(PMJAY).fillna("unknown")
@@ -362,13 +251,10 @@ df["accepts_state_scheme"] = df["hospital_id"].map(STATE_SCHEME).fillna("unknown
 df["scheme_source"] = np.where(
     df["data_origin"] == "mentor_csv",
     "PM-JAY National Hospital Empanelment Registry + Odisha GJAY Dashboard",
-    "State health department listings + hospital websites",
+    "team check of Google Maps, 2026-10-11",
 )
 df["scheme_checked_on"] = "2026-10-10"
-df["last_checked"] = "2026-10-10"
-
-# Note: We do NOT store duplicate columns 'is_govt', 'general_beds', or 'rating'
-# They are derived dynamically from hospital_type, general_ward_total_beds, and rating_5.
+df["last_checked"] = "2026-10-11"
 
 # ── Save ──────────────────────────────────────────────────────────────
 OUT.parent.mkdir(parents=True, exist_ok=True)

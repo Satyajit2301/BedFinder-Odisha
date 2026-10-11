@@ -154,4 +154,50 @@
   - Deliver grounded final report with markdown file links.
   - Commit: `C10: honest blocked log, verification markdown and grounded reporting`.
 
+---
+
+## Phase 7: v2.4 Data Honesty & Leftover Fixes (D1 to D8)
+- [x] **D1 — The 12 added hospitals curation & pipeline refresh**:
+  - Process `team_check.csv` from Google Maps findings.
+  - Drop 7 unconfirmed/mislocated hospitals (Acharya Harihar in Cuttack, Prachi IVF, Sadguru Netra in MP, Ashwini in Cuttack, DHH Khordha, Sanjeevani, Fakir Mohan in Balasore).
+  - Keep 5 confirmed hospitals (KIMS, Blue Wheel, Hemalata, Kar Clinic, Ayush) with corrected names, coordinates, ratings, reviews, phones, websites.
+  - Filter `enrich_data.py`, regenerate `history.csv`, retrain ML model, rerun `audit_ml.py`, `formula_sensitivity.py`, `test_llm_call.py`.
+  - Dynamically update hospital counts in docs and tests.
+  - Commit: `D1: curate added hospitals against team check, prune unconfirmed and retrain`.
+- [ ] **D2 — Evidence CSV honesty overhaul**:
+  - Fix `generate_added_hospitals_evidence.py` to read real columns (`rating_5`, `review_count`).
+  - Set `team_confirmed` with date for team check rows; `verified` only with specific page URL in `docs/evidence/`.
+  - Add test asserting no vague/root URLs marked verified and values match `hospitals_enriched.csv`.
+  - Commit: `D2: evidence csv honesty overhaul and strict integrity tests`.
+- [ ] **D3 — Contacts & URL verification honesty**:
+  - Clean up `verify_links.py`: exact probe statuses `LIVE`, `BLOCKED_403`, `DNS_FAIL`, `NOT_FOUND_404`, `TLS_ERROR`, `NONE`; try bare domain and www for DNS_FAIL.
+  - Add `phone_confirmed` and `website_confirmed`.
+  - UI rule: show phone only if confirmed; show website link only if LIVE or confirmed; else plain text "Not verified".
+  - Commit: `D3: honest contact verification statuses, confirmed flags and ui guards`.
+- [ ] **D4 — Scheme flags & fee honesty**:
+  - Set scheme flags to `unknown` unless specific source page exists.
+  - Fee = 0 marked estimated unless sourced.
+  - Commit: `D4: scheme flags and fee honesty pass`.
+- [ ] **D5 — Stale screenshots purge & badge leak regression assertions**:
+  - Delete old stale screenshots (1366x768 / 390x844).
+  - Assert `page.inner_text("body")` contains no `<span`, `&lt;`, or `est-badge` before saving.
+  - Regenerate screenshots via `capture_screenshots.py`.
+  - Commit: `D5: purge stale screenshots and assert clean dom rendering`.
+- [ ] **D6 — Docs sync, sensitivity flippable pairs analysis & forbidden tokens**:
+  - Fix QA_PREP Q2/Q5 and DEMO_SCRIPT wording (base score gap vs distance difference).
+  - Calculate and report flippable pairs in `formula_sensitivity.py`.
+  - Sync DEMO formula text and toggle label.
+  - Expand forbidden tokens in `test_docs.py` and delete `PROMPT_fix_v2.2.md`.
+  - Commit: `D6: docs reconciliation, flippable pairs analysis and strict forbidden tokens`.
+- [ ] **D7 — LLM input schema fix & bed chance vs availability**:
+  - Rename `availability` to `bed_chance_on_arrival`; add `beds_free`, `beds_total`, `bed_availability_pct`.
+  - Update prompt, number check allow-list, live call proof, and test against `availability` key.
+  - Commit: `D7: llm schema fix distinguishing bed chance from availability`.
+- [ ] **D8 — Minor polish & final audit reconciliation**:
+  - Remove/clarify undefined Brier 0.1256 in ML_REPORT.
+  - Update BLOCKED.md with exact selectbox replacement note.
+  - Full test suite run, VERIFICATION.md update, and final presentation report.
+  - Commit: `D8: minor polish, blocked log correction and full verification`.
+
+
 

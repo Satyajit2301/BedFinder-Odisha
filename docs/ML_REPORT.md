@@ -1,7 +1,7 @@
-# ML Evaluation and Calibration Report (BedFinder Odisha v2.3)
+# ML Evaluation and Calibration Report (BedFinder Odisha v2.4)
 
 > **Evaluation Date:** 2026-10-11  
-> **Dataset:** `data/history.csv` (69,120 hourly snapshots, 90 days, anchored to mentor snapshot)  
+> **Dataset:** `data/history.csv` (54,000 hourly snapshots, 25 hospitals, anchored to mentor snapshot)  
 > **Model:** HistGradientBoostingClassifier with balanced class weighting  
 > **Evaluation Protocol:** 80/20 time split with 6h horizon gap across 5 random seeds against Persistence Baseline  
 
@@ -9,10 +9,10 @@
 
 ## 1. Executive Summary & Honest Wording
 
-The machine learning classification model achieves a mean Macro-F1 of **0.7711 ± 0.0006** across 5 independent seeds.
-In comparison, the simple **persistence baseline** (predicting that the hospital's availability class stays unchanged over the travel horizon) achieves a mean Macro-F1 of **0.7626 ± 0.0000**.
+The machine learning classification model achieves a mean Macro-F1 of **0.7769 ± 0.0009** across 5 independent seeds.
+In comparison, the simple **persistence baseline** (predicting that the hospital's availability class stays unchanged over the travel horizon) achieves a mean Macro-F1 of **0.7687 ± 0.0000**.
 
-**Honest Assessment:** ML is comparable overall, slightly worse at +1h (0.8576 vs 0.8636), and better at +4h to +6h (0.6947 vs 0.6610). Short-term occupancy is dominated by strong inertia, making persistence a strong benchmark for immediate triage.
+**Honest Assessment:** ML is comparable overall, slightly worse at +1h (0.8633 vs 0.8696), and better at +4h to +6h (0.6914 vs 0.6675). Short-term occupancy is dominated by strong inertia, making persistence a strong benchmark for immediate triage.
 
 ---
 
@@ -20,12 +20,12 @@ In comparison, the simple **persistence baseline** (predicting that the hospital
 
 | Seed | Model Macro-F1 | Model Accuracy | Persistence Macro-F1 | Persistence Accuracy | Model Brier Score |
 |---|---|---|---|---|---|
-| 42 | 0.7703 | 0.7726 | 0.7626 | 0.7637 | 0.0654 |
-| 101 | 0.7715 | 0.7740 | 0.7626 | 0.7637 | 0.0655 |
-| 2024 | 0.7708 | 0.7732 | 0.7626 | 0.7637 | 0.0655 |
-| 777 | 0.7717 | 0.7739 | 0.7626 | 0.7637 | 0.0654 |
-| 999 | 0.7709 | 0.7733 | 0.7626 | 0.7637 | 0.0655 |
-| **Mean ± Std** | **0.7711 ± 0.0006** | **0.7734 ± 0.0006** | **0.7626 ± 0.0000** | **0.7637 ± 0.0000** | **0.0655** |
+| 42 | 0.7763 | 0.7824 | 0.7687 | 0.7734 | 0.0603 |
+| 101 | 0.7772 | 0.7834 | 0.7687 | 0.7734 | 0.0602 |
+| 2024 | 0.7772 | 0.7828 | 0.7687 | 0.7734 | 0.0598 |
+| 777 | 0.7780 | 0.7842 | 0.7687 | 0.7734 | 0.0600 |
+| 999 | 0.7757 | 0.7819 | 0.7687 | 0.7734 | 0.0604 |
+| **Mean ± Std** | **0.7769 ± 0.0009** | **0.7830 ± 0.0009** | **0.7687 ± 0.0000** | **0.7734 ± 0.0000** | **0.0601** |
 
 ---
 
@@ -36,9 +36,9 @@ Classes: `0 = Full (<5% free)`, `1 = Limited (5–15% free)`, `2 = Available (>1
 ```
 Predicted ->      Full (0)     Limited (1)   Available (2)
 Actual
-Full (0)           22566.8        4052.2         276.0
-Limited (1)         4808.0       19669.8        4142.2
-Available (2)        154.6        1968.6       10329.8
+Full (0)           19319.6        3114.6         166.8
+Limited (1)         3619.8       14533.8        3048.4
+Available (2)        103.8        1471.8        7721.4
 ```
 
 ---
@@ -47,15 +47,15 @@ Available (2)        154.6        1968.6       10329.8
 
 | Horizon (Hours) | Model Macro-F1 | Model Accuracy | Persistence Macro-F1 | Persistence Accuracy |
 |---|---|---|---|---|
-| +1h | 0.8576 | 0.8590 | 0.8636 | 0.8648 |
-| +2h | 0.8058 | 0.8074 | 0.8052 | 0.8060 |
-| +3h | 0.7648 | 0.7671 | 0.7596 | 0.7609 |
-| +4h | 0.7310 | 0.7339 | 0.7223 | 0.7235 |
-| +6h | 0.6947 | 0.6979 | 0.6610 | 0.6620 |
+| +1h | 0.8633 | 0.8669 | 0.8696 | 0.8731 |
+| +2h | 0.8123 | 0.8174 | 0.8103 | 0.8146 |
+| +3h | 0.7703 | 0.7765 | 0.7668 | 0.7716 |
+| +4h | 0.7405 | 0.7473 | 0.7278 | 0.7329 |
+| +6h | 0.6914 | 0.7002 | 0.6675 | 0.6736 |
 
 **Horizon Analysis:**
-- At **+1h**, persistence is slightly superior (0.8636 vs 0.8576 Macro-F1) because occupancy rarely shifts across class boundaries within 60 minutes.
-- At **+4h to +6h**, the ML model demonstrates superiority (0.6947 vs 0.6610 Macro-F1 at +6h) as diurnal discharge patterns and admissions overtake simple persistence.
+- At **+1h**, persistence is slightly superior (0.8696 vs 0.8633 Macro-F1) because occupancy rarely shifts across class boundaries within 60 minutes.
+- At **+4h to +6h**, the ML model demonstrates superiority (0.6914 vs 0.6675 Macro-F1 at +6h) as diurnal discharge patterns and admissions overtake simple persistence.
 
 ---
 
@@ -68,8 +68,9 @@ Available (2)        154.6        1968.6       10329.8
   1. Guaranteed strict monotonicity: fewer beds or longer transit times strictly decrease arrival probability.
   2. Instantaneous responsiveness: reacts immediately to live bed updates and "What-If" simulation without retraining.
   3. No historical distribution shift vulnerability.
-- **What the Brier Score (0.0654 vs 0.1256) Measures:**
-  The Brier score measures the probabilistic calibration of the **3-class ML classifier** (`Available`, `Limited`, `Full`) across future horizons. It is **not** used to compute or justify the physics arrival probability `p_bed`.
+- **Model Brier Score Calibration:**
+  The 3-class ML model achieves a mean Brier score of **0.0601** across test sets for predicting the Available bed class probability. It is **not** used to compute or replace the physics arrival probability `p_bed`.
+
 
 ---
 

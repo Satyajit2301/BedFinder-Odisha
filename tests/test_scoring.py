@@ -201,7 +201,7 @@ class TestSchemeCardToggleAffordability:
         res_off = rank_hospitals(hosp, lat, lon, method="bedscore", user_has_card=False)
         res_on = rank_hospitals(hosp, lat, lon, method="bedscore", user_has_card=True)
 
-        assert len(res_off) == len(hosp) == len(res_on) == 32, "Row count must remain identical (32)"
+        assert len(res_off) == len(hosp) == len(res_on), f"Row count must remain identical ({len(hosp)})"
 
         # Check accepts == True
         acc_mask = hosp["accepts_pmjay"].astype(str).str.lower().isin(["true", "1"])

@@ -53,7 +53,7 @@ def load_and_build_features():
         frames.append(d)
 
     data = pd.concat(frames, ignore_index=True)
-    return data, hosp
+    return data, hosp, len(hist)
 
 
 def run_5_seed_evaluation(data: pd.DataFrame, seeds: list[int] = [42, 101, 2024, 777, 999]):
@@ -153,7 +153,7 @@ def evaluate_eta_sensitivity():
 
 def main():
     print("Preparing features from history...")
-    data, hosp = load_and_build_features()
+    data, hosp, n_hist = load_and_build_features()
     print(f"Total rows: {len(data):,}")
 
     print("Running 5-seed evaluation...")
@@ -173,10 +173,15 @@ def main():
     std_b_f1 = seed_df["baseline_macro_f1"].std()
     mean_brier = seed_df["brier_model"].mean()
 
-    report_md = f"""# ML Evaluation and Calibration Report (BedFinder Odisha v2.3)
+    h1_m = horizon_df.loc[horizon_df["horizon_hours"] == 1, "model_macro_f1"].values[0]
+    h1_b = horizon_df.loc[horizon_df["horizon_hours"] == 1, "baseline_macro_f1"].values[0]
+    h6_m = horizon_df.loc[horizon_df["horizon_hours"] == 6, "model_macro_f1"].values[0]
+    h6_b = horizon_df.loc[horizon_df["horizon_hours"] == 6, "baseline_macro_f1"].values[0]
+
+    report_md = f"""# ML Evaluation and Calibration Report (BedFinder Odisha v2.4)
 
 > **Evaluation Date:** 2026-10-11  
-> **Dataset:** `data/history.csv` (69,120 hourly snapshots, 90 days, anchored to mentor snapshot)  
+> **Dataset:** `data/history.csv` ({n_hist:,} hourly snapshots, {len(hosp)} hospitals, anchored to mentor snapshot)  
 > **Model:** HistGradientBoostingClassifier with balanced class weighting  
 > **Evaluation Protocol:** 80/20 time split with 6h horizon gap across 5 random seeds against Persistence Baseline  
 
@@ -187,7 +192,7 @@ def main():
 The machine learning classification model achieves a mean Macro-F1 of **{mean_m_f1:.4f} ± {std_m_f1:.4f}** across 5 independent seeds.
 In comparison, the simple **persistence baseline** (predicting that the hospital's availability class stays unchanged over the travel horizon) achieves a mean Macro-F1 of **{mean_b_f1:.4f} ± {std_b_f1:.4f}**.
 
-**Honest Assessment:** ML is comparable overall, slightly worse at +1h (0.8576 vs 0.8636), and better at +4h to +6h (0.6947 vs 0.6610). Short-term occupancy is dominated by strong inertia, making persistence a strong benchmark for immediate triage.
+**Honest Assessment:** ML is comparable overall, slightly worse at +1h ({h1_m:.4f} vs {h1_b:.4f}), and better at +4h to +6h ({h6_m:.4f} vs {h6_b:.4f}). Short-term occupancy is dominated by strong inertia, making persistence a strong benchmark for immediate triage.
 
 ---
 
@@ -225,10 +230,10 @@ Available (2)     {avg_cm[2, 0]:8.1f}      {avg_cm[2, 1]:8.1f}      {avg_cm[2, 2
     for _, r in horizon_df.iterrows():
         report_md += f"| +{int(r['horizon_hours'])}h | {r['model_macro_f1']:.4f} | {r['model_acc']:.4f} | {r['baseline_macro_f1']:.4f} | {r['baseline_acc']:.4f} |\n"
 
-    report_md += """
+    report_md += f"""
 **Horizon Analysis:**
-- At **+1h**, persistence is slightly superior (0.8636 vs 0.8576 Macro-F1) because occupancy rarely shifts across class boundaries within 60 minutes.
-- At **+4h to +6h**, the ML model demonstrates superiority (0.6947 vs 0.6610 Macro-F1 at +6h) as diurnal discharge patterns and admissions overtake simple persistence.
+- At **+1h**, persistence is slightly superior ({h1_b:.4f} vs {h1_m:.4f} Macro-F1) because occupancy rarely shifts across class boundaries within 60 minutes.
+- At **+4h to +6h**, the ML model demonstrates superiority ({h6_m:.4f} vs {h6_b:.4f} Macro-F1 at +6h) as diurnal discharge patterns and admissions overtake simple persistence.
 
 ---
 
@@ -236,13 +241,14 @@ Available (2)     {avg_cm[2, 0]:8.1f}      {avg_cm[2, 1]:8.1f}      {avg_cm[2, 2
 
 ### Clarification of Metrics & Implementation
 - **Which Model Drives `p_bed_arrival`:** `src/scoring.py` strictly uses the **Physics Queue Model (`p_bed`)** derived from Poisson birth-death queue dynamics:
-  $$P = \\Phi\\left(\\frac{\\text{free} - 0.5}{\\sigma}\\right), \\quad \\sigma = \\sqrt{2 \\cdot \\frac{\\text{occupied}}{\\text{ALOS} \\times 24} \\cdot \\text{ETA}_h}$$
+  $$P = \\Phi\\left(\\frac{{\\text{{free}} - 0.5}}{{\\sigma}}\\right), \\quad \\sigma = \\sqrt{{2 \\cdot \\frac{{\\text{{occupied}}}}{{\\text{{ALOS}} \\times 24}} \\cdot \\text{{ETA}}_h}}$$
 - **Why Physics is Used for Trip Arrival:**
   1. Guaranteed strict monotonicity: fewer beds or longer transit times strictly decrease arrival probability.
   2. Instantaneous responsiveness: reacts immediately to live bed updates and "What-If" simulation without retraining.
   3. No historical distribution shift vulnerability.
-- **What the Brier Score (0.0654 vs 0.1256) Measures:**
-  The Brier score measures the probabilistic calibration of the **3-class ML classifier** (`Available`, `Limited`, `Full`) across future horizons. It is **not** used to compute or justify the physics arrival probability `p_bed`.
+- **Model Brier Score Calibration:**
+  The 3-class ML model achieves a mean Brier score of **{mean_brier:.4f}** across test sets for predicting the Available bed class probability. It is **not** used to compute or replace the physics arrival probability `p_bed`.
+
 
 ---
 

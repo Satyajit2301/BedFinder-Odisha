@@ -9,25 +9,25 @@ def test_app_smoke_default():
     at = AppTest.from_file("app.py", default_timeout=30).run()
     assert not at.exception, f"App threw exception: {at.exception}"
     assert len(at.dataframe) >= 1
-    # Check that table contains all 32 hospitals
+    # Check that table contains all 25 hospitals
     df = at.dataframe[0].value
-    assert len(df) == 32
+    assert len(df) == 25
 
 
 @pytest.mark.parametrize("method_label,has_card,top_n,location_name", [
     ("Mentor formula (as given)", False, 3, "Bhubaneswar Railway Station"),
     ("Mentor formula (as given)", True, 1, "Patia / KIIT Square"),
-    ("Mentor formula (as given)", False, 32, "Khandagiri Square"),
+    ("Mentor formula (as given)", False, 25, "Khandagiri Square"),
     ("BedScore (recommended)", True, 3, "Bhubaneswar Railway Station"),
     ("BedScore (recommended)", False, 1, "Patia / KIIT Square"),
-    ("BedScore (recommended)", True, 32, "Khandagiri Square"),
+    ("BedScore (recommended)", True, 25, "Khandagiri Square"),
     ("BedScore (recommended)", False, 3, "Master Canteen Square"),
     ("Mentor formula (as given)", True, 3, "Nayapalli"),
 ])
 def test_app_control_matrix(method_label, has_card, top_n, location_name):
     """AppTest control matrix covering methods, card toggle, top_n (1, 3, all), and locations.
     
-    Verifies that no combinations throw exceptions and that all 32 hospitals remain present.
+    Verifies that no combinations throw exceptions and that all 25 hospitals remain present.
     """
     at = AppTest.from_file("app.py", default_timeout=30).run()
     assert not at.exception
@@ -52,10 +52,10 @@ def test_app_control_matrix(method_label, has_card, top_n, location_name):
         at.sidebar.slider[0].set_value(top_n).run()
         assert not at.exception
 
-    # Assert table has 32 hospitals
+    # Assert table has 25 hospitals
     assert len(at.dataframe) >= 1
     table_df = at.dataframe[0].value
-    assert len(table_df) == 32
+    assert len(table_df) == 25
 
 
 def test_regression_pmjay_no_crash():
@@ -85,7 +85,7 @@ def test_regression_tile_css_isolation():
     assert "filter: invert(1)" in app_code
 
 
-@pytest.mark.parametrize("top_n", [1, 3, 10, 32])
+@pytest.mark.parametrize("top_n", [1, 3, 10, 25])
 def test_no_raw_html_leaking_in_markdown(top_n):
     """Assert that no rendered markdown leaks '&lt;span', '<span class=' as visible text, or raw est-badge."""
     at = AppTest.from_file("app.py", default_timeout=30).run()

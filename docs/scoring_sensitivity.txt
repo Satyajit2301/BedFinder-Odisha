@@ -1,5 +1,5 @@
 =====================================================================================
-BEDFINDER ODISHA — FORMULA SENSITIVITY ANALYSIS (32 HOSPITALS)
+BEDFINDER ODISHA — FORMULA SENSITIVITY ANALYSIS (25 HOSPITALS)
 =====================================================================================
 
 --- 1. MENTOR FORMULA (Literal: 100*A + X - Y - Z) ---
@@ -26,21 +26,27 @@ BEDFINDER ODISHA — FORMULA SENSITIVITY ANALYSIS (32 HOSPITALS)
   Jaydev Vihar Square           : #1 Apollo Hospitals Bhubanesw #2 Vivekanand Hospital Bhuban #3 PGIMER & Capital Hospital 
   Patia / KIIT Square           : #1 Kalinga Institute of Medic #2 UTKAL HOSPITAL             #3 CARE Hospitals, Bhubaneswa
   Khandagiri Square             : #1 SUM Ultimate Medicare      #2 IGKC Multispeciality Hospi #3 Manipal Hospitals, Bhubane
-  Nayapalli                     : #1 Vivekanand Hospital Bhuban #2 Ashwini Hospital           #3 Usthi Hospital            
-  Rasulgarh Square              : #1 Hi-Tech Medical College an #2 Sparsh Hospitals & Critica #3 Prachi Hospital           
-  Vani Vihar / Utkal University : #1 PGIMER & Capital Hospital  #2 Sparsh Hospitals & Critica #3 Jagannath Hospital        
+  Nayapalli                     : #1 Vivekanand Hospital Bhuban #2 Usthi Hospital             #3 Health Village Hospital   
+  Rasulgarh Square              : #1 Hi-Tech Medical College an #2 Blue Wheel Hospital        #3 Sparsh Hospitals & Critica
+  Vani Vihar / Utkal University : #1 PGIMER & Capital Hospital  #2 Sparsh Hospitals & Critica #3 Kar Clinic & Hospital     
   Saheed Nagar                  : #1 Sparsh Hospitals & Critica #2 PGIMER & Capital Hospital  #3 Jagannath Hospital        
-  Baramunda Bus Stand           : #1 Vivekanand Hospital Bhuban #2 Health Village Hospital    #3 Ashwini Hospital          
+  Baramunda Bus Stand           : #1 Vivekanand Hospital Bhuban #2 Health Village Hospital    #3 Shree Hospitals           
   Kalinga Nagar / Ghatikia      : #1 SUM Ultimate Medicare      #2 IGKC Multispeciality Hospi #3 Vivekanand Hospital Bhuban
 
   >>> Distinct full rank orders: 12 across 12 locations
-  >>> Distinct Rank-1 hospitals: 9 (Hi-Tech Medical Coll, Sparsh Hospitals & C, Kalinga Institute of, Shree Hospitals, Vivekanand Hospital , Apollo Hospitals Bhu, Neelachal Hospital P, SUM Ultimate Medicar, PGIMER & Capital Hos)
+  >>> Distinct Rank-1 hospitals: 9 (Neelachal Hospital P, Hi-Tech Medical Coll, PGIMER & Capital Hos, Apollo Hospitals Bhu, Sparsh Hospitals & C, Shree Hospitals, Kalinga Institute of, SUM Ultimate Medicar, Vivekanand Hospital )
   >>> Ranking dynamically responds to user location: True
 
 --- 3. WHY MENTOR FORMULA DOES NOT RESPOND TO LOCATION ---
   X (rating * reviews) range: 1,228.5 to 149,544.6
-  100*A (availability %) range: 7.3 to 19.1
-  Smallest gap between top consecutive X: 4.0
-  Max possible road distance + fee (Y + Z) variation: ~25 km + Rs 2,500 = ~2,525
+  A (availability %) range: 7.3 to 19.1
+  Smallest gap between top consecutive X: 59.2
+  Max possible road distance (Y) variation across city: ~25 km
   Conclusion: Because X ranges up to 149,545, review count dominates completely.
+
+--- 4. PAIRWISE FLIPPABLE PAIRS ANALYSIS (12 LANDMARKS) ---
+  Total general hospital pairs evaluated: 276
+  Theoretically flippable pairs (base score gap < max distance difference change): 0
+  Actually flipped pairs across 12 landmarks under mentor formula: 0
+  Summary finding: Moving the user changes each score only by the change in distance (tens of points at most), while hospitals differ by hundreds or thousands of points, so in our 12 test locations no pair of hospitals swapped places.
 =====================================================================================
