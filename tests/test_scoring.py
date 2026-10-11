@@ -200,10 +200,14 @@ class TestEstimatedDataTrustPenalty:
 
 class TestSchemeCardToggleAffordability:
     def test_scheme_toggle_affects_only_accepting_rows(self):
-        """C5: Toggle on sets effective fee = 0 only for flag==True rows; false/unknown unchanged; row count identical."""
+        """G3: Toggle on sets effective fee = 0 only for flag==True rows; at least 2 rows true; fails if no true rows."""
         from src.config import ENRICHED_CSV, LANDMARKS
         hosp = pd.read_csv(ENRICHED_CSV)
         lat, lon = LANDMARKS["Bhubaneswar Railway Station"]
+
+        acc_mask = hosp["accepts_pmjay"].astype(str).str.lower().isin(["true", "1"])
+        assert acc_mask.sum() >= 2, f"Test must fail if there are no true rows (found {acc_mask.sum()})"
+        assert (~acc_mask).sum() >= 1, "There should be non-accepting or unknown rows"
 
         res_off = rank_hospitals(hosp, lat, lon, method="bedscore", user_has_card=False)
         res_on = rank_hospitals(hosp, lat, lon, method="bedscore", user_has_card=True)
@@ -211,21 +215,20 @@ class TestSchemeCardToggleAffordability:
         assert len(res_off) == len(hosp) == len(res_on), f"Row count must remain identical ({len(hosp)})"
 
         # Check accepts == True
-        acc_mask = hosp["accepts_pmjay"].astype(str).str.lower().isin(["true", "1"])
         for idx in hosp[acc_mask].index:
             row_off = res_off.loc[idx]
             row_on = res_on.loc[idx]
             if row_off["admission_fee_inr"] > 0:
-                assert row_on["fee_eff"] == 0.0
-                assert row_on["t_afford"] > row_off["t_afford"]
+                assert row_on["fee_eff"] == 0.0, f"Expected fee_eff=0 for accepting hospital {row_on['hospital_name']}"
+                assert row_on["t_afford"] > row_off["t_afford"], f"Expected t_afford increase for {row_on['hospital_name']}"
 
         # Check accepts == False or unknown
         non_acc_mask = ~acc_mask
         for idx in hosp[non_acc_mask].index:
             row_off = res_off.loc[idx]
             row_on = res_on.loc[idx]
-            assert row_on["fee_eff"] == row_off["fee_eff"], "Fee must be unchanged for non-accepting"
-            assert row_on["t_afford"] == row_off["t_afford"], "Affordability must be unchanged for non-accepting"
+            assert row_on["fee_eff"] == row_off["fee_eff"], f"Fee must be unchanged for non-accepting {row_on['hospital_name']}"
+            assert row_on["t_afford"] == row_off["t_afford"], f"Affordability must be unchanged for non-accepting {row_on['hospital_name']}"
 
 
 class TestQuickPicks:

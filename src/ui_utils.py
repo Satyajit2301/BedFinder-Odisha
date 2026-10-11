@@ -31,14 +31,14 @@ def render_html(raw_html: str, **kwargs) -> str:
     return cleaned
 
 
-def scheme_icon(val: str) -> str:
+def scheme_icon(val: str, is_html: bool = False) -> str:
     """Return clean unicode icon for scheme acceptance."""
     s = str(val).lower().strip()
     if s in ("true", "yes", "1"):
-        return "✓ Yes"
+        return safe_html('<span title="demo">✓ Yes</span>') if is_html else "✓ Yes"
     elif s in ("false", "no", "0"):
-        return "✗ No"
-    return "? Confirm"
+        return safe_html('<span title="demo">✗ No</span>') if is_html else "✗ No"
+    return safe_html('<span title="demo">? Confirm</span>') if is_html else "? Confirm"
 
 
 def status_word(p: float) -> tuple[str, str, str]:

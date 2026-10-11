@@ -437,8 +437,8 @@ else:
             p_val = float(r.get("p_bed", 1.0))
             p_word, p_col, p_ico = status_word(p_val)
 
-            pmjay_status = scheme_icon(r.get('accepts_pmjay', 'unknown'))
-            state_status = scheme_icon(r.get('accepts_state_scheme', 'unknown'))
+            pmjay_status = scheme_icon(r.get('accepts_pmjay', 'unknown'), is_html=True)
+            state_status = scheme_icon(r.get('accepts_state_scheme', 'unknown'), is_html=True)
             live_text = f" · {r['live_update']}" if r.get('live_update') else ""
 
             bed_warning = ""
@@ -573,7 +573,7 @@ for _, r in result.iterrows():
         📍 {r['dist_km']:.1f} km · ~{r['eta_min']} min<br>
         💰 ₹{r['admission_fee_inr']}/day<br>
         ⭐ {r['rating_5']:.1f}★ ({r['review_count']:,} reviews)<br>
-        PM-JAY: {scheme_icon(r.get('accepts_pmjay'))} &nbsp; GJAY: {scheme_icon(r.get('accepts_state_scheme'))}<br>
+        PM-JAY: {scheme_icon(r.get('accepts_pmjay'), is_html=True)} &nbsp; GJAY: {scheme_icon(r.get('accepts_state_scheme'), is_html=True)}<br>
         {phone_line}{website_line}{directions_line}
     </div>
     """
