@@ -188,15 +188,15 @@ with st.sidebar:
 
     st.markdown("---")
 
-    # Ranking method
+    # Ranking method (Mentor formula is default as requested by mentor)
     method = st.radio(
         "Ranking method",
-        ["Mentor formula", "Balanced"],
+        ["Mentor formula (as given)", "BedScore (recommended)"],
         index=0,
-        help="**Mentor formula**: rating × reviews × 100 − distance − fee\n\n"
-             "**Balanced**: Normalised rating, distance, fee, and predicted bed availability"
+        help="**Mentor formula (as given)**: 100·A + X − Y − Z\n\n"
+             "**BedScore (recommended)**: 100 · P · (0.35·Trust + 0.40·Closeness + 0.25·Affordability)"
     )
-    method_key = "mentor" if method == "Mentor formula" else "balanced"
+    method_key = "mentor" if "mentor" in method.lower() else "bedscore"
 
     # Top N slider
     n_hospitals = len(snap)
@@ -204,18 +204,33 @@ with st.sidebar:
 
     st.markdown("---")
 
-    # Scheme toggle
-    scheme_filter_opt = st.selectbox(
-        "Filter by scheme",
-        ["None", SCHEME_PMJAY, SCHEME_STATE],
-        index=0,
-        help="Non-accepting hospitals stay visible but won't be ranked"
+    # Scheme toggle: card-holder toggle replaces dropdown
+    user_has_card = st.toggle(
+        "I have an Ayushman / Odisha scheme card",
+        value=False,
+        help="Hospitals with verified cashless acceptance get effective fee Rs 0. Non-accepting hospitals remain visible and ranked at listed fee."
     )
-    scheme_key = None
-    if scheme_filter_opt == SCHEME_PMJAY:
-        scheme_key = "pmjay"
-    elif scheme_filter_opt == SCHEME_STATE:
-        scheme_key = "state"
+    st.caption("Confirm cashless acceptance with the hospital before travelling.")
+
+    st.markdown("---")
+
+    # Simulate hospital filling up (session-only override)
+    with st.expander("🧪 Simulate a hospital filling up", expanded=False):
+        st.caption("Override available beds for this session only to demonstrate the bed gate. Never writes to disk.")
+        hosp_names = sorted(snap["hospital_name"].unique())
+        sim_hosp = st.selectbox("Select hospital", hosp_names, key="sim_hosp_select")
+        h_row = snap[snap["hospital_name"] == sim_hosp].iloc[0]
+        cur_free = int(h_row.get("general_ward_available_beds", h_row.get("beds_free_now", 20)))
+        tot_beds = int(h_row.get("general_ward_total_beds", h_row.get("general_beds", 100)))
+        sim_free = st.number_input(
+            "Available general-ward beds",
+            min_value=0, max_value=max(tot_beds, 500), value=cur_free,
+            key=f"sim_beds_input_{sim_hosp}"
+        )
+        if sim_free != cur_free:
+            snap.loc[snap["hospital_name"] == sim_hosp, "general_ward_available_beds"] = sim_free
+            snap.loc[snap["hospital_name"] == sim_hosp, "beds_free_now"] = sim_free
+            st.info(f"Simulating {sim_hosp[:24]}: {sim_free} beds free.")
 
     st.markdown("---")
 
@@ -255,7 +270,7 @@ else:
 
 # ── Rank hospitals ────────────────────────────────────────────────────
 result = rank_hospitals(snap, user_lat, user_lon, method=method_key,
-                        p_available=p_available, scheme_filter=scheme_key)
+                        user_has_card=user_has_card, p_available=p_available)
 
 # ── Alternatives strip ────────────────────────────────────────────────
 ranked = result[result["rank"] > 0].copy()
@@ -299,9 +314,14 @@ if not ranked.empty:
 st.markdown("---")
 st.markdown(f"#### 🏅 Top {min(top_n, len(ranked))} Hospitals ({method})")
 
+if "mentor" in method_key:
+    st.caption("📐 Active formula: **Score = 100·A + X − Y − Z** (A = Bed Availability %, X = Rating × Reviews, Y = Road Dist km, Z = Admission Fee ₹)")
+else:
+    st.caption("📐 Active formula: **Score = 100 · P · (0.35·Trust + 0.40·Closeness + 0.25·Affordability)** (P = arrival bed chance)")
+
 top_hospitals = ranked.head(top_n)
 if top_hospitals.empty:
-    st.warning("No hospitals match your filters. Try changing the scheme filter.")
+    st.warning("No hospitals found.")
 else:
     cols = st.columns(min(3, len(top_hospitals)))
     for i, (_, r) in enumerate(top_hospitals.head(3).iterrows()):
@@ -314,10 +334,16 @@ else:
             state_badge = scheme_badge(str(r.get('accepts_state_scheme', 'unknown')))
             live_text = f" · {r['live_update']}" if r.get('live_update') else ""
 
+            p_val = float(r.get("p_bed", 1.0))
+            bed_warning = ""
+            if p_val < 0.5:
+                bed_warning = '<div style="color: #FFAA00; font-size: 0.8rem; margin-top: 4px; font-weight: 600;">⚠️ This hospital may have no free bed on arrival.</div>'
+
             card_html = (
                 f'<div class="hospital-card">'
                 f'<h3>#{int(r["rank"])} {r["hospital_name"][:30]}{est_tag}</h3>'
-                f'<div class="stat">{status_icon} {pct(r.get("p_bed", 1.0))} chance of a bed</div>'
+                f'<div class="stat">{status_icon} {pct(p_val)} chance of a bed</div>'
+                f'{bed_warning}'
                 f'<div class="detail">'
                 f'📍 {r["dist_km"]:.1f} km · ~{r["eta_min"]} min &nbsp; '
                 f'💰 ₹{r["admission_fee_inr"]}/day &nbsp; '
@@ -469,29 +495,51 @@ st.dataframe(
 
 # Why this rank?
 with st.expander("📊 Why this rank? (Score breakdown)"):
-    if method_key == "balanced" and not ranked.empty:
-        breakdown = get_score_breakdown(ranked, user_lat, user_lon, p_available)
+    if not ranked.empty:
+        breakdown = get_score_breakdown(ranked, user_lat, user_lon, method=method_key,
+                                        p_available=p_available, user_has_card=user_has_card)
         fig = go.Figure()
-        for component in ["Rating", "Distance", "Fee", "Availability"]:
-            fig.add_trace(go.Bar(
-                name=component,
-                x=breakdown["hospital_name"].str[:20],
-                y=breakdown[component],
-            ))
-        fig.update_layout(
-            barmode="stack",
-            template="plotly_dark",
-            paper_bgcolor="#0E1117",
-            plot_bgcolor="#0E1117",
-            title="Balanced Score Breakdown",
-            yaxis_title="Score contribution",
-            height=400,
-            legend=dict(orientation="h", yanchor="bottom", y=1.02),
-        )
+        if "mentor" in method_key:
+            comps = [
+                ("Availability (100·A)", "#22AA5E"),
+                ("Reputation (X)", "#00BFA6"),
+                ("Distance (-Y)", "#FFAA00"),
+                ("Fee (-Z)", "#DC3545"),
+            ]
+            for comp, col in comps:
+                if comp in breakdown.columns:
+                    fig.add_trace(go.Bar(name=comp, x=breakdown["hospital_name"].str[:20], y=breakdown[comp], marker_color=col))
+            fig.update_layout(
+                barmode="relative",
+                template="plotly_dark",
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                title="Mentor Formula Breakdown: 100·A + X − Y − Z",
+                yaxis_title="Component Points",
+                height=420,
+                legend=dict(orientation="h", yanchor="bottom", y=1.02),
+            )
+        else:
+            comps = [
+                ("Trust", "#00BFA6"),
+                ("Closeness", "#3B82F6"),
+                ("Affordability", "#10B981"),
+                ("Lost to Bed Risk", "#EF4444"),
+            ]
+            for comp, col in comps:
+                if comp in breakdown.columns:
+                    fig.add_trace(go.Bar(name=comp, x=breakdown["hospital_name"].str[:20], y=breakdown[comp], marker_color=col))
+            fig.update_layout(
+                barmode="stack",
+                template="plotly_dark",
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                title="BedScore Breakdown: Component Points & Lost to Bed Risk",
+                yaxis_title="Points (out of 100)",
+                height=420,
+                legend=dict(orientation="h", yanchor="bottom", y=1.02),
+            )
         st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.write("The **Mentor formula** uses: `Score = (Rating × Reviews) × 100 − Distance(km) − Fee(₹)`")
-        st.write("Switch to **Balanced** method to see the component breakdown.")
 
 # Why we added a second method
 with st.expander("🔬 Why we added a second method"):

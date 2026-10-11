@@ -37,12 +37,39 @@ LANDMARKS = {
     "Vani Vihar / Utkal University": (20.2980, 85.8370),
     "Saheed Nagar": (20.2990, 85.8430),
     "Baramunda Bus Stand": (20.2750, 85.8050),
-    "Kalinga Nagar / Ghatikia": (20.2500, 85.7850),
+    "Kalinga Nagar / Ghatikia": (20.2600, 85.7850),
 }
 
-# ── Distance & ETA ────────────────────────────────────────────────────
-ROAD_FACTOR = 1.35          # haversine → approx road distance
-CITY_SPEED_KMPH = 22        # average city driving (Bhubaneswar)
+# ── Distance & ETA Constants (Reconciled to 22 km/h) ───────────────────
+SPEED_KMPH = 22.0           # city driving speed in km/h
+CITY_SPEED_KMPH = 22.0      # alias for compatibility
+ROAD_FACTOR = 1.35          # straight line -> approximate road distance
+MIN_ETA_MIN = 3.0           # minimum ETA floor in minutes
+
+# ── BedScore Ranking Constants ─────────────────────────────────────────
+ALOS_DAYS = 4.0             # Assumed average length of stay (days) in general ward
+REVIEW_CAP = 10_000         # Review count threshold for logarithmic trust scaling
+DIST_SCALE_KM = 8.0         # Characteristic distance scale (km)
+FEE_CAP_INR = 2500.0        # Fee ceiling for affordability term
+W_TRUST = 0.35              # BedScore weight: Trust (damped rating & reviews)
+W_CLOSE = 0.40              # BedScore weight: Closeness (exponential distance decay)
+W_FEE = 0.25                # BedScore weight: Affordability (effective fee)
+
+# Legacy balanced weights (for backward compatibility)
+BALANCED_WEIGHTS = {
+    "rating": 0.25,
+    "distance": 0.30,
+    "fee": 0.20,
+    "availability": 0.25,
+}
+BAYESIAN_M = 1000.0
+
+# ── Mentor Formula Variants ────────────────────────────────────────────
+# "literal":  100*A + X - Y - Z   (Sir's exact update: A in %, X=r*v, Y=km, Z=fee)
+# "x100":     100*A + 100*X - Y - Z
+# "fraction": 100*(A_frac) + X - Y - Z
+# "legacy":   (rating * reviews) * 100 - distance_km - fee_inr
+MENTOR_VARIANT = "literal"
 
 # ── ML: bed availability classes ──────────────────────────────────────
 STATUS_THRESHOLDS = {
@@ -72,34 +99,21 @@ ML_FEATURES = [
     "is_govt", "general_beds", "rating",
 ]
 
-# ── Scoring: Balanced method weights ──────────────────────────────────
-BALANCED_WEIGHTS = {
-    "rating": 0.25,
-    "distance": 0.30,
-    "fee": 0.20,
-    "availability": 0.25,
-}
-# Bayesian prior for rating adjustment
-BAYESIAN_M = 1000  # pseudo-count
-
-# ── Scoring: Mentor formula ──────────────────────────────────────────
-# Weight Score = (rating × reviews) × 100 − distance_km − fee_inr
-
-# ── Scheme labels ─────────────────────────────────────────────────────
+# ── Scheme labels (Official verified naming) ──────────────────────────
 SCHEME_PMJAY = "Ayushman Bharat (PM-JAY)"
-SCHEME_STATE = "BSKY / GJAY (Odisha)"
+SCHEME_STATE = "Gopabandhu Jan Arogya Yojana (GJAY)"
 
 # ── Map settings ──────────────────────────────────────────────────────
 MAP_CENTRE = (20.2961, 85.8245)   # approx Bhubaneswar centre
 MAP_ZOOM = 12
-MAP_TILES = "cartodbdark_matter"
+MAP_TILES = "OpenStreetMap"
 
 # ── UI colours ────────────────────────────────────────────────────────
 ACCENT = "#00BFA6"
 BG_DARK = "#0E1117"
 BG_CARD = "#1A1F2B"
 
-# ── Emergency info ────────────────────────────────────────────────────
+# ── Emergency info (Verified 108 & 112) ────────────────────────────────
 EMERGENCY_TEXT = "🚑 In an emergency call **108** (free ambulance) or **112** (unified emergency). Both are free and available 24/7 across Odisha."
 
 # ── Data generation ───────────────────────────────────────────────────

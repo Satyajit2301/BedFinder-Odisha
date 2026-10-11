@@ -18,8 +18,8 @@
 ---
 
 ## Phase 1: Scoring Formulas & Method Controls
-- [ ] Diagnose and fix PM-JAY crash BEFORE replacing the dropdown: isolate root cause in `at.selectbox` vs app options.
-- [ ] Port `bedscore_reference.py` into `src/scoring.py` and `src/config.py`:
+- [x] Diagnose and fix PM-JAY crash BEFORE replacing the dropdown: isolate root cause in `at.selectbox` vs app options.
+- [x] Port `bedscore_reference.py` into `src/scoring.py` and `src/config.py`:
   - Implement `mentor_literal`: `100*A + X - Y - Z`, with `A = available_beds / total_beds * 100` (%) and `X = rating * reviews`.
   - Keep `MENTOR_VARIANT` in `src/config.py` (`literal`, `x100`, `fraction`) and keep legacy formula (`(rating * reviews) * 100 - distance_km - fee_inr`).
   - Mentor method is DEFAULT in UI. Radio labels: `"Mentor formula (as given)"` and `"BedScore (recommended)"`.
@@ -27,13 +27,13 @@
   - Implement BedScore: `Score = 100 * P * (0.35 * Trust + 0.40 * Closeness + 0.25 * Affordability)` with physics `p_bed`, log-damped `trust`, exponential `closeness`, and `affordability`.
   - Port constants into `src/config.py`: `SPEED_KMPH = 22.0`, `ROAD_FACTOR = 1.35`, `ALOS_DAYS = 4.0`, `REVIEW_CAP = 10000`, `DIST_SCALE_KM = 8.0`, `FEE_CAP_INR = 2500.0`, `W_TRUST = 0.35`, `W_CLOSE = 0.40`, `W_FEE = 0.25`.
   - Implement `explain_terms(d)` in `src/scoring.py` (trust_pts, closeness_pts, affordability_pts, lost_to_bed_risk).
-- [ ] Replace scheme dropdown with single toggle: `"I have an Ayushman / Odisha scheme card"`. Card-holders get `effective_fee = 0` at accepting hospitals (cashless); unknown is NOT cashless; nothing is removed!
-- [ ] Add caption under scheme toggle: `"Confirm cashless acceptance with the hospital before travelling."`
-- [ ] Add "Simulate a hospital filling up" expander (session-only override: select hospital, number input for free beds; never writes to disk; demonstrates bed gate).
-- [ ] When any ranked hospital in top N has P < 0.5, show warning on its card: `"This hospital may have no free bed on arrival."`
-- [ ] Port self-test from `bedscore_reference.py` into `tests/test_bedscore.py` (term monotonicity, P monotonicity in free beds/time, location sensitivity, bed gate, card toggle keeping all rows, explain_terms summing to score).
-- [ ] Run full test suite from project root.
-- [ ] Commit to git: `phase 1: scoring formulas and controls`.
+- [x] Replace scheme dropdown with single toggle: `"I have an Ayushman / Odisha scheme card"`. Card-holders get `effective_fee = 0` at accepting hospitals (cashless); unknown is NOT cashless; nothing is removed!
+- [x] Add caption under scheme toggle: `"Confirm cashless acceptance with the hospital before travelling."`
+- [x] Add "Simulate a hospital filling up" expander (session-only override: select hospital, number input for free beds; never writes to disk; demonstrates bed gate).
+- [x] When any ranked hospital in top N has P < 0.5, show warning on its card: `"This hospital may have no free bed on arrival."`
+- [x] Port self-test from `bedscore_reference.py` into `tests/test_bedscore.py` (term monotonicity, P monotonicity in free beds/time, location sensitivity, bed gate, card toggle keeping all rows, explain_terms summing to score).
+- [x] Run full test suite from project root.
+- [x] Commit to git: `phase 1: scoring formulas and controls`.
 
 ---
 
