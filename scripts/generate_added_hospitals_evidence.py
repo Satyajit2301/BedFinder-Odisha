@@ -1,10 +1,7 @@
 """
 Generate docs/ADDED_HOSPITALS_EVIDENCE.csv for BedFinder Odisha.
-Audit trail of hospitals added by team check (BBSR021, BBSR023, BBSR024, BBSR025, BBSR031).
-Strict honesty:
-- Rows from team check get status 'team_confirmed' with date 2026-10-11 and source "team check of Google Maps, 2026-10-11".
-- Unverified fields without specific page URL are marked 'unknown' or 'estimated'.
-- No row is marked 'verified' without a specific URL and saved evidence in docs/evidence/.
+Audit trail of hospitals added for demo (BBSR021, BBSR023, BBSR024, BBSR025, BBSR031).
+Status is demo_data compiled from public listings.
 """
 import pandas as pd
 from pathlib import Path
@@ -19,7 +16,7 @@ def generate():
 
     rows = []
     tc_date = "2026-10-11"
-    tc_source = "team check of Google Maps, 2026-10-11"
+    tc_source = "public listing (demo data)"
 
     for _, h in added_df.iterrows():
         hid = h["hospital_id"]
@@ -34,7 +31,7 @@ def generate():
             "value": lat_lon_val,
             "source_url": tc_source,
             "retrieval_date": tc_date,
-            "status": "team_confirmed"
+            "status": "demo_data"
         })
 
         # 2. website
@@ -47,7 +44,7 @@ def generate():
                 "value": web,
                 "source_url": tc_source,
                 "retrieval_date": tc_date,
-                "status": "team_confirmed"
+                "status": "demo_data"
             })
         else:
             rows.append({
@@ -70,7 +67,7 @@ def generate():
                 "value": ph,
                 "source_url": tc_source,
                 "retrieval_date": tc_date,
-                "status": "team_confirmed"
+                "status": "demo_data"
             })
         else:
             rows.append({
@@ -118,7 +115,7 @@ def generate():
             "value": rating_val,
             "source_url": tc_source,
             "retrieval_date": tc_date,
-            "status": "team_confirmed"
+            "status": "demo_data"
         })
 
         # 7. reviews - read real column review_count
@@ -130,7 +127,7 @@ def generate():
             "value": rev_val,
             "source_url": tc_source,
             "retrieval_date": tc_date,
-            "status": "team_confirmed"
+            "status": "demo_data"
         })
 
         # 8. category
@@ -142,7 +139,7 @@ def generate():
             "value": cat_val,
             "source_url": tc_source,
             "retrieval_date": tc_date,
-            "status": "team_confirmed"
+            "status": "demo_data"
         })
 
         # 9. scheme flag

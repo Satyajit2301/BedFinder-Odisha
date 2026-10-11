@@ -94,7 +94,7 @@ def test_added_hospitals_evidence_csv(enriched):
     assert evidence_path.exists(), "ADDED_HOSPITALS_EVIDENCE.csv must exist"
     
     ev_df = pd.read_csv(evidence_path)
-    assert set(ev_df["status"].unique()).issubset({"verified", "team_confirmed", "estimated", "unknown"})
+    assert set(ev_df["status"].unique()).issubset({"verified", "demo_data", "estimated", "unknown"})
     
     added_in_enriched = enriched[enriched["data_origin"] == "added_by_team"]
     assert set(ev_df["hospital_id"].unique()) == set(added_in_enriched["hospital_id"].unique())

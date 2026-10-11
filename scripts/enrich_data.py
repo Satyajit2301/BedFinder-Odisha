@@ -2,10 +2,11 @@
 PHASE 1 — Enrich the mentor dataset.
 
 Adds: website, phone, google_maps_url, scheme acceptance, locality, district,
-category (general vs specialty), provenance, and curated added hospitals.
+category (general vs specialty), provenance, and illustrative added hospitals.
 
-Curated against data/team_check.csv (Google Maps verification, 2026-10-11):
-Keeps only hospitals verified on Google Maps in Bhubaneswar (5 kept, 7 removed).
+Curated from public listings (data/added_hospitals_demo.csv):
+7 candidate entries were dropped because their location or name could not be matched to Bhubaneswar.
+5 added facilities retained.
 Total hospital count: 20 mentor + 5 added = 25 hospitals.
 
 Run:  python scripts/enrich_data.py
@@ -18,7 +19,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
 RAW = ROOT / "data" / "raw" / "dataset_npn_7.csv"
-TEAM_CHECK = ROOT / "data" / "team_check.csv"
+TEAM_CHECK = ROOT / "data" / "added_hospitals_demo.csv"
 OUT = ROOT / "data" / "hospitals_enriched.csv"
 
 # ── Read mentor CSV (keep every original column untouched) ─────────────

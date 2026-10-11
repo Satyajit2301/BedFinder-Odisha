@@ -6,28 +6,30 @@
 
 ## 1. Overview & Data Provenance
 
+> **Data Summary:** Mentor hospitals: real (from the mentor CSV). Added hospitals and scheme flags: illustrative demo data compiled from public listings, not independently verified. Occupancy: simulated.
+
 | Data Layer | Source | Status | Description |
 |---|---|---|---|
 | **Mentor Hospitals (20)** | Mentor CSV (`data/raw/dataset_npn_7.csv`) | **REAL** | 20 hospitals with real names, coordinates, ratings, reviews, bed counts, and admission fees. Untouched and verified unchanged. |
-| **Added Hospitals (5)** | Google Maps team check (`data/team_check.csv`, 2026-10-11) | **TEAM CHECKED / ESTIMATED BEDS** | 5 verified Bhubaneswar facilities kept from team check (KIMS, Blue Wheel, Hemalata, Kar Clinic, Ayush). 7 unconfirmed/mislocated candidate entries removed completely. |
+| **Added Hospitals (5)** | Public listings demo data (`data/added_hospitals_demo.csv`) | **ILLUSTRATIVE DEMO DATA** | 5 facilities compiled from public listings (KIMS, Blue Wheel, Hemalata, Kar Clinic, Ayush). 7 candidate entries were dropped because their location or name could not be matched to Bhubaneswar. |
 | **Occupancy History** | Simulated generator (`scripts/generate_history.py`) | **SIMULATED** | 90 days of hourly occupancy (54,000 rows across 25 hospitals) anchored to the mentor snapshot occupancy and free beds at the final timestamp. |
-| **Scheme Acceptance** | Empirical check & public listings | **THREE-STATE** | Flagged as `true`, `false`, or `unknown`. Flags without specific verified source page URLs remain `unknown`. |
-| **Websites & Phones** | HTTP probe & team check (`scripts/verify_links.py`) | **AUDITED & LOGGED** | 25 hospitals evaluated: 16 websites listed (6 LIVE, 4 BLOCKED_403, 4 DNS_FAIL, 1 NOT_FOUND_404, 1 TLS_ERROR, 9 NONE). 16 phones listed (5 team confirmed, 11 unconfirmed). Full audit log in `docs/verify_links_output.txt`. |
+| **Scheme Acceptance** | Illustrative demo flags | **ILLUSTRATIVE DEMO FLAGS** | Set to `true` for government hospitals and large private chains, `unknown` for others. "Confirm cashless acceptance with the hospital before travelling." |
+| **Websites & Phones** | HTTP probe & directory listings (`scripts/verify_links.py`) | **AUDITED & LOGGED** | 25 hospitals evaluated: 16 websites listed (6 LIVE, 4 BLOCKED_403, 4 DNS_FAIL, 1 NOT_FOUND_404, 1 TLS_ERROR, 9 NONE). 16 phones listed (5 demo confirmed, 11 unconfirmed). Full audit log in `docs/verify_links_output.txt`. |
 
 ---
 
 ## 2. Review and Categorization of the 5 Kept Added Hospitals
 
 To prevent specialized clinics from being recommended for general medical emergencies, every added hospital is classified as either `general` or `specialty`.
-7 candidate facilities that could not be confirmed in Bhubaneswar or were located far away (Acharya Harihar in Cuttack, Fakir Mohan in Balasore, Sadguru Netra, Prachi, Ashwini, DHH Khordha, Sanjeevani) were completely removed.
+7 candidate entries were dropped because their location or name could not be matched to Bhubaneswar.
 
 | ID | Hospital Name | Category | Status & Source | Decision & Rationale |
 |---|---|---|---|---|
-| **BBSR021** | Kalinga Institute of Medical Sciences (KIMS) | `general` | `team_confirmed` (Google Maps, 2026-10-11) | **Included in general ranking.** 1,200-bed teaching hospital in Patia. Phone 0674-7111000 and website confirmed. Beds estimated. |
-| **BBSR023** | Blue Wheel Hospital | `general` | `team_confirmed` (Google Maps, 2026-10-11) | **Included in general ranking.** 150-bed general hospital. Phone 0674-7196600 and website confirmed. Beds estimated. |
-| **BBSR024** | Hemalata Hospitals & Research Centre | `specialty` | `team_confirmed` (Google Maps, 2026-10-11) | **Classified as specialty (Oncology).** Visible on map and table, unranked for general emergency beds. Phone 0674-2302333 confirmed. |
-| **BBSR025** | Kar Clinic & Hospital | `general` | `team_confirmed` (Google Maps, 2026-10-11) | **Included in general ranking.** 80-bed multi-specialty hospital in Unit 6. Phone 0674-2516666 and website confirmed. Beds estimated. |
-| **BBSR031** | Ayush Hospitals & Trauma Care | `general` | `team_confirmed` (Google Maps, 2026-10-11) | **Included in general ranking.** 60-bed general facility. Phone 0674-7111100 confirmed. Rating 3.6★ / 380 reviews. Beds and fee estimated. |
+| **BBSR021** | Kalinga Institute of Medical Sciences (KIMS) | `general` | `demo_data` (Public listings) | **Included in general ranking.** 1,200-bed teaching hospital in Patia. Phone 0674-7111000 and website. Beds estimated. |
+| **BBSR023** | Blue Wheel Hospital | `general` | `demo_data` (Public listings) | **Included in general ranking.** 150-bed general hospital. Phone 0674-7196600 and website. Beds estimated. |
+| **BBSR024** | Hemalata Hospitals & Research Centre | `specialty` | `demo_data` (Public listings) | **Classified as specialty (Oncology).** Visible on map and table, unranked for general emergency beds. Phone 0674-2302333. |
+| **BBSR025** | Kar Clinic & Hospital | `general` | `demo_data` (Public listings) | **Included in general ranking.** 80-bed multi-specialty hospital in Unit 6. Phone 0674-2516666 and website. Beds estimated. |
+| **BBSR031** | Ayush Hospitals & Trauma Care | `general` | `demo_data` (Public listings) | **Included in general ranking.** 60-bed general facility. Phone 0674-7111100. Rating 3.6★ / 380 reviews. Beds and fee estimated. |
 
 Full field-by-field audit trail with source documentation is recorded in `docs/ADDED_HOSPITALS_EVIDENCE.csv`.
 

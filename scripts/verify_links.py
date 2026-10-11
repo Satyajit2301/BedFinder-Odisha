@@ -36,7 +36,7 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parent.parent
 ENRICHED = ROOT / "data" / "hospitals_enriched.csv"
-TEAM_CHECK = ROOT / "data" / "team_check.csv"
+TEAM_CHECK = ROOT / "data" / "added_hospitals_demo.csv"
 OUTPUT_TXT = ROOT / "docs" / "verify_links_output.txt"
 
 
@@ -225,7 +225,7 @@ def main():
             is_conf = df.at[idx, "phone_confirmed"] == "yes"
             if is_conf:
                 ph_status = "CONFIRMED"
-                ph_detail = f"{ph} (Confirmed in team check Google Maps)"
+                ph_detail = f"{ph} (Listed in added hospitals demo data)"
             elif is_valid_fmt:
                 ph_status = "UNVERIFIED"
                 ph_detail = f"{ph} (Valid 0674 format; unconfirmed directory listing)"

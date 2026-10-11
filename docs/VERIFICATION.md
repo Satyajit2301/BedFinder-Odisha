@@ -83,7 +83,7 @@ Verification Summary:
 [ok] Updated C:\Cognizant Hackathon\bedfinder_odisha\data\hospitals_enriched.csv
 [ok] Saved verification log to C:\Cognizant Hackathon\bedfinder_odisha\docs\verify_links_output.txt
 ```
-- Completely removed fabricated strings `"PASS (Verified directory)"` and `"Cloudflare WAF 403 - domain verified manually"`.
+- Completely removed fabricated strings `"PASS (Verified directory)"` and manual verification claims.
 - Statuses strictly: `LIVE`, `BLOCKED_403`, `DNS_FAIL`, `NOT_FOUND_404`, `TLS_ERROR`, `NONE`. Probes bare domain and `www.` variant for `DNS_FAIL`.
 - Added `phone_confirmed` and `website_confirmed` columns.
 - UI rules implemented in `app.py`:
@@ -99,7 +99,7 @@ Verification Summary:
 ### D4: Scheme Flags Honesty Pass
 
 **Portal Probing:**
-- `gjaydashboard.odisha.gov.in` returned HTTP 403 (Cloudflare/State WAF).
+- `gjaydashboard.odisha.gov.in` returned HTTP 403.
 - `hospitals.pmjay.gov.in` redirects dynamically to `empApplicationHome.htm` requiring interactive session navigation.
 - In accordance with Rule 1 ("A status of verified needs a SPECIFIC source URL AND a saved quote or snapshot... If you did not fetch it, it is unknown"), automated retrieval is logged as blocked in `docs/BLOCKED.md`.
 - All `accepts_pmjay` and `accepts_state_scheme` flags set to `unknown` in `data/hospitals_enriched.csv`.

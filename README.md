@@ -1,8 +1,9 @@
-# 🏥 BedFinder Odisha v2.2
+# 🏥 BedFinder Odisha
 
-> **Emergency General-Ward Bed Finder & Triage Recommendation System — Bhubaneswar, Odisha**
+> **Emergency General-Ward Bed Finder & Triage Recommendation System — Bhubaneswar, Odisha**  
+> **Data Notice:** Mentor hospitals: real (from the mentor CSV). Added hospitals and scheme flags: illustrative demo data compiled from public listings, not independently verified. Occupancy: simulated.
 
-A robust, evidence-backed Streamlit application designed for patients and emergency caregivers in Bhubaneswar. It provides real-time ranking using the mentor's formula and an improved balanced **BedScore** method, ML bed availability forecasting at arrival time, verified scheme acceptance (PM-JAY / BSKY-GJAY), verified hospital contact information, and an interactive dark map.
+A robust Streamlit application designed for patients and emergency caregivers in Bhubaneswar. It provides real-time ranking using the mentor's formula and an improved balanced **BedScore** method, ML bed availability forecasting at arrival time, illustrative scheme acceptance (PM-JAY / BSKY-GJAY), contact information guards, and an interactive dark map.
 
 **Core Philosophy: It recommends; it never restricts.**
 
@@ -50,13 +51,13 @@ streamlit run app.py
    - OpenStreetMap tiles darkened via `.leaflet-tile-pane` CSS filter without inverting marker pins or badges.
    - Numbered circular badges for Top N recommendations, small markers for remaining hospitals, distinct user location pin.
 4. **Three-State Scheme Transparency (PM-JAY / BSKY-GJAY):**
-   - Displays confirmed participation with `✓` (Yes), `✗` (No), or `?` (Unknown).
+   - Displays illustrative participation with `✓` (Yes), `✗` (No), or `?` (Unknown).
    - "I have a PM-JAY / State Scheme card" toggle boosts participating hospitals without hiding non-participating ones.
    - Prominent disclaimer: *"Confirm cashless acceptance with the hospital before travelling."*
-5. **Verified Hospital Contacts & Specialty Triage:**
-   - 32 total hospitals (20 core snapshot hospitals + 12 curated facilities).
-   - 15 verified official website links and 12 emergency phone lines.
-   - Specialty institutions (Sadguru Netra Chikitsalaya, Acharya Harihar Cancer, Hemalata Cancer) are tagged and unranked for general emergency beds.
+5. **Hospital Contacts & Specialty Triage:**
+   - 25 total hospitals (20 core snapshot hospitals + 5 illustrative facilities). 7 candidate entries were dropped because their location or name could not be matched to Bhubaneswar.
+   - Specialty institutions (Hemalata Cancer Hospital) are tagged and unranked for general emergency beds.
+   - Contact guards: unconfirmed phone numbers and dead links are displayed as plain text ("Not verified").
 6. **Direct Groq LLM Explainer with Strict Numerical Guardrails:**
    - Lightweight direct `groq.Groq` client (no langchain overhead).
    - Deterministic template fallback with 8-second timeout.

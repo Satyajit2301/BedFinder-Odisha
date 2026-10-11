@@ -1,6 +1,9 @@
 """Central configuration for BedFinder Odisha."""
 from pathlib import Path
 
+# ── Demo Mode ──────────────────────────────────────────────────────────
+DEMO_MODE = True
+
 # ── Paths ──────────────────────────────────────────────────────────────
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"

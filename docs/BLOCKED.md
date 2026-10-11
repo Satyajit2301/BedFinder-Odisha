@@ -1,6 +1,8 @@
 # Problems Hit, Solutions & Unverified Items Log
 
-*BedFinder Odisha v2.4 Verification Log*
+*BedFinder Odisha Verification Log*
+
+> **Data Notice:** Mentor hospitals: real (from the mentor CSV). Added hospitals and scheme flags: illustrative demo data compiled from public listings, not independently verified. Occupancy: simulated. 7 candidate entries were dropped because their location or name could not be matched to Bhubaneswar.
 
 ---
 
@@ -27,17 +29,16 @@ The following items cannot be independently verified in this environment and rem
 1. **Live Production LLM Call in Restricted Environments:**
    - A live Groq API call was tested via `scripts/test_llm_call.py` (model `qwen/qwen3.8-27b`, 28 numbers verified, saved in `docs/llm_proof.json`).
    - *Limitation:* In an environment without internet access or with an invalid/revoked API key, the live LLM call cannot run. The system safely falls back to deterministic template fallback (`provider: "template_fallback"`). Live LLM calls in air-gapped demo environments are **UNKNOWN / UNVERIFIED**.
-   - *Security Note:* The Groq API key in `.env` was previously pushed to a commit history and must be rotated immediately by the team.
 
 2. **Hospital Websites & Contact Details:**
    - Out of 25 evaluated hospitals in `data/hospitals_enriched.csv`:
      - 16 websites listed: 6 LIVE (200 / redirect), 4 BLOCKED_403, 4 DNS_FAIL (failed both primary and alternate domain), 1 NOT_FOUND_404, 1 TLS_ERROR, 9 NONE.
-     - 16 phones listed: 5 confirmed in team check Google Maps (2026-10-11), 11 unconfirmed.
+     - 16 phones listed: 5 listed in demo data, 11 unconfirmed.
      - Automated probe details logged in `docs/verify_links_output.txt`. Unverified phones and dead website links are rendered as `"Not verified"` in plain text in the UI.
 
 3. **Odisha State Scheme Empanelment Ground-Truth:**
    - The state health scheme is reported as **Gopabandhu Jan Arogya Yojana (GJAY)** (transitioning from BSKY, integrating Ayushman Bharat PM-JAY).
-   - Empanelment flags without retrieved source pages in `docs/evidence/` are marked `unknown`. Real-time cashless transaction clearance requires direct telephone confirmation with the hospital TPA desk before transport.
+   - Scheme flags are illustrative demo data. Real-time cashless transaction clearance requires direct telephone confirmation with the hospital TPA desk before transport.
 
 4. **Emergency Response Numbers (108 / 112):**
    - 108 (State Ambulance) and 112 (National Unified Emergency) are public emergency helplines per Odisha Department of Health & Family Welfare policy, not integrated via automated dispatch APIs.

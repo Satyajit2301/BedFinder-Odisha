@@ -187,8 +187,8 @@ snap = build_snapshot(hosp, last)
 st.markdown("""
 <div class="main-header">
     <h1>🏥 BedFinder Odisha</h1>
-    <p>Find the nearest hospital with an available general-ward bed — Bhubaneswar</p>
-    <span class="demo-badge">📊 Verified snapshot — historical occupancy simulated from snapshot</span>
+    <p style="margin-bottom: 6px;">Demo project. The 20 hospitals come from the mentor dataset. Bed counts are simulated. The 5 added hospitals and the scheme flags are illustrative.</p>
+    <span class="demo-badge">📊 Demo snapshot — historical occupancy simulated from snapshot</span>
 </div>
 """, unsafe_allow_html=True)
 
@@ -766,14 +766,13 @@ with st.expander("📋 About the data"):
     st.markdown(f"""
     | Data | Source | Status |
     |------|--------|--------|
-    | Mentor 20 hospitals (beds, fees, ratings) | Mentor CSV snapshot (`dataset_npn_7.csv`) | **Verified Real** |
-    | Additional 12 hospitals | Verified from official portals & health registries | **Documented in DATA_CARD.md** |
-    | Hourly occupancy history (90 days) | 48h smooth bridge anchoring to snapshot | **Anchored Simulation** |
+    | Mentor 20 hospitals (beds, fees, ratings) | Mentor CSV (`dataset_npn_7.csv`) | **Real** |
+    | Added 5 hospitals & scheme flags | Public listings (demo data) | **Illustrative Demo Data** |
+    | Hourly occupancy history (90 days) | Smooth bridge anchored to snapshot | **Simulated** |
     | ML availability prediction | HistGradientBoosting on anchored history | **Pipeline Validated** |
-    | Website & Phone numbers | `scripts/verify_links.py` against active domains | **Verified Only** |
-    | State scheme name | Official Gopabandhu Jan Arogya Yojana (GJAY) | **Verified Official** |
+    | State scheme name | Official Gopabandhu Jan Arogya Yojana (GJAY) | **Official** |
 
-    *Fields marked with an "estimated" badge were derived from verified district benchmarks.*
+    *Mentor hospitals: real (from the mentor CSV). Added hospitals and scheme flags: illustrative demo data compiled from public listings, not independently verified. Occupancy: simulated.*
     """)
 
 # ── LLM explanation ───────────────────────────────────────────────────

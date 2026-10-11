@@ -1,46 +1,46 @@
 hospital_id,hospital_name,field,value,source_url,retrieval_date,status
-BBSR021,Kalinga Institute of Medical Sciences (KIMS),lat/lon,"20.3547, 85.8190","team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
-BBSR021,Kalinga Institute of Medical Sciences (KIMS),website,https://kims.ac.in,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
-BBSR021,Kalinga Institute of Medical Sciences (KIMS),phone,0674-7111000,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR021,Kalinga Institute of Medical Sciences (KIMS),lat/lon,"20.3547, 85.8190",public listing (demo data),2026-10-11,demo_data
+BBSR021,Kalinga Institute of Medical Sciences (KIMS),website,https://kims.ac.in,public listing (demo data),2026-10-11,demo_data
+BBSR021,Kalinga Institute of Medical Sciences (KIMS),phone,0674-7111000,public listing (demo data),2026-10-11,demo_data
 BBSR021,Kalinga Institute of Medical Sciences (KIMS),beds,"Total: 1200, Available: 108",,2026-10-11,estimated
 BBSR021,Kalinga Institute of Medical Sciences (KIMS),fee,INR 1800,,2026-10-11,estimated
-BBSR021,Kalinga Institute of Medical Sciences (KIMS),rating,4.3 stars,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
-BBSR021,Kalinga Institute of Medical Sciences (KIMS),reviews,4200 reviews,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
-BBSR021,Kalinga Institute of Medical Sciences (KIMS),category,Private / general,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
-BBSR021,Kalinga Institute of Medical Sciences (KIMS),scheme flag,"PM-JAY: unknown, State (GJAY): unknown",,2026-10-11,unknown
-BBSR023,Blue Wheel Hospital,lat/lon,"20.3015, 85.8640","team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
-BBSR023,Blue Wheel Hospital,website,https://bluewheelhospital.org,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
-BBSR023,Blue Wheel Hospital,phone,0674-7196600,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR021,Kalinga Institute of Medical Sciences (KIMS),rating,4.3 stars,public listing (demo data),2026-10-11,demo_data
+BBSR021,Kalinga Institute of Medical Sciences (KIMS),reviews,4200 reviews,public listing (demo data),2026-10-11,demo_data
+BBSR021,Kalinga Institute of Medical Sciences (KIMS),category,Private / general,public listing (demo data),2026-10-11,demo_data
+BBSR021,Kalinga Institute of Medical Sciences (KIMS),scheme flag,"PM-JAY: true, State (GJAY): true",,2026-10-11,unknown
+BBSR023,Blue Wheel Hospital,lat/lon,"20.3015, 85.8640",public listing (demo data),2026-10-11,demo_data
+BBSR023,Blue Wheel Hospital,website,https://bluewheelhospital.org,public listing (demo data),2026-10-11,demo_data
+BBSR023,Blue Wheel Hospital,phone,0674-7196600,public listing (demo data),2026-10-11,demo_data
 BBSR023,Blue Wheel Hospital,beds,"Total: 150, Available: 18",,2026-10-11,estimated
 BBSR023,Blue Wheel Hospital,fee,INR 800,,2026-10-11,estimated
-BBSR023,Blue Wheel Hospital,rating,4.2 stars,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
-BBSR023,Blue Wheel Hospital,reviews,1850 reviews,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
-BBSR023,Blue Wheel Hospital,category,Private / general,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR023,Blue Wheel Hospital,rating,4.2 stars,public listing (demo data),2026-10-11,demo_data
+BBSR023,Blue Wheel Hospital,reviews,1850 reviews,public listing (demo data),2026-10-11,demo_data
+BBSR023,Blue Wheel Hospital,category,Private / general,public listing (demo data),2026-10-11,demo_data
 BBSR023,Blue Wheel Hospital,scheme flag,"PM-JAY: unknown, State (GJAY): unknown",,2026-10-11,unknown
-BBSR024,Hemalata Hospitals & Research Centre,lat/lon,"20.2790, 85.8395","team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR024,Hemalata Hospitals & Research Centre,lat/lon,"20.2790, 85.8395",public listing (demo data),2026-10-11,demo_data
 BBSR024,Hemalata Hospitals & Research Centre,website,Not Available,,2026-10-11,unknown
-BBSR024,Hemalata Hospitals & Research Centre,phone,0674-2302333,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR024,Hemalata Hospitals & Research Centre,phone,0674-2302333,public listing (demo data),2026-10-11,demo_data
 BBSR024,Hemalata Hospitals & Research Centre,beds,"Total: 100, Available: 14",,2026-10-11,estimated
 BBSR024,Hemalata Hospitals & Research Centre,fee,INR 700,,2026-10-11,estimated
-BBSR024,Hemalata Hospitals & Research Centre,rating,4.1 stars,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
-BBSR024,Hemalata Hospitals & Research Centre,reviews,1200 reviews,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
-BBSR024,Hemalata Hospitals & Research Centre,category,Private / specialty,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR024,Hemalata Hospitals & Research Centre,rating,4.1 stars,public listing (demo data),2026-10-11,demo_data
+BBSR024,Hemalata Hospitals & Research Centre,reviews,1200 reviews,public listing (demo data),2026-10-11,demo_data
+BBSR024,Hemalata Hospitals & Research Centre,category,Private / specialty,public listing (demo data),2026-10-11,demo_data
 BBSR024,Hemalata Hospitals & Research Centre,scheme flag,"PM-JAY: unknown, State (GJAY): unknown",,2026-10-11,unknown
-BBSR025,Kar Clinic & Hospital,lat/lon,"20.2810, 85.8410","team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
-BBSR025,Kar Clinic & Hospital,website,https://karhospitals.com,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
-BBSR025,Kar Clinic & Hospital,phone,0674-2516666,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR025,Kar Clinic & Hospital,lat/lon,"20.2810, 85.8410",public listing (demo data),2026-10-11,demo_data
+BBSR025,Kar Clinic & Hospital,website,https://karhospitals.com,public listing (demo data),2026-10-11,demo_data
+BBSR025,Kar Clinic & Hospital,phone,0674-2516666,public listing (demo data),2026-10-11,demo_data
 BBSR025,Kar Clinic & Hospital,beds,"Total: 80, Available: 11",,2026-10-11,estimated
 BBSR025,Kar Clinic & Hospital,fee,INR 650,,2026-10-11,estimated
-BBSR025,Kar Clinic & Hospital,rating,4.4 stars,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
-BBSR025,Kar Clinic & Hospital,reviews,2100 reviews,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
-BBSR025,Kar Clinic & Hospital,category,Private / general,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR025,Kar Clinic & Hospital,rating,4.4 stars,public listing (demo data),2026-10-11,demo_data
+BBSR025,Kar Clinic & Hospital,reviews,2100 reviews,public listing (demo data),2026-10-11,demo_data
+BBSR025,Kar Clinic & Hospital,category,Private / general,public listing (demo data),2026-10-11,demo_data
 BBSR025,Kar Clinic & Hospital,scheme flag,"PM-JAY: unknown, State (GJAY): unknown",,2026-10-11,unknown
-BBSR031,Ayush Hospitals & Trauma Care,lat/lon,"20.2980, 85.8280","team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR031,Ayush Hospitals & Trauma Care,lat/lon,"20.2980, 85.8280",public listing (demo data),2026-10-11,demo_data
 BBSR031,Ayush Hospitals & Trauma Care,website,Not Available,,2026-10-11,unknown
-BBSR031,Ayush Hospitals & Trauma Care,phone,0674-7111100,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR031,Ayush Hospitals & Trauma Care,phone,0674-7111100,public listing (demo data),2026-10-11,demo_data
 BBSR031,Ayush Hospitals & Trauma Care,beds,"Total: 60, Available: 9",,2026-10-11,estimated
 BBSR031,Ayush Hospitals & Trauma Care,fee,INR 550,,2026-10-11,estimated
-BBSR031,Ayush Hospitals & Trauma Care,rating,3.6 stars,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
-BBSR031,Ayush Hospitals & Trauma Care,reviews,380 reviews,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
-BBSR031,Ayush Hospitals & Trauma Care,category,Private / general,"team check of Google Maps, 2026-10-11",2026-10-11,team_confirmed
+BBSR031,Ayush Hospitals & Trauma Care,rating,3.6 stars,public listing (demo data),2026-10-11,demo_data
+BBSR031,Ayush Hospitals & Trauma Care,reviews,380 reviews,public listing (demo data),2026-10-11,demo_data
+BBSR031,Ayush Hospitals & Trauma Care,category,Private / general,public listing (demo data),2026-10-11,demo_data
 BBSR031,Ayush Hospitals & Trauma Care,scheme flag,"PM-JAY: unknown, State (GJAY): unknown",,2026-10-11,unknown

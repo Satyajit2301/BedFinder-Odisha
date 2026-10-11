@@ -18,12 +18,11 @@ We honored the mentor specification by keeping this formula as the exact default
 
 ## 2. "Where does the hospital data come from?"
 **Answer:**
-"The core 20 hospitals come directly from the mentor dataset (`data/raw/dataset_npn_7.csv`). We preserved 100% of the available general ward bed counts so that the on-screen numbers match the original dataset exactly.
-For added hospitals:
-- The team conducted an audit of candidate hospitals on Google Maps on 2026-10-11.
-- Out of 12 candidate additions, 7 unconfirmed or mislocated hospitals were completely removed from the dataset, history, models, and tests (Acharya Harihar is in Cuttack, Fakir Mohan is in Balasore, etc.).
-- 5 confirmed facilities in Bhubaneswar were retained (KIMS, Blue Wheel, Hemalata, Kar Clinic, Ayush), bringing the dataset to exactly 25 hospitals (24 general, 1 specialty).
-- For transparency, ratings, phones, and website links are displayed in the UI only if confirmed by the team check or verified live; dead links and unconfirmed contact numbers are displayed as 'Not verified' in plain text.
+"Mentor hospitals: real (from the mentor CSV). Added hospitals and scheme flags: illustrative demo data compiled from public listings, not independently verified. Occupancy: simulated.
+- The core 20 hospitals come directly from the mentor dataset (`data/raw/dataset_npn_7.csv`). We preserved 100% of the available general ward bed counts so that the on-screen numbers match the original dataset exactly.
+- 7 candidate entries were dropped because their location or name could not be matched to Bhubaneswar.
+- 5 added facilities in Bhubaneswar were retained (KIMS, Blue Wheel, Hemalata, Kar Clinic, Ayush), bringing the dataset to exactly 25 hospitals (24 general, 1 specialty).
+- For contact info, a phone is shown only if marked confirmed; a dead website link is shown as plain text.
 - One specialty institution (Hemalata Hospitals & Research Centre — Cancer Specialty) is tagged and excluded by default from general emergency bed ranking."
 
 ---
