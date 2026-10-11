@@ -174,7 +174,7 @@
   - Add `phone_confirmed` and `website_confirmed`.
   - UI rule: show phone only if confirmed; show website link only if LIVE or confirmed; else plain text "Not verified".
   - Commit: `D3: honest contact verification statuses, confirmed flags and ui guards`.
-- [ ] **D4 — Scheme flags & fee honesty**:
+- [x] **D4 — Scheme flags & fee honesty**:
   - Set scheme flags to `unknown` unless specific source page exists.
   - Fee = 0 marked estimated unless sourced.
   - Commit: `D4: scheme flags and fee honesty pass`.

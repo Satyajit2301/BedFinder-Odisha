@@ -25,7 +25,7 @@ OUT = ROOT / "data" / "hospitals_enriched.csv"
 mentor = pd.read_csv(RAW)
 mentor["data_origin"] = "mentor_csv"
 mentor["category"] = "general"
-mentor["fields_estimated"] = ""
+mentor["fields_estimated"] = np.where(mentor["hospital_type"] == "Government", "admission_fee_inr", "")
 mentor["phone_confirmed"] = "no"
 mentor["website_confirmed"] = "no"
 mentor["info_source"] = "mentor_csv"
@@ -190,70 +190,13 @@ df["website_verified"] = False  # Verified by scripts/verify_links.py
 df["phone_verified"] = False    # Verified by scripts/verify_links.py
 
 # ── Scheme acceptance (Three states: true / false / unknown) ──────────
-PMJAY = {
-    "BBSR001": "true",   # AIIMS - government
-    "BBSR002": "true",   # Capital Hospital - government
-    "BBSR003": "true",   # SUM Ultimate - empanelled
-    "BBSR004": "true",   # CARE Hospitals - empanelled
-    "BBSR005": "true",   # Kalinga Hospital - empanelled
-    "BBSR006": "true",   # Hi-Tech - empanelled
-    "BBSR007": "true",   # Apollo - empanelled
-    "BBSR008": "true",   # Manipal - empanelled
-    "BBSR009": "unknown",
-    "BBSR010": "unknown",
-    "BBSR011": "unknown",
-    "BBSR012": "unknown",
-    "BBSR013": "unknown",
-    "BBSR014": "unknown",
-    "BBSR015": "unknown",
-    "BBSR016": "unknown",
-    "BBSR017": "unknown",
-    "BBSR018": "true",   # Max Hospital - empanelled
-    "BBSR019": "unknown",
-    "BBSR020": "unknown",
-    "BBSR021": "true",   # KIMS - empanelled
-    "BBSR023": "unknown",
-    "BBSR024": "unknown",
-    "BBSR025": "unknown",
-    "BBSR031": "unknown",
-}
-
-STATE_SCHEME = {
-    "BBSR001": "true",
-    "BBSR002": "true",
-    "BBSR003": "true",
-    "BBSR004": "true",
-    "BBSR005": "unknown",
-    "BBSR006": "true",
-    "BBSR007": "true",
-    "BBSR008": "true",
-    "BBSR009": "unknown",
-    "BBSR010": "unknown",
-    "BBSR011": "unknown",
-    "BBSR012": "unknown",
-    "BBSR013": "unknown",
-    "BBSR014": "unknown",
-    "BBSR015": "unknown",
-    "BBSR016": "unknown",
-    "BBSR017": "unknown",
-    "BBSR018": "true",
-    "BBSR019": "unknown",
-    "BBSR020": "unknown",
-    "BBSR021": "true",
-    "BBSR023": "unknown",
-    "BBSR024": "unknown",
-    "BBSR025": "unknown",
-    "BBSR031": "unknown",
-}
-
-df["accepts_pmjay"] = df["hospital_id"].map(PMJAY).fillna("unknown")
-df["accepts_state_scheme"] = df["hospital_id"].map(STATE_SCHEME).fillna("unknown")
-df["scheme_source"] = np.where(
-    df["data_origin"] == "mentor_csv",
-    "PM-JAY National Hospital Empanelment Registry + Odisha GJAY Dashboard",
-    "team check of Google Maps, 2026-10-11",
-)
-df["scheme_checked_on"] = "2026-10-10"
+# Per D4 / Rule 1: Set any flag without a specific source page to 'unknown'.
+# Official portal retrieval blocked (gjaydashboard: 403, pmjay finder: session redirect).
+# No claims of empanelment without a retrieved source page.
+df["accepts_pmjay"] = "unknown"
+df["accepts_state_scheme"] = "unknown"
+df["scheme_source"] = "none (portal retrieval blocked / not sourced)"
+df["scheme_checked_on"] = ""
 df["last_checked"] = "2026-10-11"
 
 # ── Save ──────────────────────────────────────────────────────────────
