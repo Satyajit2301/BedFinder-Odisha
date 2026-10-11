@@ -22,7 +22,7 @@ import numpy as np
 import pandas as pd
 
 from src.config import (
-    ALOS_DAYS, DIST_SCALE_KM, FEE_CAP_INR, MENTOR_VARIANT, MIN_ETA_MIN,
+    ALOS_DAYS, DIST_SCALE_KM, FEE_CAP_INR, MENTOR_A_WEIGHT, MENTOR_VARIANT, MIN_ETA_MIN,
     REVIEW_CAP, ROAD_FACTOR, SPEED_KMPH, W_CLOSE, W_FEE, W_TRUST,
     BALANCED_WEIGHTS, BAYESIAN_M,
 )
@@ -185,7 +185,7 @@ def explain_terms(d: pd.DataFrame) -> pd.DataFrame:
 
 # ── Mentor formula calculation ─────────────────────────────────────────
 def mentor_literal(df: pd.DataFrame, dist_km: pd.Series | np.ndarray) -> pd.Series:
-    """Mentor's updated formula: 100*A + X - Y - Z, A in %."""
+    """Mentor's updated formula: 1000*A + X - Y - Z, A in %."""
     avail_col = "general_ward_available_beds" if "general_ward_available_beds" in df.columns else "beds_free_now"
     total_col = "general_ward_total_beds" if "general_ward_total_beds" in df.columns else "general_beds"
     rating_col = "rating_5" if "rating_5" in df.columns else "rating"
@@ -194,14 +194,15 @@ def mentor_literal(df: pd.DataFrame, dist_km: pd.Series | np.ndarray) -> pd.Seri
 
     a_pct = 100.0 * df[avail_col] / np.maximum(df[total_col], 1)
     x = df[rating_col] * df[reviews_col]
-    return 100.0 * a_pct + x - dist_km - df[fee_col]
+    return MENTOR_A_WEIGHT * a_pct + x - dist_km - df[fee_col]
 
 
 def mentor_score(rating: pd.Series, reviews: pd.Series,
                  distance_km: pd.Series, fee_inr: pd.Series,
                  available_beds: pd.Series | None = None,
                  total_beds: pd.Series | None = None,
-                 variant: str = MENTOR_VARIANT) -> pd.Series:
+                 variant: str = MENTOR_VARIANT,
+                 a_weight: float = MENTOR_A_WEIGHT) -> pd.Series:
     """Mentor formula with variant support."""
     r = pd.Series(rating, dtype=float)
     v = pd.Series(reviews, dtype=float)
@@ -209,27 +210,31 @@ def mentor_score(rating: pd.Series, reviews: pd.Series,
     f = pd.Series(fee_inr, dtype=float)
     x = r * v
 
-    if variant == "legacy" or available_beds is None or total_beds is None:
+    if variant == "legacy":
         return x * 100.0 - d - f
 
-    avail = pd.Series(available_beds, dtype=float)
-    tot = pd.Series(total_beds, dtype=float)
-    a_pct = 100.0 * avail / np.maximum(tot, 1.0)
-    a_frac = avail / np.maximum(tot, 1.0)
+    if available_beds is None or total_beds is None:
+        a_pct = 0.0
+        a_frac = 0.0
+    else:
+        avail = pd.Series(available_beds, dtype=float)
+        tot = pd.Series(total_beds, dtype=float)
+        a_pct = 100.0 * avail / np.maximum(tot, 1.0)
+        a_frac = avail / np.maximum(tot, 1.0)
 
     if variant == "x100":
-        return 100.0 * a_pct + 100.0 * x - d - f
+        return a_weight * a_pct + 100.0 * x - d - f
     elif variant == "fraction":
-        return 100.0 * a_frac + x - d - f
+        return a_weight * a_frac + x - d - f
     else:  # "literal"
-        return 100.0 * a_pct + x - d - f
+        return a_weight * a_pct + x - d - f
 
 
 # ── Canonical Formula Text & Rankable Filter ───────────────────────────
 def formula_text(method: str = "mentor") -> str:
     """Return canonical mathematical formula text for docs and UI."""
     if "mentor" in str(method).lower():
-        return "Score = 100·A + X − Y − Z"
+        return f"Score = {int(MENTOR_A_WEIGHT)}·A + X − Y − Z"
     return "Score = 100 · P · (0.35·Trust + 0.40·Closeness + 0.25·Affordability)"
 
 
@@ -351,7 +356,7 @@ def get_score_breakdown(df: pd.DataFrame, user_lat: float, user_lon: float,
         x = d[rating_col] * d[reviews_col]
         breakdown = pd.DataFrame({
             "hospital_name": d["hospital_name"].values,
-            "Availability (100·A)": (100.0 * a_pct).values,
+            f"Availability ({int(MENTOR_A_WEIGHT)}·A)": (MENTOR_A_WEIGHT * a_pct).values,
             "Reputation (X)": x.values,
             "Distance (-Y)": (-d["dist_km"]).values,
             "Fee (-Z)": (-d[fee_col]).values,

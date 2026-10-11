@@ -65,9 +65,10 @@ BALANCED_WEIGHTS = {
 BAYESIAN_M = 1000.0
 
 # ── Mentor Formula Variants ────────────────────────────────────────────
-# "literal":  100*A + X - Y - Z   (Sir's exact update: A in %, X=r*v, Y=km, Z=fee)
-# "x100":     100*A + 100*X - Y - Z
-# "fraction": 100*(A_frac) + X - Y - Z
+MENTOR_A_WEIGHT = 1000      # User request G2: weight on bed availability A in % (was 100)
+# "literal":  1000*A + X - Y - Z   (Sir's exact update: A in %, X=r*v, Y=km, Z=fee)
+# "x100":     1000*A + 100*X - Y - Z
+# "fraction": 1000*(A_frac) + X - Y - Z
 # "legacy":   (rating * reviews) * 100 - distance_km - fee_inr
 MENTOR_VARIANT = "literal"
 

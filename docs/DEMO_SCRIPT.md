@@ -15,7 +15,7 @@ Launch offline with a single click: double-click `run_demo.bat` or run `streamli
 - Point out that **"Mentor formula (as given)"** is selected as the default method.
 - Show the displayed ranking: Apollo Hospitals is #1, followed by Manipal Hospital.
 - Point out the active formula shown right under the ranking:
-  $$\text{Score} = 100 \times A + X - Y - Z$$
+  $$\text{Score} = 1000 \times A + X - Y - Z$$
   Where $A = \text{bed availability \%}$ ($\text{free} / \text{total}$), $X = \text{rating} \times \text{reviews}$, $Y = \text{distance (km)}$, $Z = \text{fee (INR)}$.
 - Point out the official confirmation note: *"Confirm cashless acceptance and bed status with the hospital before travelling."*
 - Highlight the **Quick Picks** strip: Nearest, Cheapest, Best Rated, and Most Beds Free.
@@ -25,8 +25,8 @@ Launch offline with a single click: double-click `run_demo.bat` or run `streamli
 ## 3. The Sensitivity Finding (45 seconds)
 - Switch location from **Bhubaneswar Railway Station** to **Khandagiri Square**, then **Patia / KIIT Square**.
 - **The observation:** The ranking remains unchanged across Bhubaneswar!
-- Open the **"Why we added BedScore (Formula Sensitivity)"** expander:
-  - *"We proved mathematically why this happens: Apollo has 31,818 reviews and 4.7 rating ($X \approx 149,545$). Moving the user changes each score only by the change in distance (tens of points at most), while hospitals differ by hundreds or thousands of points, so in our 12 test locations no pair of hospitals swapped places."*
+- Open the **"Why we added BedScore"** expander:
+  - *"We proved mathematically why this happens: Apollo has 31,818 reviews and 4.7 rating ($X \approx 149,545$). Even with bed availability weighted at 1000 ($1000 \times A$, changing rank for 16 of 24 hospitals), the top 8 stay identical (Apollo, Manipal, SUM, Utkal, CARE, Sunshine, Sparsh, Vivekanand), and exactly 0 of 276 pairs can be flipped by location. Moving the user changes each score only by the change in distance (tens of points at most), while hospitals differ by hundreds or thousands of points, so across all 12 test locations no pair of hospitals swapped places."*
   - *"Across 276 pairs of general hospitals evaluated across the 12 landmarks, exactly 0 pairs are flippable (base score gap < max distance difference change) and 0 pairs actually swapped places."*
   - Show the 12-location sensitivity table proving Apollo is #1 at every single location under the raw mentor formula.
 

@@ -40,7 +40,7 @@ streamlit run app.py
 ## 🌟 Key Features
 
 1. **Two Complementary Scoring Methods:**
-   - **Mentor formula (as given, default):** Exact implementation of `Weight Score = 100*A + X - Y - Z`. Transparently demonstrates why review volume dominates distance across Bhubaneswar.
+   - **Mentor formula (as given, default):** Exact implementation of `Weight Score = 1000*A + X - Y - Z`. Transparently demonstrates why review volume dominates distance across Bhubaneswar.
    - **BedScore (recommended):** Balanced multi-criteria score weighting Closeness (35%), Bayesian Trust (40%), Affordability (25%), gated by arrival bed probability $p_{\text{bed\_arrival}}$. Yields location-sensitive recommendations across 12 landmarks.
 2. **Predictive ML Classification:**
    - Classifies bed status at estimated time of arrival into 3 classes: `Available (>=15%)`, `Limited (5-15%)`, and `Full (<5%)`.

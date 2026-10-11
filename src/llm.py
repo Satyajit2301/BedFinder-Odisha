@@ -11,6 +11,7 @@ import re
 import time
 
 from dotenv import load_dotenv
+from src.config import MENTOR_A_WEIGHT
 
 load_dotenv()
 
@@ -48,7 +49,7 @@ def _template_fallback(facts: dict, language: str = "en") -> str:
 
     if "mentor" in method.lower():
         lines.append(
-            f"Using the mentor's formula `Score = 100·A + X − Y − Z` "
+            f"Using the mentor's formula `Score = {int(MENTOR_A_WEIGHT)}·A + X − Y − Z` "
             f"(where A is bed availability %, X is rating × reviews, Y is distance, Z is fee), "
             f"**{h1.get('name', '?')}** ranks #1 from {location} with a score of "
             f"{h1.get('score', 0):,.1f} "

@@ -6,6 +6,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import numpy as np
 import pandas as pd
 import pytest
+from src.config import MENTOR_A_WEIGHT
 from src.scoring import mentor_score, balanced_score, bayesian_rating, rank_hospitals, rankable
 
 
@@ -30,30 +31,36 @@ def sample_df():
 
 class TestMentorFormula:
     def test_hand_computed_apollo(self):
-        """Verify mentor formula for Apollo: (4.7 × 31818) × 100 - 5.0 - 2200."""
+        """Verify mentor formula for Apollo: 1000*A + X - Y - Z."""
         score = mentor_score(
             pd.Series([4.7]), pd.Series([31818]),
-            pd.Series([5.0]), pd.Series([2200])
+            pd.Series([5.0]), pd.Series([2200]),
+            available_beds=pd.Series([22]), total_beds=pd.Series([300])
         )
-        expected = (4.7 * 31818) * 100 - 5.0 - 2200
+        a_pct = 100.0 * 22 / 300
+        expected = MENTOR_A_WEIGHT * a_pct + (4.7 * 31818) - 5.0 - 2200
         assert abs(score.iloc[0] - expected) < 0.01
 
     def test_hand_computed_capital(self):
-        """Verify mentor formula for Capital Hospital: (3.8 × 1028) × 100 - 3.0 - 0."""
+        """Verify mentor formula for Capital Hospital: 1000*A + X - Y - Z."""
         score = mentor_score(
             pd.Series([3.8]), pd.Series([1028]),
-            pd.Series([3.0]), pd.Series([0])
+            pd.Series([3.0]), pd.Series([0]),
+            available_beds=pd.Series([64]), total_beds=pd.Series([720])
         )
-        expected = (3.8 * 1028) * 100 - 3.0 - 0
+        a_pct = 100.0 * 64 / 720
+        expected = MENTOR_A_WEIGHT * a_pct + (3.8 * 1028) - 3.0 - 0
         assert abs(score.iloc[0] - expected) < 0.01
 
     def test_hand_computed_small(self):
-        """Verify mentor formula for Small Clinic: (4.9 × 12) × 100 - 10.0 - 500."""
+        """Verify mentor formula for Small Clinic: 1000*A + X - Y - Z."""
         score = mentor_score(
             pd.Series([4.9]), pd.Series([12]),
-            pd.Series([10.0]), pd.Series([500])
+            pd.Series([10.0]), pd.Series([500]),
+            available_beds=pd.Series([9]), total_beds=pd.Series([30])
         )
-        expected = (4.9 * 12) * 100 - 10.0 - 500
+        a_pct = 100.0 * 9 / 30
+        expected = MENTOR_A_WEIGHT * a_pct + (4.9 * 12) - 10.0 - 500
         assert abs(score.iloc[0] - expected) < 0.01
 
     def test_ranking_unchanged_across_locations(self, sample_df):

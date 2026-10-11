@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 import pytest
 from src.scoring import formula_text, W_TRUST, W_CLOSE, W_FEE, DIST_SCALE_KM, ALOS_DAYS
-from src.config import ROAD_FACTOR, CITY_SPEED_KMPH
+from src.config import ROAD_FACTOR, CITY_SPEED_KMPH, MENTOR_A_WEIGHT
 
 DOCS_DIR = Path(__file__).resolve().parent.parent / "docs"
 ACTIVE_DOCS = [
@@ -49,7 +49,7 @@ class TestDocIntegrity:
         assert f"{W_FEE:.2f}" in bed_f
 
         mentor_f = formula_text("mentor")
-        assert "100·A + X − Y − Z" in mentor_f
+        assert f"{int(MENTOR_A_WEIGHT)}·A + X − Y − Z" in mentor_f
 
     def test_qa_prep_formula_constants_consistency(self):
         """C7: QA_PREP.md consistently quotes canonical constants from src/scoring.py and src/geo.py."""

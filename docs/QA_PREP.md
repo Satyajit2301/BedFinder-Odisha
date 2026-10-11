@@ -3,13 +3,14 @@
 ## 1. "Why doesn't the ranking change when I move location?"
 **Answer:**
 "That is the mentor formula working exactly as specified:
-$$\text{Score} = 100 \times A + X - Y - Z$$
-Where $X = \text{Rating} \times \text{Reviews}$.
+$$\text{Score} = 1000 \times A + X - Y - Z$$
+Where $X = \text{Rating} \times \text{Reviews}$ and $A = \text{bed availability in \%}$.
 We verified this mathematically and empirically across 12 Bhubaneswar landmarks:
 - Apollo Hospitals has 31,818 reviews and a 4.7 rating ($X = 149,544.6$).
-- The gap between Apollo and the next hospital in $X$ is tens of thousands of points.
-- Across Bhubaneswar, travel distance varies by at most 19 km ($Y$). Note that fee does not change with patient location, only distance does.
-- Moving the user changes each score only by the change in distance (tens of points at most), while hospitals differ by hundreds or thousands of points, so in our 12 test locations no pair of hospitals swapped places.
+- Even with bed availability weighted by 1000 ($1000 \times A$ yields ~7,333 to ~19,149 points, changing rank for 16 of 24 hospitals), the top 8 stay identical (Apollo, Manipal, SUM, Utkal, CARE, Sunshine, Sparsh, Vivekanand).
+- Apollo leads the second hospital by tens of thousands of points.
+- Across Bhubaneswar, travel distance varies by at most ~25 km ($Y$). Note that fee does not change with patient location, only distance does.
+- Moving the user changes each score only by the change in distance (tens of points at most), while hospitals differ by hundreds or thousands of points, so in our 12 test locations no pair of hospitals swapped places (0 of 276 pairs can be flipped by location).
 - In our pairwise analysis across 276 pairs of general hospitals evaluated across the 12 landmarks, exactly 0 pairs are theoretically flippable (base score gap < max distance difference change) and 0 pairs actually swapped places.
 We honored the mentor specification by keeping this formula as the exact default, and added **BedScore** as a recommended option where each dimension (Bayesian trust, closeness, affordability, arrival bed probability) is normalized to $[0, 1]$."
 

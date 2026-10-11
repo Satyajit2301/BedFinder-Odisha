@@ -18,6 +18,7 @@ from streamlit_folium import st_folium
 
 from src.config import (
     ACCENT, EMERGENCY_TEXT, LANDMARKS, MAP_CENTRE, MAP_ZOOM,
+    MENTOR_A_WEIGHT,
     ODISHA_BOUNDS, STATUS_COLOURS, STATUS_NAMES, SCHEME_PMJAY, SCHEME_STATE,
     SCHEME_TOGGLE_LABEL,
     W_TRUST, W_CLOSE, W_FEE,
@@ -256,8 +257,8 @@ with st.sidebar:
         "Ranking method",
         ["Mentor formula (as given)", "BedScore (recommended)"],
         index=0,
-        help="**Mentor formula (as given)**: 100·A + X − Y − Z\n\n"
-             "**BedScore (recommended)**: 100 · P · (0.35·Trust + 0.40·Closeness + 0.25·Affordability)"
+        help=f"**Mentor formula (as given)**: {formula_text('mentor').replace('Score = ', '')}\n\n"
+             f"**BedScore (recommended)**: {formula_text('bedscore').replace('Score = ', '')}"
     )
     method_key = "mentor" if "mentor" in method.lower() else "bedscore"
 
@@ -706,7 +707,7 @@ with st.expander("📊 Why this rank? (Score breakdown)"):
         fig = go.Figure()
         if "mentor" in method_key:
             comps = [
-                ("Availability (100·A)", "#22AA5E"),
+                (f"Availability ({int(MENTOR_A_WEIGHT)}·A)", "#22AA5E"),
                 ("Reputation (X)", "#00BFA6"),
                 ("Distance (-Y)", "#FFAA00"),
                 ("Fee (-Z)", "#DC3545"),
@@ -719,7 +720,7 @@ with st.expander("📊 Why this rank? (Score breakdown)"):
                 template="plotly_dark",
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(0,0,0,0)",
-                title="Mentor Formula Breakdown: 100·A + X − Y − Z",
+                title=f"Mentor Formula Breakdown: {int(MENTOR_A_WEIGHT)}·A + X − Y − Z",
                 yaxis_title="Component Points",
                 height=420,
                 legend=dict(orientation="h", yanchor="bottom", y=1.02),
@@ -747,19 +748,17 @@ with st.expander("📊 Why this rank? (Score breakdown)"):
         st.plotly_chart(fig, use_container_width=True)
 
 # Why we added a second method
-with st.expander("🔬 Why we added a second method"):
-    st.markdown("""
-    **Finding:** The mentor's formula `100·A + X − Y − Z` (where `X = Rating × Reviews`)
+with st.expander("🔬 Why we added BedScore"):
+    st.markdown(f"""
+    **Finding:** The mentor's formula `{int(MENTOR_A_WEIGHT)}·A + X − Y − Z` (where `X = Rating × Reviews` and `A` = bed availability in %)
     gives **identical rankings at every location in Bhubaneswar.**
 
-    **Why?** `X` ranges from **1,228.5 to 149,544.6** across our hospitals.
-    Distance across the city is at most ~25 km and fee at most ₹2,500.
-    The gap between top hospitals on reputation `X` is thousands of points, dwarfing any change from location or fee (~2,525 max).
+    **Location Blindness:** Even at weight {int(MENTOR_A_WEIGHT)} for bed availability, while 16 of 24 hospitals change rank compared to weight 100, the top 8 remain identical (Apollo, Manipal, SUM, Utkal, CARE, Sunshine, Sparsh, Vivekanand), and there is still **ONE ranking for every location** with **0 of 276 pairs flippable** by location. Only travel distance $Y$ varies with user location (a few km), which is completely dwarfed by reputation $X$ (ranging up to 149,545).
 
-    **Result:** Apollo Hospitals is always #1 regardless of where you are in the city.
+    **Result:** Apollo Hospitals is always #1 across all 12 landmarks citywide.
 
     **Our improvement:** The **BedScore** method applies physics-based queue arrival probability `P`,
-    log-damped review trust, and bounded distance and fee terms. The ranking genuinely responds to user location (12 distinct orders across 12 landmarks).
+    log-damped review trust, and bounded distance and fee terms. The ranking genuinely responds to user location (12 distinct orders and 9 distinct Rank-1 hospitals across 12 landmarks).
     """)
 
 # About the data

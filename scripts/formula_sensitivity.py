@@ -13,7 +13,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
 import pandas as pd
-from src.config import ENRICHED_CSV, LANDMARKS
+from src.config import ENRICHED_CSV, LANDMARKS, MENTOR_A_WEIGHT
 from src.scoring import bedscore, mentor_literal, rank_hospitals, rankable
 from src.geo import road_distance_km
 
@@ -29,7 +29,7 @@ log(f"BEDFINDER ODISHA — FORMULA SENSITIVITY ANALYSIS ({len(hosp)} HOSPITALS)"
 log("=" * 85)
 
 # 1. Test mentor formula variants
-log("\n--- 1. MENTOR FORMULA (Literal: 100*A + X - Y - Z) ---")
+log(f"\n--- 1. MENTOR FORMULA (Literal: {int(MENTOR_A_WEIGHT)}*A + X - Y - Z) ---")
 mentor_rankings = {}
 mentor_top1 = set()
 for name, (lat, lon) in LANDMARKS.items():
@@ -68,12 +68,14 @@ log("\n--- 3. WHY MENTOR FORMULA DOES NOT RESPOND TO LOCATION ---")
 avail_col = "general_ward_available_beds" if "general_ward_available_beds" in hosp.columns else "beds_free_now"
 tot_col = "general_ward_total_beds" if "general_ward_total_beds" in hosp.columns else "general_beds"
 hosp["X"] = hosp["rating_5"] * hosp["review_count"]
-hosp["100A"] = 100.0 * hosp[avail_col] / hosp[tot_col]
+hosp["A_pct"] = 100.0 * hosp[avail_col] / hosp[tot_col]
+hosp["A_weighted"] = MENTOR_A_WEIGHT * hosp["A_pct"]
 vals = sorted(hosp["X"].values, reverse=True)
 gaps = [vals[i] - vals[i+1] for i in range(len(vals)-1)]
 
 log(f"  X (rating * reviews) range: {min(vals):,.1f} to {max(vals):,.1f}")
-log(f"  A (availability %) range: {hosp['100A'].min():.1f} to {hosp['100A'].max():.1f}")
+log(f"  A (availability %) range: {hosp['A_pct'].min():.1f} to {hosp['A_pct'].max():.1f}")
+log(f"  {int(MENTOR_A_WEIGHT)}*A term range: {hosp['A_weighted'].min():,.1f} to {hosp['A_weighted'].max():,.1f}")
 log(f"  Smallest gap between top consecutive X: {min(gaps):,.1f}")
 log(f"  Max possible road distance (Y) variation across city: ~25 km")
 log(f"  Conclusion: Because X ranges up to {max(vals):,.0f}, review count dominates completely.")
@@ -81,7 +83,7 @@ log(f"  Conclusion: Because X ranges up to {max(vals):,.0f}, review count domina
 # 4. Flippable pairs analysis across the 12 landmarks
 log("\n--- 4. PAIRWISE FLIPPABLE PAIRS ANALYSIS (12 LANDMARKS) ---")
 gen_hosp = hosp[hosp["category"] == "general"].copy().reset_index(drop=True)
-gen_hosp["base_score"] = 100.0 * (gen_hosp[avail_col] / gen_hosp[tot_col]) + (gen_hosp["rating_5"] * gen_hosp["review_count"]) - gen_hosp["admission_fee_inr"]
+gen_hosp["base_score"] = MENTOR_A_WEIGHT * (100.0 * gen_hosp[avail_col] / gen_hosp[tot_col]) + (gen_hosp["rating_5"] * gen_hosp["review_count"]) - gen_hosp["admission_fee_inr"]
 
 landmark_keys = list(LANDMARKS.keys())
 dist_matrix = {}
