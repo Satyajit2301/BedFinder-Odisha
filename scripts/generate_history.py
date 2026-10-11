@@ -2,7 +2,7 @@
 PHASE 3a — Generate simulated hourly occupancy history.
 
 Anchored on the real snapshot: each hospital's mentor occupancy_pct is its
-long-run mean, and the final timestamp equals the mentor snapshot.
+long-run mean, and the final timestamp equals the mentor snapshot EXACTLY.
 
 Run:  python scripts/generate_history.py
 """
@@ -38,11 +38,11 @@ frames = []
 for _, h in hosp.iterrows():
     base_occ = h["general_ward_occupancy_pct"] / 100.0
     beds = h["general_ward_total_beds"]
+    target_free = int(h["general_ward_available_beds"])
     is_govt = h["hospital_type"] == "Government"
 
     # AR(1) drift: slow-moving noise
     ar = np.zeros(n_ts)
-    # Smaller hospitals are noisier (higher relative volatility)
     noise_scale = 0.015 if beds >= 200 else 0.025 if beds >= 100 else 0.035
     for i in range(1, n_ts):
         ar[i] = 0.96 * ar[i - 1] + rng.normal(0, noise_scale)
@@ -56,11 +56,21 @@ for _, h in hosp.iterrows():
         peak = rng.uniform(0.06, 0.15)
         surge[start:start + length] += peak * np.bartlett(length)
 
-    # Government hospitals persistently fuller
     govt_adj = 0.02 if is_govt else 0.0
 
-    occ = np.clip(base_occ + daily + weekly + season + ar + surge + govt_adj, 0.15, 1.0)
-    beds_free = np.round((1 - occ) * beds).astype(int).clip(0)
+    raw_occ = np.clip(base_occ + daily + weekly + season + ar + surge + govt_adj, 0.15, 1.0)
+
+    # Smooth bridge over last 48 hours to anchor EXACTLY at mentor snapshot
+    bridge_len = min(48, n_ts)
+    bridge_correction = np.zeros(n_ts)
+    diff = raw_occ[-1] - base_occ
+    bridge_correction[-bridge_len:] = np.linspace(0, diff, bridge_len)
+
+    occ = np.clip(raw_occ - bridge_correction, 0.10, 1.0)
+    occ[-1] = base_occ  # Exact anchor to mentor snapshot occupancy
+
+    beds_free = np.round((1.0 - occ) * beds).astype(int).clip(0)
+    beds_free[-1] = target_free  # Exact anchor to mentor snapshot free beds
 
     frames.append(pd.DataFrame({
         "ts": ts,
@@ -72,20 +82,26 @@ for _, h in hosp.iterrows():
 
 hist = pd.concat(frames, ignore_index=True)
 
-# ── Validate: final timestamp matches mentor snapshot ─────────────────
+# ── Validate: final timestamp matches mentor snapshot EXACTLY ──────────
 for _, h in hosp.iterrows():
     last = hist[(hist["hospital_id"] == h["hospital_id"]) & (hist["ts"] == end)]
-    if not last.empty:
-        final_occ = last["occ_pct"].iloc[0]
-        target = h["general_ward_occupancy_pct"] / 100.0
-        # Allow some drift since AR(1) noise is present
-        assert abs(final_occ - target) < 0.20, (
-            f"{h['hospital_id']}: final occ {final_occ:.3f} too far from target {target:.3f}"
-        )
+    assert not last.empty, f"Missing final timestamp for {h['hospital_id']}"
+    final_occ = last["occ_pct"].iloc[0]
+    target_occ = h["general_ward_occupancy_pct"] / 100.0
+    final_free = last["beds_free"].iloc[0]
+    target_free = int(h["general_ward_available_beds"])
+    assert abs(final_occ - target_occ) < 1e-6, (
+        f"{h['hospital_id']}: final occ {final_occ:.5f} != target {target_occ:.5f}"
+    )
+    assert final_free == target_free, (
+        f"{h['hospital_id']}: final beds_free {final_free} != target {target_free}"
+    )
+
+print("[ok] All 32 hospitals verified: final timestamp in history matches mentor snapshot EXACTLY")
 
 HISTORY_CSV.parent.mkdir(parents=True, exist_ok=True)
 hist.to_csv(HISTORY_CSV, index=False)
 print(f"[ok] Wrote {len(hist):,} hourly occupancy rows to {HISTORY_CSV}")
 print(f"  Time range: {ts[0]} to {ts[-1]}")
 print(f"  Hospitals: {hist['hospital_id'].nunique()}")
-print(f"  All values are SIMULATED")
+print(f"  All history values are labelled 'simulated'")

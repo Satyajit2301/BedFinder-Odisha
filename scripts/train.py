@@ -28,8 +28,12 @@ hosp = pd.read_csv(ENRICHED_CSV)
 hist = pd.read_csv(HISTORY_CSV, parse_dates=["ts"])
 print(f"[info] {len(hosp)} hospitals, {len(hist):,} history rows")
 
-static = hosp[["hospital_id", "is_govt", "general_ward_total_beds", "rating_5"]].copy()
-static = static.rename(columns={"general_ward_total_beds": "general_beds", "rating_5": "rating"})
+static = pd.DataFrame({
+    "hospital_id": hosp["hospital_id"],
+    "is_govt": (hosp["hospital_type"] == "Government").astype(int),
+    "general_beds": hosp["general_ward_total_beds"],
+    "rating": hosp["rating_5"],
+})
 
 base = add_lags(hist).merge(static, on="hospital_id", how="left")
 base = base.sort_values(["hospital_id", "ts"]).reset_index(drop=True)

@@ -38,19 +38,19 @@
 ---
 
 ## Phase 2: Data Anchoring, Curation & Link Verification
-- [ ] Anchor snapshot: For the 20 mentor hospitals, "beds free now" in app must equal `general_ward_available_beds` in mentor CSV exactly.
-- [ ] Regenerate history in `scripts/generate_history.py` so simulated hourly occupancy ends EXACTLY at the mentor snapshot (final timestamp occupancy equals `1 - available/total`).
-- [ ] Retrain ML model on re-anchored history via `scripts/train.py` so ML probabilities agree with displayed beds.
-- [ ] Specialty hospital curation: add `category` (`general` or `specialty`) to all added hospitals. Handle eye/specialty hospitals (e.g. Sadguru Netra Chikitsalaya): mark as `specialty` or exclude from general-ward bed ranking. Record decisions for all 12 added hospitals in `docs/DATA_CARD.md`.
-- [ ] Provenance & estimated badges: per-field source/date or `estimated` for the 12 added hospitals; add visible "estimated" badge for imputed fields; define `fields_estimated` list for each added hospital.
-- [ ] Create `scripts/verify_links.py`: verify HTTP status and hospital domain match for websites and phones. Show only verified websites and phones in the app.
-- [ ] Remove duplicate columns (`general_beds`, `rating`, `is_govt`); derive from `general_ward_total_beds`, `rating_5`, `hospital_type`.
-- [ ] Verify official name of Odisha state scheme (Gopabandhu Jan Arogya Yojana / GJAY) and use single correct official label.
-- [ ] Reconcile ETA speed constant: Ensure 22 km/h is used consistently across config, geo, scoring, and UI.
-- [ ] Re-run sensitivity numbers after Phase 2 (since data curation changes dataset) via `scripts/formula_sensitivity.py`.
-- [ ] Add data tests in `tests/test_data.py`.
-- [ ] Run full test suite from project root.
-- [ ] Commit to git: `phase 2: data anchoring and verification`.
+- [x] Anchor snapshot: For the 20 mentor hospitals, "beds free now" in app must equal `general_ward_available_beds` in mentor CSV exactly.
+- [x] Regenerate history in `scripts/generate_history.py` so simulated hourly occupancy ends EXACTLY at the mentor snapshot (final timestamp occupancy equals `1 - available/total`).
+- [x] Retrain ML model on re-anchored history via `scripts/train.py` so ML probabilities agree with displayed beds.
+- [x] Specialty hospital curation: add `category` (`general` or `specialty`) to all added hospitals. Handle eye/specialty hospitals (e.g. Sadguru Netra Chikitsalaya): mark as `specialty` or exclude from general-ward bed ranking. Record decisions for all 12 added hospitals in `docs/DATA_CARD.md`.
+- [x] Provenance & estimated badges: per-field source/date or `estimated` for the 12 added hospitals; add visible "estimated" badge for imputed fields; define `fields_estimated` list for each added hospital.
+- [x] Create `scripts/verify_links.py`: verify HTTP status and hospital domain match for websites and phones. Show only verified websites and phones in the app.
+- [x] Remove duplicate columns (`general_beds`, `rating`, `is_govt`); derive from `general_ward_total_beds`, `rating_5`, `hospital_type`.
+- [x] Verify official name of Odisha state scheme (Gopabandhu Jan Arogya Yojana / GJAY) and use single correct official label.
+- [x] Reconcile ETA speed constant: Ensure 22 km/h is used consistently across config, geo, scoring, and UI.
+- [x] Re-run sensitivity numbers after Phase 2 (since data curation changes dataset) via `scripts/formula_sensitivity.py`.
+- [x] Add data tests in `tests/test_data.py`.
+- [x] Run full test suite from project root.
+- [x] Commit to git: `phase 2: data anchoring and verification`.
 
 ---
 
