@@ -1,0 +1,30 @@
+{
+  "model": "hgb",
+  "seed": 0,
+  "sklearn_version": "1.7.2",
+  "features": [
+    "horizon",
+    "occ_pct",
+    "occ_lag1",
+    "occ_lag3",
+    "occ_lag6",
+    "occ_lag24",
+    "occ_roll6",
+    "trend3",
+    "target_hour",
+    "target_dow",
+    "target_month",
+    "is_govt",
+    "general_beds",
+    "rating"
+  ],
+  "horizons": [
+    1,
+    2,
+    3,
+    4,
+    6
+  ],
+  "train_rows": 272320,
+  "test_rows": 67968
+}
