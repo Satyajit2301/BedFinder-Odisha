@@ -86,45 +86,144 @@ def _template_fallback(facts: dict, language: str = "en") -> str:
     return "\n".join(lines)
 
 
+# ── Build Grounded Facts from Real DataFrame ───────────────────────────
+def build_facts(df_ranked, method: str, location_name: str, top_n: int = 3) -> dict:
+    """Build grounded input facts dictionary from ranked hospital DataFrame."""
+    top_facts = []
+    avail_col = "general_ward_available_beds" if "general_ward_available_beds" in df_ranked.columns else "beds_free_now"
+    for _, r in df_ranked.head(top_n).iterrows():
+        p_val = float(r.get("p_bed", 1.0))
+        p_pct = f"{int(round(p_val * 100))}%"
+        top_facts.append({
+            "name": str(r["hospital_name"]),
+            "rank": int(r["rank"]),
+            "score": round(float(r.get("score", 0)), 1),
+            "distance": round(float(r["dist_km"]), 1),
+            "fee": int(r["admission_fee_inr"]),
+            "rating": round(float(r["rating_5"]), 1),
+            "reviews": int(r["review_count"]),
+            "availability": p_pct,
+            "beds_free": int(r[avail_col]),
+        })
+    return {
+        "method": method,
+        "location_name": location_name,
+        "top_hospitals": top_facts,
+    }
+
+
 # ── Strict Number Verification Check ───────────────────────────────────
 def post_check_numbers(response: str, facts: dict) -> bool:
     """Verify that every number in the LLM response appears in the input facts.
     
     Prevents hallucinated bed counts, distances, fees, and ratings.
-    Allows only standard rank numbers (1..3), formula weights (25, 35, 40, 100),
+    Allows only standard rank numbers (1..5), formula weights (20, 25, 35, 40, 100),
     and verified emergency numbers (108, 112).
     """
     facts_str = json.dumps(facts)
     numbers_in_response = set(re.findall(r'\b\d+(?:\.\d+)?\b', response))
     numbers_in_facts = set(re.findall(r'\b\d+(?:\.\d+)?\b', facts_str))
     allowed_structural = {
-        '0', '1', '2', '3', '100', '108', '112',
-        '25', '35', '40', '0.25', '0.35', '0.40', '0.20', '0.30'
+        '0', '1', '2', '3', '4', '5', '10', '100', '108', '112',
+        '20', '25', '30', '35', '40', '0.20', '0.25', '0.30', '0.35', '0.40'
     }
     suspicious = numbers_in_response - numbers_in_facts - allowed_structural
     return len(suspicious) == 0
 
 
+def inspect_numbers(response: str, facts: dict) -> dict:
+    """Return detailed breakdown of extracted vs allowed numbers."""
+    facts_str = json.dumps(facts)
+    numbers_in_response = set(re.findall(r'\b\d+(?:\.\d+)?\b', response))
+    numbers_in_facts = set(re.findall(r'\b\d+(?:\.\d+)?\b', facts_str))
+    allowed_structural = {
+        '0', '1', '2', '3', '4', '5', '10', '100', '108', '112',
+        '20', '25', '30', '35', '40', '0.20', '0.25', '0.30', '0.35', '0.40'
+    }
+    allowed_all = numbers_in_facts | allowed_structural
+    suspicious = numbers_in_response - allowed_all
+    return {
+        "numbers_in_response": sorted(list(numbers_in_response)),
+        "allowed_numbers": sorted(list(allowed_all)),
+        "suspicious_numbers": sorted(list(suspicious)),
+        "passed": len(suspicious) == 0,
+    }
+
+
 def _call_groq(facts: dict, language: str) -> str | None:
-    """Call Groq API directly without langchain-groq."""
+    """Call Groq API directly, trying candidate models."""
+    detail = call_groq_detailed(facts, language)
+    return detail.get("raw_response")
+
+
+def call_groq_detailed(facts: dict, language: str = "en") -> dict:
+    """Call Groq API with timing and model fallback, returning detailed metrics."""
+    api_key = os.getenv("GROQ_API_KEY", "")
+    if not api_key:
+        return {
+            "provider": "template_fallback",
+            "model": None,
+            "latency_ms": 0,
+            "raw_response": None,
+            "error": "Missing GROQ_API_KEY",
+            "number_check_passed": False,
+        }
+
+    models_to_try = [
+        os.getenv("GROQ_MODEL", "qwen/qwen3.8-27b"),
+        "openai/gpt-oss-120b",
+        "openai/gpt-oss-20b",
+        "llama-3.3-70b-versatile",
+    ]
+    # Remove duplicates preserving order
+    candidates = list(dict.fromkeys([m for m in models_to_try if m]))
+
+    t0 = time.time()
+    last_err = None
     try:
         from groq import Groq
-        api_key = os.getenv("GROQ_API_KEY", "")
-        if not api_key:
-            return None
         client = Groq(api_key=api_key, timeout=LLM_TIMEOUT)
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT.format(language=language)},
-                {"role": "user", "content": f"Facts:\n{json.dumps(facts, indent=2)}"},
-            ],
-            max_tokens=300,
-            temperature=0.2,
-        )
-        return response.choices[0].message.content
-    except Exception:
-        return None
+
+        for model in candidates:
+            try:
+                response = client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {"role": "system", "content": SYSTEM_PROMPT.format(language=language)},
+                        {"role": "user", "content": f"Facts:\n{json.dumps(facts, indent=2)}"},
+                    ],
+                    max_tokens=300,
+                    temperature=0.2,
+                )
+                latency_ms = int((time.time() - t0) * 1000)
+                raw_text = response.choices[0].message.content or ""
+                num_info = inspect_numbers(raw_text, facts)
+                return {
+                    "provider": "groq",
+                    "model": model,
+                    "latency_ms": latency_ms,
+                    "raw_response": raw_text,
+                    "numbers_extracted": num_info["numbers_in_response"],
+                    "allowed_numbers": num_info["allowed_numbers"],
+                    "number_check_passed": num_info["passed"],
+                    "suspicious_numbers": num_info["suspicious_numbers"],
+                }
+            except Exception as e:
+                last_err = str(e)
+                continue
+
+    except Exception as e:
+        last_err = str(e)
+
+    latency_ms = int((time.time() - t0) * 1000)
+    return {
+        "provider": "template_fallback",
+        "model": None,
+        "latency_ms": latency_ms,
+        "raw_response": None,
+        "error": last_err or "Unknown error",
+        "number_check_passed": False,
+    }
 
 
 def explain(facts: dict, language: str = "en") -> str:
@@ -152,3 +251,4 @@ def explain(facts: dict, language: str = "en") -> str:
 
     _cache[key] = result
     return result
+

@@ -23,7 +23,7 @@ from src.config import (
 )
 from src.data import build_snapshot, load_history_snapshot, load_hospitals, load_ml_model
 from src.geo import road_distance_km, eta_minutes
-from src.llm import explain
+from src.llm import build_facts, explain
 from src.ml import predict_availability
 from src.scoring import get_score_breakdown, rank_hospitals
 from src.ui_utils import render_html, scheme_icon, status_word
@@ -679,25 +679,7 @@ with st.expander("📋 About the data"):
 
 # ── LLM explanation ───────────────────────────────────────────────────
 if explain_clicked and not ranked.empty:
-    top_facts = []
-    for _, r in ranked.head(3).iterrows():
-        top_facts.append({
-            "name": r["hospital_name"],
-            "rank": int(r["rank"]),
-            "score": float(r.get("score", 0)),
-            "distance": float(r["dist_km"]),
-            "fee": int(r["admission_fee_inr"]),
-            "rating": float(r["rating_5"]),
-            "reviews": int(r["review_count"]),
-            "availability": pct(r.get("p_bed", 1.0)),
-            "beds_free": int(r["beds_free_now"]),
-        })
-
-    facts = {
-        "method": method,
-        "location_name": place,
-        "top_hospitals": top_facts,
-    }
+    facts = build_facts(ranked, method=method, location_name=place, top_n=3)
 
     with st.spinner("Generating explanation..."):
         explanation = explain(facts)

@@ -96,3 +96,62 @@
 - [x] Commit to git: `phase 5: tests, llm rewrite, demo pack`.
 - [x] Final comprehensive report: changed files list, test suite output, Playwright screenshots, `docs/ML_REPORT.md`, 8-location sensitivity table on all hospitals, `docs/BLOCKED.md` status, unverified items list.
 
+---
+
+## Phase 6: v2.3 Correction Pass (C1 to C10)
+- [x] **C1 — Honest LLM call, data grounding & tests**:
+  - `scripts/test_llm_call.py` generates `input_facts` dynamically by calling `rank_hospitals` on `data/hospitals_enriched.csv` for a named landmark.
+  - Call Groq directly using `.env` key (never printed/logged).
+  - Save provider, model, latency_ms, full raw_response, numbers extracted, allowed set, number_check_passed into `docs/llm_proof.json`.
+  - If no key/network: record `provider: "template_fallback"` and mark BLOCKED in `docs/BLOCKED.md`.
+  - Tests in `tests/test_llm.py`: input_facts match dataframe; rejects invented numbers; fallback on exception/timeout.
+  - Commit: `C1: honest llm call script, data grounding and tests`.
+- [ ] **C2 — Fix HTML escaping leak in badges**:
+  - `html.escape()` dynamic text only (name, address), append trusted badge markup, render with `unsafe_allow_html=True`.
+  - AppTest checks across Top N 1, 3, 10, 32 that no rendered markdown leaks `<span class=` or `&lt;span` as visible text. Capture screenshot.
+  - Commit: `C2: fix html escaping leak in badges across cards and tables`.
+- [ ] **C3 — Specialty hospitals ranking exclusion**:
+  - Implement single `rankable(df, include_specialty)` in `src/scoring.py` used by ALL consumers (ranking, Top N, Quick Picks, Simulate picker, LLM, sensitivity scripts/tables).
+  - Default: specialty unranked (`rank = 0`, badge "Specialty - not ranked"). If toggled on: ranked with badge.
+  - Re-run `scripts/formula_sensitivity.py` and compute new distinct orders / rank-1 counts.
+  - Unit test in `tests/test_scoring.py`: for all 12 landmarks, no specialty hospital ranked when toggle off.
+  - Commit: `C3: unified rankable filter for specialty hospitals and regenerated sensitivity`.
+- [ ] **C4 — Estimated-data trust penalty & disclosure**:
+  - Check Ayush Hospital estimated fields. Apply conservative trust discount (reviews * 0.5) if rating/reviews estimated, so guessed data cannot elevate it to top 3.
+  - Card disclosure: "Some data estimated - confirm by phone". Document decision in DATA_CARD.
+  - Unit test: estimated-rating hospital never outranks identical real hospital.
+  - Commit: `C4: conservative trust penalty for estimated rating and data disclosure`.
+- [ ] **C5 — Scheme toggle effective fee Rs 0 (no +10% boost)**:
+  - When toggle is on: `effective_fee = 0` for `scheme_card_accepted == True` (flows into Affordability). Unknown is not cashless.
+  - Remove all mentions of "+10% boost" across code, docs, tests.
+  - Tests: toggle alters Affordability only for True rows; row count unchanged (nothing hidden).
+  - Commit: `C5: scheme toggle effective fee zero instead of arbitrary boost`.
+- [ ] **C6 — Reconcile ML reporting, honest horizon breakdown & ETA decay table**:
+  - Check `src/scoring.py` and confirm `p_bed` vs ML probability; align `ML_REPORT`, `QA_PREP`, and final report.
+  - Replace ETA table with 3 hospitals at free beds = 1, 2, 3, 5, 10 across 10, 30, 60, 120 min showing real decay.
+  - Report honest horizon results: ML comparable overall, slightly worse at +1h, better at +4h to +6h.
+  - Unit test: `p_bed(free=1, total=50, eta=10) > p_bed(free=1, total=50, eta=120)`.
+  - Commit: `C6: reconcile ml reporting, honest horizon breakdown and eta decay table`.
+- [ ] **C7 — Docs sync, `formula_text()` helper & strict doc tests**:
+  - Implement `src/scoring.py::formula_text()`.
+  - Update `docs/QA_PREP.md`, `docs/DEMO_SCRIPT.md` (remove AMRI, correct A = availability %, sync BedScore weights).
+  - Sync all file names to match `docs/TREE.txt` exactly.
+  - Add `tests/test_docs.py` asserting no forbidden tokens ("AMRI", "m=500", "+10%") and consistent constants.
+  - Commit: `C7: formula_text helper, tree sync and strict doc tests`.
+- [ ] **C8 — Real link verification logs & added hospitals evidence CSV**:
+  - Run `scripts/verify_links.py` saving stdout to `docs/verify_links_output.txt`.
+  - Generate `docs/ADDED_HOSPITALS_EVIDENCE.csv` with per-field source URL, retrieval date, and status.
+  - Use "verified" only with verified proof; soften unverified claims.
+  - Commit: `C8: real link verification logs, added hospitals evidence csv and honesty pass`.
+- [ ] **C9 — High contrast error, quick picks rankable & full-page screenshots**:
+  - High-contrast error banner for invalid manual location (contrast >= 4.5:1).
+  - Quick Picks uses `rankable()`.
+  - Playwright captures full-page (desktop 1440px, mobile 390px) + close-ups (map, table, Plotly chart, emergency banner, What-If expander).
+  - Commit: `C9: high contrast error styling, quick picks consistency and full-page screenshots`.
+- [ ] **C10 — Honest BLOCKED log, verification markdown & grounded reporting**:
+  - Rewrite `docs/BLOCKED.md` with problems hit & resolved, plus unverified items (live LLM, external sources).
+  - Update `docs/VERIFICATION.md` with complete command logs and PASS/FAIL table.
+  - Deliver grounded final report with markdown file links.
+  - Commit: `C10: honest blocked log, verification markdown and grounded reporting`.
+
+

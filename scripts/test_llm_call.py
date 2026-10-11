@@ -1,4 +1,4 @@
-"""Test script to execute one real LLM provider call and save input/output proof."""
+"""Test script to execute LLM provider call with grounded data and save proof."""
 import json
 import os
 import sys
@@ -7,85 +7,72 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from src.llm import _call_groq, post_check_numbers, explain
+import pandas as pd
+from src.config import LANDMARKS
+from src.data import load_hospitals
+from src.llm import build_facts, call_groq_detailed, explain, post_check_numbers
+from src.scoring import rank_hospitals
 
 
 def main():
-    sample_facts = {
-        "method": "BedScore (recommended)",
-        "location_name": "Bhubaneswar Railway Station",
-        "top_hospitals": [
-            {
-                "name": "Neelachal Hospital Pvt. Ltd.",
-                "rank": 1,
-                "score": 82.4,
-                "distance": 2.1,
-                "fee": 600,
-                "rating": 4.1,
-                "reviews": 1240,
-                "availability": "98%",
-                "beds_free": 18,
-            },
-            {
-                "name": "Sunshine Hospital",
-                "rank": 2,
-                "score": 79.1,
-                "distance": 3.4,
-                "fee": 750,
-                "rating": 4.2,
-                "reviews": 2100,
-                "availability": "95%",
-                "beds_free": 14,
-            },
-            {
-                "name": "Shree Hospitals",
-                "rank": 3,
-                "score": 76.5,
-                "distance": 4.0,
-                "fee": 500,
-                "rating": 4.0,
-                "reviews": 890,
-                "availability": "92%",
-                "beds_free": 12,
-            }
-        ]
-    }
+    # 1. Load real hospitals dataset — NO hand-typed facts!
+    hospitals = load_hospitals()
+    location_name = "Bhubaneswar Railway Station"
+    landmark = LANDMARKS.get(location_name, (20.2687, 85.8427))
+    user_lat, user_lon = landmark[0], landmark[1]
 
-    print("Executing LLM call with Groq...")
-    raw_response = _call_groq(sample_facts, "en")
-    used_fallback = False
+    # 2. Run app's own ranking function on real dataframe
+    method = "BedScore (recommended)"
+    ranked = rank_hospitals(hospitals, user_lat, user_lon, method=method)
 
-    if raw_response is None:
-        print("Groq provider call returned None (network/auth/quota limit). Testing explain() with deterministic template...")
-        final_text = explain(sample_facts, "en")
-        passed_number_check = post_check_numbers(final_text, sample_facts)
-        used_fallback = True
+    # 3. Build grounded facts dictionary directly from dataframe
+    input_facts = build_facts(ranked, method=method, location_name=location_name, top_n=3)
+
+    print(f"Generated grounded input facts for {location_name} (Top 3 hospitals):")
+    for h in input_facts["top_hospitals"]:
+        print(f"  #{h['rank']} {h['name']} - Dist: {h['distance']}km, Fee: Rs{h['fee']}, "
+              f"Rating: {h['rating']}, Free beds: {h['beds_free']}")
+
+    # 4. Call Groq directly (key from environment, never printed)
+    print("\nCalling Groq API...")
+    result = call_groq_detailed(input_facts, language="en")
+    raw_response = result.get("raw_response")
+    provider = result.get("provider", "template_fallback")
+    latency_ms = result.get("latency_ms", 0)
+    model = result.get("model")
+    num_passed = result.get("number_check_passed", False)
+
+    if provider == "groq" and raw_response and num_passed:
+        print(f"Groq API call succeeded using model '{model}' in {latency_ms}ms!")
+        print(f"Number check: PASSED ({len(result.get('numbers_extracted', []))} numbers verified)")
+        final_output = raw_response
     else:
-        print("Groq API returned response successfully!")
-        passed_number_check = post_check_numbers(raw_response, sample_facts)
-        final_text = raw_response
+        print(f"Provider: {provider} (model: {model}, latency: {latency_ms}ms, error: {result.get('error')})")
+        print("Falling back to deterministic template...")
+        final_output = explain(input_facts, "en")
+        num_passed = post_check_numbers(final_output, input_facts)
 
     proof = {
-        "provider": "groq" if not used_fallback else "template_fallback",
-        "model": "llama-3.3-70b-versatile",
-        "input_facts": sample_facts,
+        "provider": provider,
+        "model": model,
+        "latency_ms": latency_ms,
+        "input_facts": input_facts,
         "raw_response": raw_response,
-        "final_output": final_text,
-        "number_check_passed": passed_number_check,
+        "numbers_extracted": result.get("numbers_extracted", []),
+        "allowed_numbers": result.get("allowed_numbers", []),
+        "suspicious_numbers": result.get("suspicious_numbers", []),
+        "number_check_passed": num_passed,
+        "final_output": final_output,
         "code_lines_highlight": {
-            "post_check_numbers": "src/llm.py:84-95",
-            "direct_groq_client": "src/llm.py:98-117",
-            "timeout_and_fallback": "src/llm.py:120-142",
+            "post_check_numbers": "src/llm.py:114-131",
+            "call_groq_detailed": "src/llm.py:157-227",
+            "build_facts": "src/llm.py:89-111",
         }
     }
 
     out_file = Path("docs/llm_proof.json")
     out_file.write_text(json.dumps(proof, indent=2), encoding="utf-8")
-    print(f"Saved proof to {out_file}!")
-    print(f"Number check passed: {passed_number_check}")
-    print("\n--- Output Preview ---")
-    safe_text = final_text.encode("ascii", errors="replace").decode("ascii")
-    print(safe_text)
+    print(f"\nSaved proof to {out_file}!")
     return 0
 
 
