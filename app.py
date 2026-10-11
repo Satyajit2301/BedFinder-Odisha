@@ -26,7 +26,7 @@ from src.geo import road_distance_km, eta_minutes
 from src.llm import build_facts, explain
 from src.ml import predict_availability
 from src.scoring import get_score_breakdown, rank_hospitals
-from src.ui_utils import render_html, scheme_icon, status_word
+from src.ui_utils import render_html, safe_html, scheme_icon, status_word
 
 # ── Page config ───────────────────────────────────────────────────────
 st.set_page_config(
@@ -383,8 +383,10 @@ else:
     for i, (_, r) in enumerate(top_hospitals.head(3).iterrows()):
         with cols[i]:
             est_tag = ""
+            est_disclosure = ""
             if r.get("fields_estimated", "") and str(r["fields_estimated"]) != "nan" and r["fields_estimated"]:
-                est_tag = ' <span class="est-badge">some fields estimated</span>'
+                est_tag = safe_html(' <span class="est-badge">some fields estimated</span>')
+                est_disclosure = safe_html('<div class="detail" style="color: #FBBF24; font-size: 0.78rem;">ℹ️ Some data estimated — confirm by phone</div>')
 
             p_val = float(r.get("p_bed", 1.0))
             p_word, p_col, p_ico = status_word(p_val)
@@ -395,13 +397,14 @@ else:
 
             bed_warning = ""
             if p_val < 0.5:
-                bed_warning = '<div style="color: #FFAA00; font-size: 0.8rem; margin-top: 4px; font-weight: 600;">⚠️ This hospital may have no free bed on arrival.</div>'
+                bed_warning = safe_html('<div style="color: #FFAA00; font-size: 0.8rem; margin-top: 4px; font-weight: 600;">⚠️ This hospital may have no free bed on arrival.</div>')
 
             card_html = render_html("""
             <div class="hospital-card">
                 <h3>#{rank} {name}{est_tag}</h3>
                 <div class="stat" style="color: {p_col};">{p_ico} {p_word} ({chance}) — {beds} beds free now</div>
                 {bed_warning}
+                {est_disclosure}
                 <div class="detail">
                     📍 {dist:.1f} km · ~{eta} min &nbsp; 💰 ₹{fee}/day &nbsp; ⭐ {rating:.1f}★ ({reviews:,} reviews)
                 </div>
@@ -413,6 +416,7 @@ else:
                 </div>
             </div>
             """, rank=int(r["rank"]), name=r["hospital_name"][:32], est_tag=est_tag,
+               est_disclosure=est_disclosure,
                p_col=p_col, p_ico=p_ico, p_word=p_word, chance=pct(p_val), beds=r["beds_free_now"],
                bed_warning=bed_warning, dist=r["dist_km"], eta=r["eta_min"], fee=r["admission_fee_inr"],
                rating=r["rating_5"], reviews=r["review_count"], type_str=r["hospital_type"],

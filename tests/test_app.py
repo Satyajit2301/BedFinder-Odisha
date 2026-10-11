@@ -83,3 +83,18 @@ def test_regression_tile_css_isolation():
         app_code = f.read()
     assert ".leaflet-tile-pane" in app_code
     assert "filter: invert(1)" in app_code
+
+
+@pytest.mark.parametrize("top_n", [1, 3, 10, 32])
+def test_no_raw_html_leaking_in_markdown(top_n):
+    """Assert that no rendered markdown leaks '&lt;span', '<span class=' as visible text, or raw est-badge."""
+    at = AppTest.from_file("app.py", default_timeout=30).run()
+    if len(at.sidebar.slider) > 0:
+        at.sidebar.slider[0].set_value(top_n).run()
+    assert not at.exception
+    for md in at.markdown:
+        val = str(md.value)
+        assert "&lt;span" not in val, f"Found &lt;span in markdown: {val}"
+        assert "&lt;div" not in val, f"Found &lt;div in markdown: {val}"
+        assert "&lt;span class=&quot;est-badge&quot;&gt;" not in val
+

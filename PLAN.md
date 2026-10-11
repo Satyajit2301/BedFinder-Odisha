@@ -106,7 +106,7 @@
   - If no key/network: record `provider: "template_fallback"` and mark BLOCKED in `docs/BLOCKED.md`.
   - Tests in `tests/test_llm.py`: input_facts match dataframe; rejects invented numbers; fallback on exception/timeout.
   - Commit: `C1: honest llm call script, data grounding and tests`.
-- [ ] **C2 — Fix HTML escaping leak in badges**:
+- [x] **C2 — Fix HTML escaping leak in badges**:
   - `html.escape()` dynamic text only (name, address), append trusted badge markup, render with `unsafe_allow_html=True`.
   - AppTest checks across Top N 1, 3, 10, 32 that no rendered markdown leaks `<span class=` or `&lt;span` as visible text. Capture screenshot.
   - Commit: `C2: fix html escaping leak in badges across cards and tables`.

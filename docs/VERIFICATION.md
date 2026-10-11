@@ -7,7 +7,7 @@ This document records the exact commands run, their raw outputs, and PASS / FAIL
 | Item | Description | Proof File / Command | Status |
 |---|---|---|---|
 | C1 | Honest LLM call, data grounding & tests | `scripts/test_llm_call.py`, `docs/llm_proof.json`, `tests/test_llm.py` | PASS |
-| C2 | Fix HTML escaping leak in badges across cards & tables | `src/ui_utils.py`, `app.py`, `tests/test_ui.py` | PENDING |
+| C2 | Fix HTML escaping leak in badges across cards & tables | `src/ui_utils.py`, `app.py`, `tests/test_ui.py`, `tests/test_app.py` | PASS |
 | C3 | Unified `rankable(df, include_specialty)` across all consumers | `src/scoring.py`, `scripts/formula_sensitivity.py`, `tests/test_scoring.py` | PENDING |
 | C4 | Conservative trust penalty for estimated rating & data disclosure | `src/scoring.py`, `app.py`, `docs/DATA_CARD.md`, `tests/test_scoring.py` | PENDING |
 | C5 | Scheme toggle effective fee Rs 0 (no +10% boost) | `src/scoring.py`, `tests/test_bedscore.py`, `tests/test_scoring.py` | PENDING |
@@ -45,4 +45,23 @@ tests/test_llm.py::test_fallback_on_exception_or_timeout PASSED          [100%]
 ============================== 3 passed in 4.68s ==============================
 ```
 **Verdict:** PASS. Grounded input facts built from dataset, live Groq API call succeeded, proof JSON saved with extracted numbers matching facts, and 3 unit tests passing.
+
+### C2: Fix HTML Escaping Leak in Badges Across Cards & Tables
+
+**Command:** `pytest tests/test_ui.py -k test_safe_html_not_escaped -v`
+```text
+tests/test_ui.py::test_safe_html_not_escaped PASSED                      [100%]
+============================== 1 passed in 0.05s ==============================
+```
+
+**Command:** `pytest tests/test_app.py -k test_no_raw_html_leaking_in_markdown -v`
+```text
+tests/test_app.py::test_no_raw_html_leaking_in_markdown[1] PASSED        [ 25%]
+tests/test_app.py::test_no_raw_html_leaking_in_markdown[3] PASSED        [ 50%]
+tests/test_app.py::test_no_raw_html_leaking_in_markdown[10] PASSED       [ 75%]
+tests/test_app.py::test_no_raw_html_leaking_in_markdown[32] PASSED       [100%]
+====================== 4 passed, 12 deselected in 25.66s ======================
+```
+**Verdict:** PASS. `SafeHTML` wrapper ensures badge HTML markup is preserved without literal `&lt;span` leakage, while dynamic user content remains XSS-escaped. All 4 AppTest slider configurations passed.
+
 

@@ -63,3 +63,14 @@ def test_odisha_bounds():
     # Invalid Delhi coordinate
     delhi_lat, delhi_lon = 28.6139, 77.2090
     assert not (ODISHA_BOUNDS["lat_min"] <= delhi_lat <= ODISHA_BOUNDS["lat_max"])
+
+
+def test_safe_html_not_escaped():
+    from src.ui_utils import safe_html, render_html
+    badge = safe_html('<span class="est-badge">estimated</span>')
+    name = "Ayush <Hospital>"
+    rendered = render_html("<h3>{name}{badge}</h3>", name=name, badge=badge)
+    assert '<span class="est-badge">estimated</span>' in rendered
+    assert "Ayush &lt;Hospital&gt;" in rendered
+    assert "&lt;span" not in rendered
+

@@ -3,15 +3,26 @@ import html
 import textwrap
 
 
+class SafeHTML(str):
+    """Marker for trusted HTML strings that should not be re-escaped."""
+    pass
+
+
+def safe_html(text: str) -> SafeHTML:
+    """Wrap trusted HTML string so render_html does not re-escape it."""
+    return SafeHTML(text)
+
+
 def render_html(raw_html: str, **kwargs) -> str:
     """Safely format and clean HTML templates.
     
-    1. Escapes dynamic string kwargs using html.escape to prevent injection.
+    1. Escapes dynamic string kwargs using html.escape to prevent injection,
+       unless marked as SafeHTML.
     2. Dedents indentation.
     3. Strips empty lines between HTML tags.
     """
     escaped_kwargs = {
-        k: html.escape(str(v)) if isinstance(v, str) else v
+        k: v if isinstance(v, SafeHTML) else (html.escape(str(v)) if isinstance(v, str) else v)
         for k, v in kwargs.items()
     }
     formatted = raw_html.format(**escaped_kwargs) if kwargs else raw_html
