@@ -178,7 +178,7 @@ def main():
     h6_m = horizon_df.loc[horizon_df["horizon_hours"] == 6, "model_macro_f1"].values[0]
     h6_b = horizon_df.loc[horizon_df["horizon_hours"] == 6, "baseline_macro_f1"].values[0]
 
-    report_md = f"""# ML Evaluation and Calibration Report (BedFinder Odisha v2.4)
+    report_md = f"""# ML Evaluation and Calibration Report (BedFinder Odisha)
 
 > **Evaluation Date:** 2026-10-11  
 > **Dataset:** `data/history.csv` ({n_hist:,} hourly snapshots, {len(hosp)} hospitals, anchored to mentor snapshot)  
@@ -271,6 +271,33 @@ To demonstrate genuine queue risk decay, we evaluate arrival probability $P$ acr
     out_file = Path("docs/ML_REPORT.md")
     out_file.write_text(report_md, encoding="utf-8")
     print(f"\n[ok] Saved {out_file} successfully!")
+
+    # Update docs/numbers.json with ML audit metrics
+    numbers_path = Path("docs/numbers.json")
+    num_data = {}
+    if numbers_path.exists():
+        try:
+            num_data = json.loads(numbers_path.read_text(encoding="utf-8"))
+        except Exception:
+            num_data = {}
+
+    # Per-horizon values
+    for h in [1, 2, 3, 4, 6]:
+        row = horizon_df[horizon_df["horizon_hours"] == h]
+        if not row.empty:
+            num_data[f"h{h}_macro_f1_model"] = round(float(row["model_macro_f1"].iloc[0]), 4)
+            num_data[f"h{h}_macro_f1_baseline"] = round(float(row["baseline_macro_f1"].iloc[0]), 4)
+
+    num_data.update({
+        "macro_f1_model": round(float(mean_m_f1), 4),
+        "macro_f1_baseline": round(float(mean_b_f1), 4),
+        "accuracy_model": round(float(seed_df["model_acc"].mean()), 4),
+        "accuracy_baseline": round(float(seed_df["baseline_acc"].mean()), 4),
+        "brier_model": round(float(mean_brier), 4),
+    })
+
+    numbers_path.write_text(json.dumps(num_data, indent=2), encoding="utf-8")
+    print(f"[ok] Updated {numbers_path} with ML metrics.")
 
 
 if __name__ == "__main__":

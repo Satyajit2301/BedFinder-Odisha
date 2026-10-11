@@ -46,7 +46,7 @@ streamlit run app.py
 2. **Predictive ML Classification:**
    - Classifies bed status at estimated time of arrival into 3 classes: `Available (>=15%)`, `Limited (5-15%)`, and `Full (<5%)`.
    - Re-anchored to the mentor's snapshot data with a 48-hour smooth bridge so ML predictions and on-screen bed counts never conflict.
-   - Honestly audited against persistence baseline in `docs/ML_REPORT.md` (Macro-F1 0.7710 vs 0.7626 baseline).
+   - Honestly audited against persistence baseline in `docs/ML_REPORT.md` (Macro-F1 0.7769 vs 0.7687 baseline).
 3. **Interactive Dark Leaflet Map:**
    - OpenStreetMap tiles darkened via `.leaflet-tile-pane` CSS filter without inverting marker pins or badges.
    - Numbered circular badges for Top N recommendations, small markers for remaining hospitals, distinct user location pin.
@@ -117,11 +117,11 @@ bedfinder_odisha/
 │   ├── test_llm_call.py        # Real Groq API call validation test
 │   └── capture_screenshots.py  # Playwright automated screenshot script
 ├── data/                       # Datasets
-│   ├── hospital_data.csv       # Original mentor 20-hospital CSV
-│   ├── hospitals_curated.csv   # 32 curated hospitals with verified provenance
-│   └── hospital_occupancy_history.csv # 90-day anchored occupancy history
+│   ├── raw/dataset_npn_7.csv   # Original mentor 20-hospital CSV (frozen)
+│   ├── hospitals_enriched.csv  # 25 hospitals with coordinates, beds, fees, scheme flags
+│   └── history.csv             # 90-day anchored occupancy history
 ├── models/                     # Trained ML artifacts (committed to repo)
-│   ├── bed_availability_model.joblib
+│   ├── bed_model.joblib
 │   └── model_metadata.json
 ├── tests/                      # 49 unit and integration tests
 ├── docs/                       # Comprehensive documentation & reports

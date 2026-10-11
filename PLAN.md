@@ -1,4 +1,4 @@
-# PLAN.md — BedFinder Odisha v2.2 Execution Plan
+# PLAN.md — BedFinder Odisha Execution Plan
 
 > **Goal:** Complete, evidence-based overhaul of BedFinder Odisha based on PROMPT_fix_v2.2.md.
 > Recommend, never restrict. Transparent scoring, re-anchored data, verified links, dark aesthetic, honest ML reporting.

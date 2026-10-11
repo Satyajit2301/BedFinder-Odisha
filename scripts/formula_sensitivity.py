@@ -127,3 +127,30 @@ log("=" * 85)
 out_file = Path(__file__).resolve().parent.parent / "docs" / "scoring_sensitivity.txt"
 out_file.write_text("\n".join(lines) + "\n", encoding="utf-8")
 print(f"Saved: {out_file}")
+
+# Update docs/numbers.json
+import json
+numbers_path = Path(__file__).resolve().parent.parent / "docs" / "numbers.json"
+num_data = {}
+if numbers_path.exists():
+    try:
+        num_data = json.loads(numbers_path.read_text(encoding="utf-8"))
+    except Exception:
+        num_data = {}
+
+mentor_count = int((hosp["data_origin"] == "mentor_csv").sum()) if "data_origin" in hosp.columns else 20
+added_count = int(len(hosp) - mentor_count)
+
+num_data.update({
+    "total_hospitals": int(len(hosp)),
+    "mentor_hospitals": mentor_count,
+    "added_hospitals": added_count,
+    "distinct_rank_orders_bedscore": int(len(bedscore_orders)),
+    "distinct_rank1_bedscore": int(len(bedscore_top1)),
+    "total_pairs": int(total_pairs),
+    "flippable_pairs": int(actually_flipped_pairs),
+    "flippable_pairs_mentor": int(actually_flipped_pairs),
+})
+
+numbers_path.write_text(json.dumps(num_data, indent=2), encoding="utf-8")
+print(f"[ok] Updated {numbers_path} with sensitivity and hospital count metrics.")

@@ -1,4 +1,4 @@
-# VERIFICATION.md — BedFinder Odisha v2.4 Evidence Log
+# VERIFICATION.md — BedFinder Odisha Evidence Log
 
 This document records the exact commands run, raw outputs, and PASS / FAIL / BLOCKED verdicts for each item in PROMPT v2.4 (D1..D8).
 

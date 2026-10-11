@@ -1,4 +1,4 @@
-# ML Evaluation and Calibration Report (BedFinder Odisha v2.4)
+# ML Evaluation and Calibration Report (BedFinder Odisha)
 
 > **Evaluation Date:** 2026-10-11  
 > **Dataset:** `data/history.csv` (54,000 hourly snapshots, 25 hospitals, anchored to mentor snapshot)  

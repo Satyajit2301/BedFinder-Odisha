@@ -136,9 +136,9 @@ The app is fully functional with LLM disabled. Template fallback is always ready
 
 ## D14: ML evaluation: Brier score and honest reporting vs persistence baseline
 
-**What:** Evaluated HistGradientBoosting over 5 seeds (42, 101, 2024, 777, 999) on 341,248 samples. Reported honest results: Macro-F1 0.7710 ± 0.0006 vs persistence baseline 0.7626.
+**What:** Evaluated HistGradientBoosting over 5 seeds (42, 101, 2024, 777, 999) on 266,600 samples. Reported honest results: Macro-F1 0.7769 ± 0.0009 vs persistence baseline 0.7687.
 
-**Why:** Hospital occupancy changes slowly over 1 to 4 hour intervals; a persistence model ("occupancy stays what it is now") achieves 0.7626 F1. The ML model provides modest gains (+0.0084 F1) and calibrated probabilities ($p_{\text{bed\_arrival}}$ with Brier score 0.0654). Per instructions, we explicitly describe performance as "comparable to the persistence baseline" rather than claiming artificial superiority.
+**Why:** Hospital occupancy changes slowly over 1 to 4 hour intervals; a persistence model ("occupancy stays what it is now") achieves 0.7687 F1. The ML model provides modest gains (+0.0082 F1) and calibrated probabilities (Brier score 0.0601). Per instructions, we explicitly describe performance as "comparable to the persistence baseline" rather than claiming artificial superiority.
 
 ---
 

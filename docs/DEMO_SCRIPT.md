@@ -1,4 +1,4 @@
-# BedFinder Odisha v2.3 — Presentation Demo Script (3-5 Minutes)
+# BedFinder Odisha — Presentation Demo Script (3-5 Minutes)
 
 Launch offline with a single click: double-click `run_demo.bat` or run `streamlit run app.py`.
 
@@ -68,7 +68,7 @@ Launch offline with a single click: double-click `run_demo.bat` or run `streamli
   - Mentor hospitals: real (from the mentor CSV). Added hospitals and scheme flags: illustrative demo data compiled from public listings, not independently verified. Occupancy: simulated.
   - 7 candidate entries were dropped because their location or name could not be matched to Bhubaneswar (5 kept; 25 total).
   - 1 specialty hospital (Hemalata Cancer Hospital) is tagged and excluded by default from general emergency bed ranking.
-  - ML performance is honestly reported: HistGradientBoosting achieves Macro-F1 0.7710 vs 0.7626 persistence baseline ("comparable to the baseline").
+  - ML performance is honestly reported: HistGradientBoosting achieves Macro-F1 0.7769 vs 0.7687 persistence baseline ("comparable to the baseline").
 - Point to the banner:
   - *"In a medical emergency, call 108 (free ambulance) or 112 (unified emergency) — Department of Health & Family Welfare, Government of Odisha."*
 

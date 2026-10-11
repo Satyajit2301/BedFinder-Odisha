@@ -72,3 +72,74 @@ class TestDocIntegrity:
         assert "hospital_data.csv" not in lines
         assert "hospitals_curated.csv" not in lines
         assert "bed_availability_model.joblib" not in lines
+
+    def test_no_version_strings_in_doc_titles(self):
+        """G5: Doc titles must not contain version strings like v2.3 or v2.4."""
+        doc_files = [
+            Path(__file__).resolve().parent.parent / "README.md",
+            DOCS_DIR / "DEMO_SCRIPT.md",
+            DOCS_DIR / "QA_PREP.md",
+            DOCS_DIR / "DATA_CARD.md",
+            DOCS_DIR / "BLOCKED.md",
+            DOCS_DIR / "ML_REPORT.md",
+            DOCS_DIR / "VERIFICATION.md",
+        ]
+        for doc in doc_files:
+            if doc.exists():
+                first_lines = doc.read_text(encoding="utf-8").splitlines()[:5]
+                for line in first_lines:
+                    if line.startswith("#"):
+                        assert not re.search(r"v2\.\d", line), f"Version string found in title of {doc.name}: '{line}'"
+
+    def test_doc_numbers_match_numbers_json(self):
+        """G5: Numbers in README / DEMO_SCRIPT / QA_PREP / DATA_CARD / BLOCKED must match docs/numbers.json."""
+        import json
+        numbers_path = DOCS_DIR / "numbers.json"
+        assert numbers_path.exists(), "docs/numbers.json does not exist"
+        data = json.loads(numbers_path.read_text(encoding="utf-8"))
+
+        m_f1_str = f"{data['macro_f1_model']:.4f}"
+        b_f1_str = f"{data['macro_f1_baseline']:.4f}"
+        tot_hosp = str(data["total_hospitals"])
+        mentor_hosp = str(data["mentor_hospitals"])
+        added_hosp = str(data["added_hospitals"])
+        tot_pairs = str(data["total_pairs"])
+        flippable = str(data["flippable_pairs"])
+
+        stale_numbers = ["0.7710", "0.7626"]
+
+        readme = (Path(__file__).resolve().parent.parent / "README.md").read_text(encoding="utf-8")
+        assert m_f1_str in readme
+        assert b_f1_str in readme
+        assert tot_hosp in readme
+        for sn in stale_numbers:
+            assert sn not in readme
+
+        demo = (DOCS_DIR / "DEMO_SCRIPT.md").read_text(encoding="utf-8")
+        assert m_f1_str in demo
+        assert b_f1_str in demo
+        assert tot_hosp in demo
+        for sn in stale_numbers:
+            assert sn not in demo
+
+        qa = (DOCS_DIR / "QA_PREP.md").read_text(encoding="utf-8")
+        assert m_f1_str in qa
+        assert b_f1_str in qa
+        assert tot_pairs in qa
+        assert flippable in qa
+        for sn in stale_numbers:
+            assert sn not in qa
+
+        datacard = (DOCS_DIR / "DATA_CARD.md").read_text(encoding="utf-8")
+        assert tot_hosp in datacard
+        assert mentor_hosp in datacard
+        assert added_hosp in datacard
+        for sn in stale_numbers:
+            assert sn not in datacard
+
+        blocked = (DOCS_DIR / "BLOCKED.md").read_text(encoding="utf-8")
+        assert mentor_hosp in blocked
+        assert added_hosp in blocked
+        for sn in stale_numbers:
+            assert sn not in blocked
+
