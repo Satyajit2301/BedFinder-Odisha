@@ -1,11 +1,11 @@
 """Scoring engine — Formula 1 (Baseline) + Formula 2 (BedScore).
 
-Formula 1 (as given in problem statement):
-    Score = 1000*A + X - Y - Z
+Formula 1 (Mentor formula):
+    Score = 1000*A + X/1000 - 100*Y - Z/10
     A = bed availability in percent (available_beds / total_beds * 100)
     X = rating * reviews
     Y = road distance in km
-    Z = admission fee in INR
+    Z = admission fee in INR (effective fee after card cashless discount)
     Ties broken by distance (closer wins).
 
 Formula 2 (recommended BedScore):
@@ -209,9 +209,9 @@ def explain_terms(d: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
-# ── Formula 1 calculation ─────────────────────────────────────────────
+# ── Formula 1 calculation (Mentor Formula) ─────────────────────────────
 def formula1_literal(df: pd.DataFrame, dist_km: pd.Series | np.ndarray, user_has_card: bool = False) -> pd.Series:
-    """Formula 1 (problem statement baseline): 1000*A + X - Y - Z, A in %."""
+    """Formula 1 (Mentor formula): 1000*A + X/1000 - 100*Y - Z/10, A in %."""
     avail_col = "general_ward_available_beds" if "general_ward_available_beds" in df.columns else "beds_free_now"
     total_col = "general_ward_total_beds" if "general_ward_total_beds" in df.columns else "general_beds"
     rating_col = "rating_5" if "rating_5" in df.columns else "rating"
@@ -225,7 +225,8 @@ def formula1_literal(df: pd.DataFrame, dist_km: pd.Series | np.ndarray, user_has
 
     a_pct = 100.0 * df[avail_col] / np.maximum(df[total_col], 1)
     x = df[rating_col] * df[reviews_col]
-    return A_WEIGHT * a_pct + x - dist_km - fee_eff
+    dist_s = pd.Series(dist_km, index=df.index, dtype=float)
+    return A_WEIGHT * a_pct + (x / 1000.0) - (dist_s * 100.0) - (fee_eff / 10.0)
 
 
 def formula1_score(rating: pd.Series, reviews: pd.Series,
@@ -234,7 +235,7 @@ def formula1_score(rating: pd.Series, reviews: pd.Series,
                    total_beds: pd.Series | None = None,
                    variant: str = FORMULA1_VARIANT,
                    a_weight: float = A_WEIGHT) -> pd.Series:
-    """Formula 1 with variant support."""
+    """Formula 1 / Mentor formula: 1000*A + X/1000 - 100*Y - Z/10 with variant support."""
     r = pd.Series(rating, dtype=float)
     v = pd.Series(reviews, dtype=float)
     d = pd.Series(distance_km, dtype=float)
@@ -242,7 +243,7 @@ def formula1_score(rating: pd.Series, reviews: pd.Series,
     x = r * v
 
     if variant == "legacy":
-        return x * 100.0 - d - f
+        return a_weight * (100.0 * pd.Series(available_beds, dtype=float) / np.maximum(pd.Series(total_beds, dtype=float), 1.0) if available_beds is not None else 0.0) + x - d - f
 
     if available_beds is None or total_beds is None:
         a_pct = 0.0
@@ -256,9 +257,9 @@ def formula1_score(rating: pd.Series, reviews: pd.Series,
     if variant == "x100":
         return a_weight * a_pct + 100.0 * x - d - f
     elif variant == "fraction":
-        return a_weight * a_frac + x - d - f
-    else:  # "literal"
-        return a_weight * a_pct + x - d - f
+        return a_weight * a_frac + (x / 1000.0) - (d * 100.0) - (f / 10.0)
+    else:  # "literal" / Mentor formula: A*1000 + X/1000 - Y*100 - Z/10
+        return a_weight * a_pct + (x / 1000.0) - (d * 100.0) - (f / 10.0)
 
 
 # Compatibility aliases
@@ -271,7 +272,7 @@ def formula_text(method: str = "formula2") -> str:
     """Return canonical formula text for selector options and documentation."""
     m = str(method).lower()
     if "1" in m or "baseline" in m or "formula1" in m or "mentor" in m:
-        return f"Formula 1:  {int(A_WEIGHT)}·A + X − Y − Z"
+        return f"Formula 1 (Mentor):  {int(A_WEIGHT)}·A + X/1000 − 100·Y − Z/10"
     return f"Formula 2 (recommended):  BedScore = 100 × P × ({W_TRUST:.2f}·Trust + {W_CLOSE:.2f}·Closeness + {W_FEE:.2f}·Affordability)"
 
 
@@ -279,7 +280,7 @@ def formula_latex(method: str = "formula2") -> str:
     """Return LaTeX equation string for display."""
     m = str(method).lower()
     if "1" in m or "baseline" in m or "formula1" in m or "mentor" in m:
-        return r"\text{Score} = " + f"{int(A_WEIGHT)}" + r" \cdot A + X - Y - Z"
+        return r"\text{Score} = " + f"{int(A_WEIGHT)}" + r" \cdot A + \frac{X}{1000} - 100 \cdot Y - \frac{Z}{10}"
     return r"\text{BedScore} = 100 \times P \times (" + f"{W_TRUST:.2f}" + r" \cdot \text{Trust} + " + f"{W_CLOSE:.2f}" + r" \cdot \text{Closeness} + " + f"{W_FEE:.2f}" + r" \cdot \text{Affordability})"
 
 
@@ -287,7 +288,7 @@ def formula_legend(method: str = "formula2") -> str:
     """Return compact legend explaining terms in the selected formula."""
     m = str(method).lower()
     if "1" in m or "baseline" in m or "formula1" in m or "mentor" in m:
-        return "A = free beds ÷ total beds, in percent (e.g. 19.1) · X = rating × number of reviews · Y = distance in km · Z = admission fee in Rs per day."
+        return "Mentor formula: A = % free beds (×1000) · X = rating × reviews (/1000) · Y = road distance km (×100) · Z = effective fee Rs (/10)."
     return f"P = chance a general bed is still free when you arrive · Trust = rating and reviews (log-scaled) · Closeness = e^(−km/{int(DIST_SCALE_KM)}) · Affordability = 1 − fee/Rs {int(FEE_CAP_INR):,}."
 
 
@@ -435,9 +436,9 @@ def get_score_breakdown(df: pd.DataFrame, user_lat: float, user_lon: float,
         breakdown = pd.DataFrame({
             "hospital_name": d["hospital_name"].values,
             f"Availability ({int(A_WEIGHT)}·A)": (A_WEIGHT * a_pct).values,
-            "Reputation (X)": x.values,
-            "Distance (-Y)": (-d["dist_km"]).values,
-            "Fee (-Z)": (-d[fee_col]).values,
+            "Reputation (X/1000)": (x / 1000.0).values,
+            "Distance (−100·Y)": (-d["dist_km"] * 100.0).values,
+            "Fee (−Z/10)": (-d[fee_col] / 10.0).values,
             "Total": d["score"].values,
         })
     else:
@@ -519,24 +520,24 @@ def compare_with_rank1(comp_row: pd.Series, rank1_row: pd.Series, method: str = 
         r1_avail = float(rank1_row.get("general_ward_available_beds", rank1_row.get("beds_free_now", 20)))
         r1_tot = float(rank1_row.get("general_ward_total_beds", rank1_row.get("general_beds", 100)))
         r1_a = A_WEIGHT * (100.0 * r1_avail / max(r1_tot, 1.0))
-        r1_x = float(rank1_row["rating_5"]) * float(rank1_row["review_count"])
-        r1_y = -float(rank1_row["dist_km"])
-        r1_z = -float(rank1_row.get("fee_eff", rank1_row["admission_fee_inr"]))
+        r1_x = (float(rank1_row["rating_5"]) * float(rank1_row["review_count"])) / 1000.0
+        r1_y = -float(rank1_row["dist_km"]) * 100.0
+        r1_z = -float(rank1_row.get("fee_eff", rank1_row["admission_fee_inr"])) / 10.0
         r1_score = r1_a + r1_x + r1_y + r1_z
 
         comp_avail = float(comp_row.get("general_ward_available_beds", comp_row.get("beds_free_now", 20)))
         comp_tot = float(comp_row.get("general_ward_total_beds", comp_row.get("general_beds", 100)))
         comp_a = A_WEIGHT * (100.0 * comp_avail / max(comp_tot, 1.0))
-        comp_x = float(comp_row["rating_5"]) * float(comp_row["review_count"])
-        comp_y = -float(comp_row["dist_km"])
-        comp_z = -float(comp_row.get("fee_eff", comp_row["admission_fee_inr"]))
+        comp_x = (float(comp_row["rating_5"]) * float(comp_row["review_count"])) / 1000.0
+        comp_y = -float(comp_row["dist_km"]) * 100.0
+        comp_z = -float(comp_row.get("fee_eff", comp_row["admission_fee_inr"])) / 10.0
         comp_score = comp_a + comp_x + comp_y + comp_z
 
         diff_points = {
             "1000·A (Availability)": round(comp_a - r1_a, 1),
-            "X (Reputation)": round(comp_x - r1_x, 1),
-            "−Y (Distance)": round(comp_y - r1_y, 1),
-            "−Z (Fee)": round(comp_z - r1_z, 1),
+            "X/1000 (Reputation)": round(comp_x - r1_x, 1),
+            "−100·Y (Distance)": round(comp_y - r1_y, 1),
+            "−Z/10 (Fee)": round(comp_z - r1_z, 1),
         }
         total_diff = comp_score - r1_score
         driver_term = max(diff_points.keys(), key=lambda k: abs(diff_points[k]))
@@ -544,13 +545,13 @@ def compare_with_rank1(comp_row: pd.Series, rank1_row: pd.Series, method: str = 
         trail_pts = abs(total_diff)
         dist_diff = float(comp_row["dist_km"]) - float(rank1_row["dist_km"])
 
-        if driver_term == "X (Reputation)":
-            reason = f"reputation score X is {abs(diff_points['X (Reputation)']):,.1f} points lower"
-        elif driver_term == "−Y (Distance)":
-            reason = f"it is {dist_diff:.1f} km farther"
-        elif driver_term == "−Z (Fee)":
+        if driver_term == "X/1000 (Reputation)":
+            reason = f"reputation score X/1000 is {abs(diff_points['X/1000 (Reputation)']):,.1f} points lower"
+        elif driver_term == "−100·Y (Distance)":
+            reason = f"it is {dist_diff:.1f} km farther (penalty {abs(diff_points['−100·Y (Distance)']):,.1f} pts)"
+        elif driver_term == "−Z/10 (Fee)":
             fee_diff = float(comp_row.get("fee_eff", comp_row["admission_fee_inr"])) - float(rank1_row.get("fee_eff", rank1_row["admission_fee_inr"]))
-            reason = f"admission fee is Rs {int(abs(fee_diff)):,} higher"
+            reason = f"admission fee is Rs {int(abs(fee_diff)):,} higher (penalty {abs(diff_points['−Z/10 (Fee)']):,.1f} pts)"
         else:
             reason = f"availability term 1000·A is {abs(diff_points['1000·A (Availability)']):,.1f} points lower"
 

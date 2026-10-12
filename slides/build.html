@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slide 1: System Architecture & Build | BedFinder Odisha</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: rgba(19, 26, 42, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent: #00e5ff;
+      --accent-glow: rgba(0, 229, 255, 0.25);
+      --emerald: #10b981;
+      --purple: #8b5cf6;
+      --amber: #f59e0b;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: radial-gradient(circle at 15% 15%, #162035 0%, var(--bg) 70%);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 30px;
+    }
+    .slide-wrapper {
+      max-width: 1300px;
+      margin: 0 auto;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    /* Nav Bar */
+    .slide-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 24px;
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .brand-badge {
+      background: linear-gradient(135deg, #00e5ff, #3b82f6);
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      color: #000;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+    }
+    .tabs {
+      display: flex;
+      gap: 8px;
+    }
+    .tab {
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+      color: var(--muted);
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }
+    .tab:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab.active {
+      color: #000;
+      background: var(--accent);
+      box-shadow: 0 0 15px var(--accent-glow);
+    }
+    /* Header Section */
+    .slide-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 16px;
+    }
+    .title-group h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.3rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffffff 40%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.02em;
+    }
+    .title-group p {
+      color: var(--muted);
+      font-size: 1.05rem;
+      margin-top: 6px;
+    }
+    .slide-index {
+      font-family: 'Fira Code', monospace;
+      color: var(--accent);
+      font-size: 0.95rem;
+      background: rgba(0, 229, 255, 0.1);
+      border: 1px solid rgba(0, 229, 255, 0.2);
+      padding: 6px 14px;
+      border-radius: 20px;
+    }
+    /* Main Content Grid */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 20px;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 24px;
+      backdrop-filter: blur(12px);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .card:hover {
+      border-color: rgba(0, 229, 255, 0.3);
+      transform: translateY(-2px);
+    }
+    .card-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #fff;
+    }
+    .card-title .icon {
+      font-size: 1.3rem;
+    }
+    /* Tech Stack Tags */
+    .pill-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .pill {
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #cbd5e1;
+    }
+    .pill.cyan { border-color: rgba(0, 229, 255, 0.4); color: var(--accent); background: rgba(0, 229, 255, 0.08); }
+    .pill.emerald { border-color: rgba(16, 185, 129, 0.4); color: var(--emerald); background: rgba(16, 185, 129, 0.08); }
+    .pill.purple { border-color: rgba(139, 92, 246, 0.4); color: var(--purple); background: rgba(139, 92, 246, 0.08); }
+    /* Architecture Flow */
+    .flow-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .flow-step:last-child { border-bottom: none; }
+    .step-num {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.85rem;
+      background: rgba(0, 229, 255, 0.15);
+      color: var(--accent);
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .step-body h4 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #fff;
+    }
+    .step-body p {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 3px;
+      line-height: 1.4;
+    }
+    /* Stat Callout */
+    .stat-callout {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: auto;
+    }
+    .stat-box {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 14px;
+      border-radius: 12px;
+      text-align: center;
+    }
+    .stat-val {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--accent);
+    }
+    .stat-lbl {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    /* Code block */
+    pre {
+      background: #060911;
+      padding: 14px;
+      border-radius: 10px;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.8rem;
+      color: #38bdf8;
+      overflow-x: auto;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+  </style>
+</head>
+<body>
+  <div class="slide-wrapper">
+    <!-- Slide Nav -->
+    <nav class="slide-nav">
+      <div class="brand">
+        <span>🏥</span> BedFinder Odisha
+        <span class="brand-badge">HACKATHON DECK</span>
+      </div>
+      <div class="tabs">
+        <a href="build.html" class="tab active">1. Build</a>
+        <a href="explain.html" class="tab">2. Explain</a>
+        <a href="proof.html" class="tab">3. Proof</a>
+        <a href="results.html" class="tab">4. Results</a>
+      </div>
+    </nav>
+
+    <!-- Slide Header -->
+    <div class="slide-header">
+      <div class="title-group">
+        <h1>System Architecture & Engineering Build</h1>
+        <p>End-to-End Real-Time Hospital Discovery, Queuing Physics & AI Explainability Pipeline</p>
+      </div>
+      <div class="slide-index">SLIDE 01 / 04</div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="grid-3">
+      <!-- Card 1: Problem & Mission -->
+      <div class="card">
+        <div class="card-title"><span class="icon">🎯</span> Problem & Objective</div>
+        <p style="color: #cbd5e1; font-size: 0.9rem; line-height: 1.5;">
+          During medical emergencies in Odisha, families drive blindly between hospitals facing <strong>"phantom beds"</strong>—arriving to find the last ICU or oxygen bed occupied minutes earlier.
+        </p>
+        <p style="color: var(--muted); font-size: 0.85rem; line-height: 1.5;">
+          <strong>Our Mission:</strong> Build a mathematically grounded, real-time triage system that couples urban transit time with stochastic bed turnover and financial scheme awareness (Ayushman Bharat / BSKY).
+        </p>
+        <div class="stat-callout">
+          <div class="stat-box">
+            <div class="stat-val">25</div>
+            <div class="stat-lbl">Tertiary Centers</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val">12</div>
+            <div class="stat-lbl">Urban Landmarks</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Core Engineering Stack -->
+      <div class="card">
+        <div class="card-title"><span class="icon">⚡</span> Technology Stack</div>
+        <div class="pill-list">
+          <span class="pill cyan">Python 3.12</span>
+          <span class="pill cyan">Streamlit (UI)</span>
+          <span class="pill emerald">Folium & Leaflet (Maps)</span>
+          <span class="pill emerald">OpenStreetMap</span>
+          <span class="pill purple">Groq LLaMA 3.3 70B</span>
+          <span class="pill purple">Scikit-Learn (ML)</span>
+          <span class="pill">Haversine Geodesy</span>
+          <span class="pill">Poisson Queuing Engine</span>
+          <span class="pill">PyTest (112 Suites)</span>
+        </div>
+        <div style="margin-top: auto;">
+          <h4 style="font-size: 0.85rem; color: #fff; margin-bottom: 6px;">Zero-Cost Scalable Infrastructure:</h4>
+          <pre><code># Instant Local & Cloud Setup
+pip install -r requirements.txt
+streamlit run app.py --server.port 8501</code></pre>
+        </div>
+      </div>
+
+      <!-- Card 3: Data Foundation & Enrichment -->
+      <div class="card">
+        <div class="card-title"><span class="icon">📂</span> Data Foundation</div>
+        <p style="color: var(--muted); font-size: 0.85rem; line-height: 1.5;">
+          Synthesized from official Bhubaneswar health registries and enriched with verified geospatial ground truth:
+        </p>
+        <div class="flow-step">
+          <div class="step-num">A</div>
+          <div class="step-body">
+            <h4>20 Provided Baseline Hospitals</h4>
+            <p>From mentor dataset with baseline bed capacities and ratings.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">B</div>
+          <div class="step-body">
+            <h4>+5 Added Major Hubs (Audited)</h4>
+            <p>AIIMS BBSR, SUM Ultimate, Sparsh, Blue Wheel, Care Hospitals with geocoded lat/long and 24/7 emergency helplines.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">C</div>
+          <div class="step-body">
+            <h4>Scheme Transparency Flags</h4>
+            <p>Binary acceptance flags for BSKY & Ayushman cards calculating actual out-of-pocket costs.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Architecture Flow -->
+    <div class="grid-2">
+      <!-- Data Pipeline Card -->
+      <div class="card">
+        <div class="card-title"><span class="icon">🔄</span> End-to-End Execution Pipeline</div>
+        <div class="flow-step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <h4>Multilingual Query Parsing (Rule-Based + Groq AI)</h4>
+            <p>Extracts user landmark (Patia, Jaydev Vihar, Airport), scheme card status, and priority (cheapest, nearest, best rated) across English, Hindi, and Hinglish.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <h4>Dynamic Geospatial Routing</h4>
+            <p>Haversine geodesic computation with urban traffic friction multipliers computes real-time driving distance and estimated time of arrival (ETA).</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <h4>Poisson Queuing Arrival Probability Engine (P_bed)</h4>
+            <p>Calculates the exact stochastic probability that a bed remains free upon arrival, taking into account current occupancy, average length of stay (ALOS), and transit time.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <h4>BedScore Multi-Attribute Ranking & Instant Render</h4>
+            <p>Scores all 25 hospitals in &lt;15ms; renders interactive OpenStreetMap pins, Top 3 hospital recommendations, and 4 Quick-Pick triage cards.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Deployment & High Availability -->
+      <div class="card">
+        <div class="card-title"><span class="icon">🚀</span> Deployment & Resilience</div>
+        <p style="color: var(--muted); font-size: 0.85rem; line-height: 1.5;">
+          Engineered for extreme reliability during crisis scenarios where cellular networks or external APIs may falter:
+        </p>
+        <div style="background: rgba(0, 0, 0, 0.3); padding: 14px; border-radius: 10px; border-left: 3px solid var(--emerald); margin-top: 4px;">
+          <h4 style="font-size: 0.88rem; color: var(--emerald);">✓ 100% Offline Rule Fallback</h4>
+          <p style="font-size: 0.8rem; color: #cbd5e1; margin-top: 4px;">If Groq API experiences rate limits or network drops, an internal rule-based regex parser and templated clinical explainer seamlessly take over with zero disruption.</p>
+        </div>
+        <div style="background: rgba(0, 0, 0, 0.3); padding: 14px; border-radius: 10px; border-left: 3px solid var(--accent); margin-top: 8px;">
+          <h4 style="font-size: 0.88rem; color: var(--accent);">✓ Dual Tunnel & LAN Access</h4>
+          <p style="font-size: 0.8rem; color: #cbd5e1; margin-top: 4px;">Tested with low-latency Serveo HTTPS tunnel and direct peer-to-peer Wi-Fi LAN distribution (0ms lag) for emergency dispatchers and field workers.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

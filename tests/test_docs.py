@@ -49,7 +49,7 @@ class TestDocIntegrity:
         assert f"{W_FEE:.2f}" in bed_f
 
         f1_f = formula_text("formula1")
-        assert f"{int(A_WEIGHT)}·A + X − Y − Z" in f1_f
+        assert f"{int(A_WEIGHT)}·A + X/1000 − 100·Y − Z/10" in f1_f
 
     def test_qa_prep_formula_constants_consistency(self):
         """C7: QA_PREP.md consistently quotes canonical constants from src/scoring.py and src/geo.py."""

@@ -31,36 +31,36 @@ def sample_df():
 
 class TestFormula1:
     def test_hand_computed_apollo(self):
-        """Verify Formula 1 for Apollo: 1000*A + X - Y - Z."""
+        """Verify Formula 1 (Mentor): 1000*A + X/1000 - 100*Y - Z/10."""
         score = formula1_score(
             pd.Series([4.7]), pd.Series([31818]),
             pd.Series([5.0]), pd.Series([2200]),
             available_beds=pd.Series([22]), total_beds=pd.Series([300])
         )
         a_pct = 100.0 * 22 / 300
-        expected = A_WEIGHT * a_pct + (4.7 * 31818) - 5.0 - 2200
+        expected = A_WEIGHT * a_pct + (4.7 * 31818 / 1000.0) - (5.0 * 100.0) - (2200.0 / 10.0)
         assert abs(score.iloc[0] - expected) < 0.01
 
     def test_hand_computed_capital(self):
-        """Verify Formula 1 for Capital Hospital: 1000*A + X - Y - Z."""
+        """Verify Formula 1 (Mentor): 1000*A + X/1000 - 100*Y - Z/10."""
         score = formula1_score(
             pd.Series([3.8]), pd.Series([1028]),
             pd.Series([3.0]), pd.Series([0]),
             available_beds=pd.Series([64]), total_beds=pd.Series([720])
         )
         a_pct = 100.0 * 64 / 720
-        expected = A_WEIGHT * a_pct + (3.8 * 1028) - 3.0 - 0
+        expected = A_WEIGHT * a_pct + (3.8 * 1028 / 1000.0) - (3.0 * 100.0) - (0.0 / 10.0)
         assert abs(score.iloc[0] - expected) < 0.01
 
     def test_hand_computed_small(self):
-        """Verify Formula 1 for Small Clinic: 1000*A + X - Y - Z."""
+        """Verify Formula 1 (Mentor): 1000*A + X/1000 - 100*Y - Z/10."""
         score = formula1_score(
             pd.Series([4.9]), pd.Series([12]),
             pd.Series([10.0]), pd.Series([500]),
             available_beds=pd.Series([9]), total_beds=pd.Series([30])
         )
         a_pct = 100.0 * 9 / 30
-        expected = A_WEIGHT * a_pct + (4.9 * 12) - 10.0 - 500
+        expected = A_WEIGHT * a_pct + (4.9 * 12 / 1000.0) - (10.0 * 100.0) - (500.0 / 10.0)
         assert abs(score.iloc[0] - expected) < 0.01
 
     def test_ranking_unchanged_across_locations(self, sample_df):

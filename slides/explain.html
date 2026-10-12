@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slide 2: Mathematical Foundation & AI Explainability | BedFinder Odisha</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: rgba(19, 26, 42, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent: #00e5ff;
+      --accent-glow: rgba(0, 229, 255, 0.25);
+      --emerald: #10b981;
+      --purple: #8b5cf6;
+      --amber: #f59e0b;
+      --rose: #f43f5e;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: radial-gradient(circle at 85% 15%, #221438 0%, var(--bg) 70%);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 30px;
+    }
+    .slide-wrapper {
+      max-width: 1300px;
+      margin: 0 auto;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .slide-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 24px;
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .brand-badge {
+      background: linear-gradient(135deg, #00e5ff, #3b82f6);
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      color: #000;
+      font-weight: 800;
+    }
+    .tabs { display: flex; gap: 8px; }
+    .tab {
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+      color: var(--muted);
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }
+    .tab:hover { color: #fff; background: rgba(255, 255, 255, 0.05); }
+    .tab.active {
+      color: #000;
+      background: var(--accent);
+      box-shadow: 0 0 15px var(--accent-glow);
+    }
+    .slide-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 16px;
+    }
+    .title-group h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.3rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffffff 40%, #c084fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.02em;
+    }
+    .title-group p { color: var(--muted); font-size: 1.05rem; margin-top: 6px; }
+    .slide-index {
+      font-family: 'Fira Code', monospace;
+      color: var(--purple);
+      font-size: 0.95rem;
+      background: rgba(139, 92, 246, 0.1);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      padding: 6px 14px;
+      border-radius: 20px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 24px;
+      backdrop-filter: blur(12px);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .card:hover {
+      border-color: rgba(139, 92, 246, 0.4);
+      transform: translateY(-2px);
+    }
+    .card-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #fff;
+    }
+    .math-block {
+      background: #060911;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 16px;
+      border-radius: 12px;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.88rem;
+      line-height: 1.6;
+      color: #38bdf8;
+    }
+    .math-block .highlight { color: #f43f5e; font-weight: 600; }
+    .math-block .green { color: #34d399; font-weight: 600; }
+    .math-block .amber { color: #fbbf24; font-weight: 600; }
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin-top: 6px;
+    }
+    .comparison-table th {
+      text-align: left;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--muted);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .comparison-table td {
+      padding: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: #cbd5e1;
+    }
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .tag-fail { background: rgba(244, 63, 94, 0.15); color: var(--rose); border: 1px solid rgba(244, 63, 94, 0.3); }
+    .tag-pass { background: rgba(16, 185, 129, 0.15); color: var(--emerald); border: 1px solid rgba(16, 185, 129, 0.3); }
+  </style>
+</head>
+<body>
+  <div class="slide-wrapper">
+    <!-- Nav Bar -->
+    <nav class="slide-nav">
+      <div class="brand">
+        <span>🏥</span> BedFinder Odisha
+        <span class="brand-badge">HACKATHON DECK</span>
+      </div>
+      <div class="tabs">
+        <a href="build.html" class="tab">1. Build</a>
+        <a href="explain.html" class="tab active">2. Explain</a>
+        <a href="proof.html" class="tab">3. Proof</a>
+        <a href="results.html" class="tab">4. Results</a>
+      </div>
+    </nav>
+
+    <!-- Header -->
+    <div class="slide-header">
+      <div class="title-group">
+        <h1>Methodology, Formulas & AI Explainability</h1>
+        <p>Mathematical Proof: Transitioning from Additive Scoring to Queuing Probability & LLM Reasoners</p>
+      </div>
+      <div class="slide-index">SLIDE 02 / 04</div>
+    </div>
+
+    <!-- Grid 1: The Core Scoring Shift -->
+    <div class="grid-2">
+      <!-- Formula 1 Breakdown -->
+      <div class="card">
+        <div class="card-title">
+          <span>📐</span> Formula 1: Mentor's Formula
+        </div>
+        <div class="math-block">
+Score = 1000·A + X/1000 − 100·Y − Z/10<br><br>
+Where:<br>
+• A = Free Bed Ratio (free / total % × 1000)<br>
+• X/1000 = (Rating × Reviews) ÷ 1000 (Normalized reputation)<br>
+• −100·Y = −100 × Road Distance in km (Urban travel penalty)<br>
+• −Z/10 = −Effective Admission Fee ÷ 10 in INR
+        </div>
+        <p style="color: #cbd5e1; font-size: 0.85rem; line-height: 1.5;">
+          <strong>Mentor's Dimensional Normalization:</strong>
+        </p>
+        <table class="comparison-table">
+          <tr><th>Term</th><th>Scaling</th><th>Impact</th></tr>
+          <tr>
+            <td>A (Availability)</td>
+            <td>× 1000</td>
+            <td><span class="tag tag-pass">Primary</span> Bed urgency drives 10,000–50,000 base points.</td>
+          </tr>
+          <tr>
+            <td>X (Reputation)</td>
+            <td>÷ 1000</td>
+            <td><span class="tag tag-pass">Balanced</span> Damped down to tens/hundreds (prevents 150k monopoly).</td>
+          </tr>
+          <tr>
+            <td>Y (Distance)</td>
+            <td>× 100</td>
+            <td><span class="tag tag-pass">Responsive</span> Each 1 km farther penalizes 100 points.</td>
+          </tr>
+          <tr>
+            <td>Z (Fee)</td>
+            <td>÷ 10</td>
+            <td><span class="tag tag-pass">Fair</span> Scaled to hundreds (Rs 2000 fee = 200 pt deduction).</td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- Formula 2 BedScore -->
+      <div class="card">
+        <div class="card-title">
+          <span>✨</span> Formula 2: Probabilistic BedScore (Recommended)
+        </div>
+        <div class="math-block">
+<span class="green">BedScore</span> = 100 × <span class="amber">P_bed</span> × (<span class="green">0.35·Trust + 0.40·Closeness + 0.25·Affordability</span>)<br><br>
+Sub-factors strictly bounded in [0.0, 1.0]:<br>
+• <span class="green">Trust</span> = 0.70·(rating/5) + 0.30·min(1, log₁₀(reviews+1)/3)<br>
+• <span class="green">Closeness</span> = max(0, 1 - distance_km / 25)<br>
+• <span class="green">Affordability</span> = Card: 1.0 | No Card: max(0, 1 - fee / 10000)
+        </div>
+        <p style="color: #cbd5e1; font-size: 0.85rem; line-height: 1.5;">
+          <strong>The Multiplicative Gatekeeper Guarantee:</strong>
+        </p>
+        <div style="background: rgba(16, 185, 129, 0.1); border-left: 3px solid var(--emerald); padding: 12px; border-radius: 8px;">
+          <p style="font-size: 0.82rem; color: #a7f3d0; line-height: 1.4;">
+            Because <code>P_bed</code> multiplies the utility sum, <strong>if arrival bed probability falls to 0, BedScore drops to exactly 0.0</strong>—regardless of 5-star ratings or low prices. A hospital with no beds will never be recommended!
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grid 2: Physics Queuing & Groq Explainability -->
+    <div class="grid-2">
+      <!-- Physics Queuing Engine -->
+      <div class="card">
+        <div class="card-title"><span>⏳</span> Queuing Physics: Transit-Decay Probability (P_bed)</div>
+        <p style="color: var(--muted); font-size: 0.85rem; line-height: 1.4;">
+          Models hospital bed occupancy as an M/M/c continuous-time Markovian queue with Poisson turnover:
+        </p>
+        <div class="math-block">
+P_bed = Φ( (free_beds - 0.5) / σ )<br>
+σ = √( 2 × (occupied_beds / (ALOS × 24)) × ETA_hours )
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.82rem; color: #cbd5e1; margin-top: 4px;">
+          <div>• <strong>ALOS (Average Length of Stay):</strong> Set to 4.0 days based on Indian tertiary clinical data.</div>
+          <div>• <strong>Real-World Sensitivity:</strong> A hospital with 1 free bed 10 minutes away has <strong>P = 89%</strong>. The same hospital 60 minutes away drops to <strong>P = 69%</strong> due to turnover risk.</div>
+        </div>
+      </div>
+
+      <!-- Groq LLM Explainability -->
+      <div class="card">
+        <div class="card-title"><span>🤖</span> Groq LLaMA 3.3 Explainability & Guardrails</div>
+        <p style="color: var(--muted); font-size: 0.85rem; line-height: 1.4;">
+          Translates raw mathematical vectors into clear, compassionate, and transparent patient advisories:
+        </p>
+        <div style="background: #060911; padding: 14px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.05);">
+          <div style="font-size: 0.75rem; color: var(--purple); font-family: 'Fira Code', monospace; margin-bottom: 6px;">STRUCTURED FACTS GROUNDING (Zero Hallucination):</div>
+          <p style="font-size: 0.82rem; color: #e2e8f0; line-height: 1.5; font-style: italic;">
+            "KIMS (Patia) ranks #1 with BedScore 94.2. Although Apollo is 4.8★, KIMS is only 1.2 km away (4 min ETA) with 14 free beds (P_bed >99%) and accepts your Ayushman card for ₹0 admission fee."
+          </p>
+        </div>
+        <div style="font-size: 0.8rem; color: var(--emerald); display: flex; align-items: center; gap: 6px;">
+          <span>✓</span> Strictly constrained to verified dataset attributes—no invented beds or fake pricing.
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -3,3 +3,8 @@ __pycache__/
 .pytest_cache/
 audit/
 *.pyc
+cloudflared.exe
+.streamlit/secrets.toml
+*.log
+.DS_Store
+Thumbs.db

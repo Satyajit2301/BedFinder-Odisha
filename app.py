@@ -469,7 +469,7 @@ with st.sidebar:
         "Ranking formula",
         formula_options,
         index=1,  # Default = Formula 2
-        help="Formula 1 is the baseline formula given in the problem statement; Formula 2 is BedScore (recommended)."
+        help="Formula 1 is the mentor's updated formula: 1000·A + X/1000 − 100·Y − Z/10; Formula 2 is BedScore (recommended)."
     )
     method_key = "formula1" if "formula 1" in method.lower() else "formula2"
     st.caption(formula_legend(method_key))
@@ -1112,38 +1112,46 @@ if model_bundle is not None:
     if not fc_matched.empty:
         fc_row = fc_matched.iloc[0]
         fc_df = forecast_hospital_horizons(fc_row, model_bundle, now)
-        fig_fc = go.Figure()
-        fig_fc.add_trace(go.Bar(
-            name="Available (>15%)",
-            x=fc_df["horizon_label"],
-            y=(fc_df["p_available"] * 100).round(1),
-            marker_color="#10B981",
-        ))
-        fig_fc.add_trace(go.Bar(
-            name="Limited (5–15%)",
-            x=fc_df["horizon_label"],
-            y=(fc_df["p_limited"] * 100).round(1),
-            marker_color="#F59E0B",
-        ))
-        fig_fc.add_trace(go.Bar(
-            name="Full (<5%)",
-            x=fc_df["horizon_label"],
-            y=(fc_df["p_full"] * 100).round(1),
-            marker_color="#EF4444",
-        ))
-        fig_fc.update_layout(
-            barmode="stack",
-            template="plotly_dark",
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            title=f"6-Hour Ward Availability Forecast: {selected_fc_name}",
-            yaxis=dict(title="Probability (%)", range=[0, 100]),
-            xaxis=dict(title="Forecast Horizon (hours from now)"),
-            height=340,
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-            margin=dict(l=40, r=40, t=50, b=40),
+        
+        import altair as alt
+        
+        melted_records = []
+        for _, r in fc_df.iterrows():
+            melted_records.append({"Horizon": r["horizon_label"], "Status": "Available (>15%)", "Probability": round(r["p_available"] * 100, 1), "order": 1})
+            melted_records.append({"Horizon": r["horizon_label"], "Status": "Limited (5–15%)", "Probability": round(r["p_limited"] * 100, 1), "order": 2})
+            melted_records.append({"Horizon": r["horizon_label"], "Status": "Full (<5%)", "Probability": round(r["p_full"] * 100, 1), "order": 3})
+        melted_fc = pd.DataFrame(melted_records)
+        
+        color_scale = alt.Scale(
+            domain=["Available (>15%)", "Limited (5–15%)", "Full (<5%)"],
+            range=["#10B981", "#F59E0B", "#EF4444"],
         )
-        st.plotly_chart(fig_fc, use_container_width=True)
+        chart_fc = alt.Chart(melted_fc).mark_bar().encode(
+            x=alt.X("Horizon:N", sort=list(fc_df["horizon_label"]), title="Forecast Horizon (hours from now)"),
+            y=alt.Y("Probability:Q", title="Probability (%)", scale=alt.Scale(domain=[0, 100])),
+            color=alt.Color("Status:N", scale=color_scale, legend=alt.Legend(orient="top", title=None)),
+            order=alt.Order("order:O"),
+            tooltip=["Horizon", "Status", "Probability"],
+        ).properties(
+            title=f"6-Hour Ward Availability Forecast: {selected_fc_name}",
+            height=280,
+        )
+        st.altair_chart(chart_fc, use_container_width=True)
+        
+        # Horizon metric chips
+        cols_fc = st.columns(6)
+        for i, h_row in fc_df.iterrows():
+            with cols_fc[i]:
+                p_avail_pct = round(h_row["p_available"] * 100)
+                badge_color = "#10B981" if p_avail_pct >= 60 else ("#F59E0B" if p_avail_pct >= 30 else "#EF4444")
+                st.markdown(
+                    f"""<div style='background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:8px 4px; text-align:center;'>
+                        <div style='font-size:0.75rem; color:#94A3B8; font-weight:600;'>{h_row['horizon_label']}</div>
+                        <div style='font-size:1.05rem; font-weight:800; color:{badge_color}; margin-top:2px;'>{p_avail_pct}%</div>
+                        <div style='font-size:0.65rem; color:#CBD5E1;'>Free Bed Chance</div>
+                    </div>""",
+                    unsafe_allow_html=True,
+                )
 st.caption("Trained on a simulated 90-day history; see accuracy below.")
 
 with st.expander("🎯 How good is the ML model?"):
@@ -1192,24 +1200,24 @@ with st.expander("📊 Why this rank? (Score breakdown)"):
             st.markdown(f"- {b}")
 
         if "formula1" in method_key or "1" in method_key:
-            # Formula 1 breakdown: a 5-row table (1000·A, X, −Y, −Z, total), no chart (the terms differ by 1000×)
+            # Formula 1 (Mentor) breakdown: 1000·A + X/1000 − 100·Y − Z/10
             avail_beds = float(h_row.get("general_ward_available_beds", h_row.get("beds_free_now", 20)))
             total_beds = float(h_row.get("general_ward_total_beds", h_row.get("general_beds", 100)))
             a_pct = 100.0 * avail_beds / max(total_beds, 1.0)
             a_pts = A_WEIGHT * a_pct
-            x_pts = float(h_row["rating_5"]) * float(h_row["review_count"])
-            y_pts = -float(h_row["dist_km"])
-            z_pts = -float(h_row["fee_eff"])
+            x_pts = (float(h_row["rating_5"]) * float(h_row["review_count"])) / 1000.0
+            y_pts = -float(h_row["dist_km"]) * 100.0
+            z_pts = -float(h_row["fee_eff"]) / 10.0
             f1_total = a_pts + x_pts + y_pts + z_pts
 
             f1_table_data = [
                 {"Term": f"1000·A (Availability: {a_pct:.1f}%)", "Value": f"+{a_pts:,.1f}", "Formula Term": f"{int(A_WEIGHT)} × (Free Beds ÷ Total Beds %)"},
-                {"Term": "X (Reputation)", "Value": f"+{x_pts:,.1f}", "Formula Term": "Rating × Number of Reviews"},
-                {"Term": "−Y (Distance)", "Value": f"{y_pts:,.1f}", "Formula Term": "− Road Distance (km)"},
-                {"Term": "−Z (Fee)", "Value": f"{z_pts:,.1f}", "Formula Term": "− Effective Admission Fee (Rs/day)"},
-                {"Term": "Total Score", "Value": f"{f1_total:,.1f}", "Formula Term": f"{int(A_WEIGHT)}·A + X − Y − Z"},
+                {"Term": "X / 1000 (Reputation)", "Value": f"+{x_pts:,.1f}", "Formula Term": "(Rating × Reviews) ÷ 1000"},
+                {"Term": "−100·Y (Distance)", "Value": f"{y_pts:,.1f}", "Formula Term": "− 100 × Road Distance (km)"},
+                {"Term": "−Z / 10 (Fee)", "Value": f"{z_pts:,.1f}", "Formula Term": "− Admission Fee ÷ 10 (Rs/day)"},
+                {"Term": "Total Score", "Value": f"{f1_total:,.1f}", "Formula Term": "1000·A + X/1000 − 100·Y − Z/10"},
             ]
-            st.markdown(f"##### Formula 1 Breakdown for {sel_bd_name}")
+            st.markdown(f"##### Formula 1 (Mentor) Breakdown for {sel_bd_name}")
             st.table(pd.DataFrame(f1_table_data))
         else:
             # Formula 2 breakdown: bars are the three term-points only (Trust, Closeness, Affordability)
