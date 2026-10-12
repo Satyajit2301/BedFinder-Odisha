@@ -315,6 +315,26 @@ def _build_system_prompt(gaz_df: pd.DataFrame) -> str:
     )
 
 
+def get_groq_api_key() -> str:
+    """Return Groq API key from environment or Streamlit Community Cloud secrets."""
+    # 1. Check environment variable
+    key = os.getenv("GROQ_API_KEY")
+    if key and key.strip():
+        return key.strip()
+
+    # 2. Check Streamlit Cloud secrets (st.secrets)
+    try:
+        import streamlit as st
+        if hasattr(st, "secrets") and "GROQ_API_KEY" in st.secrets:
+            s_key = str(st.secrets["GROQ_API_KEY"]).strip()
+            if s_key:
+                return s_key
+    except Exception:
+        pass
+
+    return ""
+
+
 def parse_request(
     text: str,
     client: Any = None,
@@ -348,7 +368,7 @@ def parse_request(
         rules_res, _ = parse_request_rules(text, gaz_df)
         return (rules_res, "rules") if return_source else rules_res
 
-    api_key = os.getenv("GROQ_API_KEY", "")
+    api_key = get_groq_api_key()
     use_llm = bool(client or api_key)
 
     if use_llm:
