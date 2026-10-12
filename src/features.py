@@ -28,9 +28,11 @@ def add_lags(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def add_target_time(df: pd.DataFrame, target_ts: pd.Series) -> pd.DataFrame:
+def add_target_time(df: pd.DataFrame, target_ts) -> pd.DataFrame:
     """Add target-time calendar features."""
     df = df.copy()
+    if not isinstance(target_ts, pd.Series):
+        target_ts = pd.Series([target_ts] * len(df), index=df.index)
     df["target_hour"] = target_ts.dt.hour
     df["target_dow"] = target_ts.dt.dayofweek
     df["target_month"] = target_ts.dt.month

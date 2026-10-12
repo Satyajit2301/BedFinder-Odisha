@@ -161,3 +161,23 @@ class TestDocIntegrity:
 
         assert verif_count == pytest_count, f"VERIFICATION.md count ({verif_count}) != pytest_output.txt count ({pytest_count})"
 
+    def test_ml_accuracy_numbers_match_numbers_json(self):
+        """V4: audit_ml.py writes ML numbers to numbers.json, and on-screen accuracy expander reflects it."""
+        import json
+        from streamlit.testing.v1 import AppTest
+        numbers_path = DOCS_DIR / "numbers.json"
+        data = json.loads(numbers_path.read_text(encoding="utf-8"))
+        at = AppTest.from_file("app.py", default_timeout=30).run()
+        assert not at.exception
+        # Check rendered markdown in app for macro F1 and Brier
+        found_f1 = False
+        m_f1_str = f"{data['macro_f1_model']:.4f}"
+        b_f1_str = f"{data['macro_f1_baseline']:.4f}"
+        brier_str = f"{data['brier_model']:.4f}"
+        for md in at.markdown:
+            val = str(md.value)
+            if m_f1_str in val and b_f1_str in val and brier_str in val:
+                found_f1 = True
+                break
+        assert found_f1, f"ML metrics ({m_f1_str}, {b_f1_str}, {brier_str}) not found in rendered app markdown"
+

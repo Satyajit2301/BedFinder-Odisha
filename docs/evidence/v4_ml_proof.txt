@@ -1,0 +1,51 @@
+V4 — ML Model Visibility and Honest Calibration Proof
+======================================================
+Generated: 2026-10-12
+
+1. Renamed Fields & Clamped Horizon
+------------------------------------
+In src/ml.py:
+- ml_p_full, ml_p_limited, ml_p_available, ml_status, ml_confidence, ml_status_code
+- horizon per hospital: clamp(ceil(ETA_min / 60), 1, 6) hours
+- forecast_hospital_horizons(hospital_row, model_bundle, now) predicts +1h through +6h
+
+2. UI & Card Display
+--------------------
+In app.py:
+- Card bed status: colour + text (e.g., 🟢 Available 78%, 🟡 Limited 64%, 🔴 Likely full 71%)
+- Card safety badge: ⚠️ Likely full — call first (with original Formula rank tooltip)
+- Table column: 'Bed status (ML)' replacing old 'Bed Chance' bar column
+- Results header counter: '0 hospitals flagged' / '1 hospital flagged'
+
+3. Safety Flag Rule & Invariants
+--------------------------------
+In src/scoring.py:
+- if ml_status == Full and ml_p_full >= 0.5:
+    hospital flagged with 'Likely full — call first' and ranked AFTER all unflagged hospitals.
+- Invariant: Formula score is completely unchanged by ML predictions (ML never multiplies into score).
+- Invariant: Flagged hospitals stay in table, never hidden.
+
+4. 6-Hour Forecast & Accuracy Expander
+--------------------------------------
+- 6-Hour Ward Availability Forecast stacked Plotly bar chart for selected hospital (+1h to +6h).
+- Expander '🎯 How good is the ML model?' displaying numbers from docs/numbers.json:
+    * Model Macro-F1: 0.7769 vs Persistence Baseline: 0.7687
+    * Brier Score: 0.0601
+    * Per-horizon Macro-F1 breakdown (+1h: 0.8633 vs 0.8696; +6h: 0.6914 vs 0.6675)
+    * Honest statement: 'Comparable overall: slightly worse at +1 h, better at +4 h to +6 h. Trained on simulated data, so this shows that the pipeline works, not real-world accuracy.'
+
+5. Test Verification
+--------------------
+tests/test_ml.py (7 passed):
+- test_status_names_mapping PASSED
+- test_p_bed_arrival_monotonicity PASSED
+- test_model_bundle_prediction_keys PASSED
+- test_p_bed_strict_decay_tight_capacity PASSED
+- test_v4_ml_fields_renamed_and_clamped_horizon PASSED
+- test_v4_safety_flag_places_flagged_after_unflagged_without_changing_score PASSED
+- test_v4_zero_beds_in_demo_tools_triggers_full_flag PASSED
+
+tests/test_docs.py:
+- test_ml_accuracy_numbers_match_numbers_json PASSED
+
+Total test suite: 93 passed.

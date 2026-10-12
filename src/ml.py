@@ -1,8 +1,8 @@
-"""ML inference — predict bed availability at arrival time."""
+"""ML inference — predict bed availability at arrival time with honest calibration."""
 import joblib
 import numpy as np
 import pandas as pd
-from src.config import MODEL_PATH, ML_FEATURES, HORIZONS, STATUS_NAMES
+from src.config import MODEL_PATH, ML_FEATURES, STATUS_NAMES
 from src.features import add_lags, add_target_time
 
 
@@ -27,7 +27,8 @@ def predict_availability(snap: pd.DataFrame, model_bundle: dict,
 
     Returns
     -------
-    DataFrame with columns: p_full, p_limited, p_avail, p_bed, pred_status
+    DataFrame with columns:
+        ml_p_full, ml_p_limited, ml_p_available, ml_status, ml_confidence, horizon
     """
     if now is None:
         now = pd.Timestamp.now().floor("min")
@@ -35,11 +36,11 @@ def predict_availability(snap: pd.DataFrame, model_bundle: dict,
     model = model_bundle["model"]
     d = snap.copy()
 
-    # Pick the nearest horizon for each hospital's ETA
-    d["horizon"] = [
-        next((h for h in HORIZONS if h >= m / 60), HORIZONS[-1])
-        for m in eta_minutes
-    ]
+    # V4: Horizon per hospital = clamp(ceil(ETA_min / 60), 1, 6) hours
+    eta_arr = np.asarray(eta_minutes, dtype=float)
+    eta_hours = np.ceil(eta_arr / 60.0).astype(int)
+    d["horizon"] = np.clip(eta_hours, 1, 6)
+
     d = add_target_time(d, now + pd.to_timedelta(d["horizon"], unit="h"))
 
     # Ensure all required features exist
@@ -54,12 +55,51 @@ def predict_availability(snap: pd.DataFrame, model_bundle: dict,
     )
     proba = proba.reindex(columns=[0, 1, 2], fill_value=0.0)
 
-    d["p_full"] = proba[0].values
-    d["p_limited"] = proba[1].values
-    d["p_avail"] = proba[2].values
-    d["p_bed"] = d["p_limited"] + d["p_avail"]  # chance of getting at least some bed
-    d["pred_status"] = proba.to_numpy().argmax(axis=1)
-    d["pred_status_name"] = d["pred_status"].map(STATUS_NAMES)
-    d["horizon"] = d["horizon"]
+    d["ml_p_full"] = proba[0].values
+    d["ml_p_limited"] = proba[1].values
+    d["ml_p_available"] = proba[2].values
+
+    code = proba.to_numpy().argmax(axis=1)
+    d["ml_status_code"] = code
+    d["ml_status"] = pd.Series(code).map({0: "Full", 1: "Limited", 2: "Available"}).values
+    d["ml_confidence"] = proba.to_numpy().max(axis=1)
+
+    # Aliases for backward compatibility
+    d["p_full"] = d["ml_p_full"]
+    d["p_limited"] = d["ml_p_limited"]
+    d["p_avail"] = d["ml_p_available"]
+    d["p_bed"] = d["ml_p_limited"] + d["ml_p_available"]
+    d["pred_status"] = code
+    d["pred_status_name"] = d["ml_status"]
 
     return d
+
+
+def forecast_hospital_horizons(hospital_row: pd.Series, model_bundle: dict, now: pd.Timestamp | None = None) -> pd.DataFrame:
+    """Predict probabilities across horizons +1h through +6h for a single hospital."""
+    if now is None:
+        now = pd.Timestamp.now().floor("min")
+    model = model_bundle["model"]
+
+    records = []
+    for h in range(1, 7):
+        row_copy = hospital_row.to_frame().T.copy()
+        row_copy["horizon"] = h
+        target_ts = now + pd.to_timedelta(h, unit="h")
+        row_copy = add_target_time(row_copy, target_ts)
+        for f in ML_FEATURES:
+            if f not in row_copy.columns:
+                row_copy[f] = 0
+        proba = model.predict_proba(row_copy[ML_FEATURES])[0]
+        class_map = {c: proba[i] for i, c in enumerate(model.classes_)}
+        p_full = float(class_map.get(0, 0.0))
+        p_limited = float(class_map.get(1, 0.0))
+        p_available = float(class_map.get(2, 0.0))
+        records.append({
+            "horizon": h,
+            "horizon_label": f"+{h}h",
+            "p_full": p_full,
+            "p_limited": p_limited,
+            "p_available": p_available,
+        })
+    return pd.DataFrame(records)

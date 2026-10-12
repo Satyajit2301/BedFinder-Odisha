@@ -166,10 +166,28 @@ def bedscore(df: pd.DataFrame, user_lat: float, user_lon: float, *,
     if not include_specialty and "category" in d.columns:
         ranked_mask = ranked_mask & (d["category"].astype(str).str.lower() != "specialty")
 
+    d["formula_rank"] = 0
+    if ranked_mask.any():
+        f_sub = d.loc[ranked_mask].sort_values(["score", "dist_km"], ascending=[False, True])
+        d.loc[f_sub.index, "formula_rank"] = range(1, len(f_sub) + 1)
+
+    is_full = (
+        (d.get("ml_status") == "Full") |
+        (d.get("ml_status_code") == 0) |
+        (d.get("pred_status_name") == "Full") |
+        (d.get("pred_status") == 0)
+    )
+    p_full_s = d["ml_p_full"] if "ml_p_full" in d.columns else d.get("p_full", pd.Series(0.0, index=d.index))
+    d["is_flagged"] = is_full & (p_full_s >= 0.5)
+    d["safety_flag"] = np.where(d["is_flagged"], "Likely full — call first", "")
+
     d["rank"] = 0
     if ranked_mask.any():
-        ranked_sub = d.loc[ranked_mask].sort_values(["score", "dist_km"], ascending=[False, True])
-        d.loc[ranked_sub.index, "rank"] = range(1, len(ranked_sub) + 1)
+        unflagged = d.loc[ranked_mask & (~d["is_flagged"])].sort_values(["score", "dist_km"], ascending=[False, True])
+        flagged = d.loc[ranked_mask & d["is_flagged"]].sort_values(["score", "dist_km"], ascending=[False, True])
+        ordered_idx = list(unflagged.index) + list(flagged.index)
+        d.loc[ordered_idx, "rank"] = range(1, len(ordered_idx) + 1)
+
     return d.sort_values(["rank", "dist_km"], key=lambda s: s.replace(0, 9999) if s.name == "rank" else s)
 
 
@@ -349,10 +367,27 @@ def rank_hospitals(df: pd.DataFrame, user_lat: float, user_lon: float,
     if not include_specialty and "category" in result.columns:
         ranked_mask = ranked_mask & (result["category"].astype(str).str.lower() != "specialty")
 
+    result["formula_rank"] = 0
+    if ranked_mask.any():
+        f_sub = result.loc[ranked_mask].sort_values(["score", "dist_km"], ascending=[False, True])
+        result.loc[f_sub.index, "formula_rank"] = range(1, len(f_sub) + 1)
+
+    is_full = (
+        (result.get("ml_status") == "Full") |
+        (result.get("ml_status_code") == 0) |
+        (result.get("pred_status_name") == "Full") |
+        (result.get("pred_status") == 0)
+    )
+    p_full_s = result["ml_p_full"] if "ml_p_full" in result.columns else result.get("p_full", pd.Series(0.0, index=result.index))
+    result["is_flagged"] = is_full & (p_full_s >= 0.5)
+    result["safety_flag"] = np.where(result["is_flagged"], "Likely full — call first", "")
+
     result["rank"] = 0
     if ranked_mask.any():
-        ranked_subset = result.loc[ranked_mask].sort_values(["score", "dist_km"], ascending=[False, True])
-        result.loc[ranked_subset.index, "rank"] = range(1, len(ranked_subset) + 1)
+        unflagged = result.loc[ranked_mask & (~result["is_flagged"])].sort_values(["score", "dist_km"], ascending=[False, True])
+        flagged = result.loc[ranked_mask & result["is_flagged"]].sort_values(["score", "dist_km"], ascending=[False, True])
+        ordered_idx = list(unflagged.index) + list(flagged.index)
+        result.loc[ordered_idx, "rank"] = range(1, len(ordered_idx) + 1)
     
     result = result.sort_values(["rank", "dist_km"], key=lambda s: s.replace(0, 9999) if s.name == "rank" else s)
     return result

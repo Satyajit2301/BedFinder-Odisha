@@ -29,7 +29,7 @@ from src.geo import (
     validate_location, BHUBANESWAR_CENTER, MAX_CITY_DIST_KM, haversine_km,
 )
 from src.llm import build_facts, explain
-from src.ml import predict_availability
+from src.ml import predict_availability, forecast_hospital_horizons
 from src.scoring import formula_text, formula_latex, formula_legend, get_score_breakdown, rank_hospitals, rankable
 from src.ui_utils import render_html, safe_html, scheme_icon, status_word
 
@@ -435,19 +435,39 @@ p_available = None
 if model_bundle is not None:
     try:
         pred = predict_availability(snap, model_bundle, snap["eta_min"].values, now)
-        snap["p_full"] = pred["p_full"].values
-        snap["p_limited"] = pred["p_limited"].values
-        snap["p_avail"] = pred["p_avail"].values
-        snap["p_bed"] = pred["p_bed"].values
-        snap["pred_status"] = pred["pred_status"].values
-        snap["pred_status_name"] = pred["pred_status_name"].values
+        snap["ml_p_full"] = pred["ml_p_full"].values
+        snap["ml_p_limited"] = pred["ml_p_limited"].values
+        snap["ml_p_available"] = pred["ml_p_available"].values
+        snap["ml_status"] = pred["ml_status"].values
+        snap["ml_status_code"] = pred["ml_status_code"].values
+        snap["ml_confidence"] = pred["ml_confidence"].values
         snap["horizon"] = pred["horizon"].values
-        p_available = snap["p_avail"]
+        # Aliases for backward compatibility
+        snap["p_full"] = pred["ml_p_full"].values
+        snap["p_limited"] = pred["ml_p_limited"].values
+        snap["p_avail"] = pred["ml_p_available"].values
+        snap["p_bed"] = pred["p_bed"].values
+        snap["pred_status"] = pred["ml_status_code"].values
+        snap["pred_status_name"] = pred["ml_status"].values
     except Exception as e:
+        snap["ml_p_full"] = 0.0
+        snap["ml_p_limited"] = 0.0
+        snap["ml_p_available"] = 1.0
+        snap["ml_status"] = "Available"
+        snap["ml_status_code"] = 2
+        snap["ml_confidence"] = 1.0
+        snap["horizon"] = 1
         snap["pred_status"] = 2
         snap["pred_status_name"] = "Available"
         snap["p_bed"] = 1.0
 else:
+    snap["ml_p_full"] = 0.0
+    snap["ml_p_limited"] = 0.0
+    snap["ml_p_available"] = 1.0
+    snap["ml_status"] = "Available"
+    snap["ml_status_code"] = 2
+    snap["ml_confidence"] = 1.0
+    snap["horizon"] = 1
     snap["pred_status"] = 2
     snap["pred_status_name"] = "Available"
     snap["p_bed"] = 1.0
@@ -463,6 +483,14 @@ ranked = rankable(result, show_specialty).copy()
 # ── Top picks cards ───────────────────────────────────────────────────
 st.markdown("---")
 st.markdown(f"#### 🏅 Top {min(top_n, len(ranked))} Hospitals ({method})")
+
+flagged_count = int(ranked["is_flagged"].sum()) if "is_flagged" in ranked.columns else 0
+flagged_str = f"{flagged_count} hospital{'s' if flagged_count != 1 else ''} flagged" if flagged_count > 0 else "0 hospitals flagged"
+card_str = "Card on" if user_has_card else "Card off"
+loc_src = loc.get("source", "area search")
+acc_txt = f" ±{int(loc['accuracy_m'])} m" if loc.get("accuracy_m") and loc_src == "GPS" else ""
+res_header_str = f"{'Formula 1' if 'formula1' in method_key else 'Formula 2'} · {loc['label']} ({loc_src}{acc_txt}) · {card_str} · {flagged_str}"
+st.markdown(f'<div style="color:#A0AEC0; font-size:0.92rem; font-weight:500; margin-bottom:8px;">{html.escape(res_header_str)}</div>', unsafe_allow_html=True)
 
 st.caption(f"📐 Active formula: **{formula_text(method)}**")
 
@@ -483,16 +511,31 @@ else:
             if show_specialty and str(r.get("category", "")).lower() == "specialty":
                 spec_tag = safe_html(' <span class="est-badge" style="background:rgba(139,92,246,0.25);color:#C4B5FD;border-color:rgba(139,92,246,0.5);">Specialty</span>')
 
-            p_val = float(r.get("p_bed", 1.0))
-            p_word, p_col, p_ico = status_word(p_val)
+            ml_stat = str(r.get("ml_status", "Available"))
+            ml_conf = float(r.get("ml_confidence", 0.78))
+            conf_pct = int(round(ml_conf * 100)) if ml_conf <= 1.0 else int(round(ml_conf))
+            if ml_stat.lower() == "full" or ml_stat == "0":
+                ml_word = "Likely full"
+                ml_col = "#EF4444"
+                ml_ico = "🔴"
+            elif ml_stat.lower() == "limited" or ml_stat == "1":
+                ml_word = "Limited"
+                ml_col = "#F59E0B"
+                ml_ico = "🟡"
+            else:
+                ml_word = "Available"
+                ml_col = "#10B981"
+                ml_ico = "🟢"
+            ml_display_str = f"{ml_ico} {ml_word} {conf_pct}%"
+
+            safety_badge = ""
+            if r.get("is_flagged"):
+                f_rank_txt = f" (Formula rank: #{int(r['formula_rank'])})" if r.get("formula_rank") else ""
+                safety_badge = safe_html(f'<div style="background:rgba(239,68,68,0.2); color:#F87171; border:1px solid #EF4444; padding:2px 8px; border-radius:12px; font-size:0.78rem; font-weight:600; margin-top:4px;">⚠️ Likely full — call first{f_rank_txt}</div>')
 
             pmjay_status = scheme_icon(r.get('accepts_pmjay', 'unknown'), is_html=True)
             state_status = scheme_icon(r.get('accepts_state_scheme', 'unknown'), is_html=True)
             live_text = f" · {r['live_update']}" if r.get('live_update') else ""
-
-            bed_warning = ""
-            if p_val < 0.5:
-                bed_warning = safe_html('<div style="color: #FFAA00; font-size: 0.8rem; margin-top: 4px; font-weight: 600;">⚠️ This hospital may have no free bed on arrival.</div>')
 
             # UI rule D3: show phone only if phone_confirmed == 'yes'
             is_phone_conf = str(r.get("phone_confirmed", "")).strip().lower() == "yes"
@@ -514,8 +557,8 @@ else:
             card_html = render_html("""
             <div class="hospital-card">
                 <h3>#{rank} {name}{spec_tag}{est_tag}</h3>
-                <div class="stat" style="color: {p_col};">{p_ico} {p_word} ({chance}) — {beds} beds free now</div>
-                {bed_warning}
+                <div class="stat" style="color: {ml_col};">{ml_display_str} — {beds} beds free now</div>
+                {safety_badge}
                 {est_disclosure}
                 <div class="detail">
                     📍 {dist:.1f} km · ~{eta} min &nbsp; 💰 ₹{fee}/day &nbsp; ⭐ {rating:.1f}★ ({reviews:,} reviews)
@@ -532,8 +575,8 @@ else:
             </div>
             """, rank=int(r["rank"]), name=r["hospital_name"][:32], spec_tag=spec_tag, est_tag=est_tag,
                est_disclosure=est_disclosure,
-               p_col=p_col, p_ico=p_ico, p_word=p_word, chance=pct(p_val), beds=r["beds_free_now"],
-               bed_warning=bed_warning, dist=r["dist_km"], eta=r["eta_min"], fee=r["admission_fee_inr"],
+               ml_col=ml_col, ml_display_str=ml_display_str, beds=r["beds_free_now"],
+               safety_badge=safety_badge, dist=r["dist_km"], eta=r["eta_min"], fee=r["admission_fee_inr"],
                rating=r["rating_5"], reviews=r["review_count"], type_str=r["hospital_type"],
                live_text=live_text, pmjay=pmjay_status, state_sch=state_status,
                phone_card=phone_card, web_card=web_card)
@@ -580,8 +623,20 @@ folium.Marker(
 for _, r in result.iterrows():
     is_ranked = r["rank"] > 0
     is_top_n = 0 < r["rank"] <= top_n
-    p_val = float(r.get("p_bed", 1.0))
-    p_word, marker_hex, status_ico = status_word(p_val)
+    ml_stat = str(r.get("ml_status", "Available")).lower()
+    if "full" in ml_stat or ml_stat == "0":
+        marker_hex = "#EF4444"
+        status_ico = "🔴"
+        status_word_txt = "Likely full"
+    elif "limited" in ml_stat or ml_stat == "1":
+        marker_hex = "#F59E0B"
+        status_ico = "🟡"
+        status_word_txt = "Limited"
+    else:
+        marker_hex = "#10B981"
+        status_ico = "🟢"
+        status_word_txt = "Available"
+
     if not is_ranked:
         marker_hex = "#6B7280"
 
@@ -607,18 +662,21 @@ for _, r in result.iterrows():
 
     if is_ranked:
         rank_text = f"Rank #{int(r['rank'])}"
+        if r.get("is_flagged") and r.get("formula_rank"):
+            rank_text += f" (Formula #{int(r['formula_rank'])})"
     elif str(r.get("category", "")).lower() == "specialty":
         rank_text = "Specialty — not ranked"
     else:
         rank_text = "Not ranked"
 
+    conf_pct = int(round(float(r.get("ml_confidence", 0.78)) * 100))
     popup_html = f"""
     <div style="min-width:220px; font-family:Inter,sans-serif;">
         <b>{html.escape(r['hospital_name'])}</b><br>
         <span style="color:{'#22AA5E' if is_ranked else '#888'}">{rank_text}</span><br>
         <hr style="margin:4px 0">
         🛏️ {r['beds_free_now']} beds free now<br>
-        {status_ico} {p_word} — {pct(p_val)} bed chance<br>
+        {status_ico} Bed status (ML): {status_word_txt} {conf_pct}%<br>
         📍 {r['dist_km']:.1f} km · ~{r['eta_min']} min<br>
         💰 ₹{r['admission_fee_inr']}/day<br>
         ⭐ {r['rating_5']:.1f}★ ({r['review_count']:,} reviews)<br>
@@ -699,8 +757,8 @@ sort_by = st.selectbox(
 st.caption("Sorting only changes the order of this table. The recommendation above is unchanged.")
 
 table_data = result[[
-    "hospital_id", "rank", "hospital_name", "category", "hospital_type", "dist_km", "eta_min",
-    "beds_free_now", "p_bed", "admission_fee_inr", "rating_5", "review_count",
+    "hospital_id", "rank", "formula_rank", "is_flagged", "hospital_name", "category", "hospital_type", "dist_km", "eta_min",
+    "beds_free_now", "p_bed", "ml_status", "ml_confidence", "admission_fee_inr", "rating_5", "review_count",
     "accepts_pmjay", "accepts_state_scheme", "website", "google_maps_url"
 ]].copy()
 
@@ -718,7 +776,19 @@ table_data["Type"] = table_data["hospital_type"]
 table_data["Km"] = table_data["dist_km"]
 table_data["ETA min"] = table_data["eta_min"]
 table_data["Free Beds"] = table_data["beds_free_now"]
-table_data["Bed Chance"] = (table_data["p_bed"] * 100).round()
+
+def format_ml_status(r):
+    stat = str(r.get("ml_status", "Available"))
+    conf = float(r.get("ml_confidence", 0.78))
+    conf_pct = int(round(conf * 100)) if conf <= 1.0 else int(round(conf))
+    if stat.lower() == "full" or stat == "0":
+        return f"🔴 Likely full {conf_pct}%"
+    elif stat.lower() == "limited" or stat == "1":
+        return f"🟡 Limited {conf_pct}%"
+    else:
+        return f"🟢 Available {conf_pct}%"
+
+table_data["Bed status (ML)"] = result.apply(format_ml_status, axis=1)
 table_data["Fee/day"] = table_data["admission_fee_inr"]
 table_data["Rating"] = table_data["rating_5"]
 table_data["Reviews"] = table_data["review_count"]
@@ -758,7 +828,7 @@ elif sort_by == "Most beds free":
 
 display_cols = [
     "Rank", "Hospital", "Category", "Type", "Km", "ETA min", "Free Beds",
-    "Bed Chance", "Fee/day", "Rating", "Reviews", "PM-JAY", "GJAY (Odisha)",
+    "Bed status (ML)", "Fee/day", "Rating", "Reviews", "PM-JAY", "GJAY (Odisha)",
     "Phone", "Website", "Directions",
 ]
 display_df = table_data[display_cols]
@@ -773,14 +843,14 @@ def highlight_top(row):
 st.dataframe(
     display_df.style.apply(highlight_top, axis=1),
     column_config={
-        "Rank": st.column_config.TextColumn("Rank", width="medium"),
+        "Rank": st.column_config.TextColumn("Rank", width="medium", help="Final rank after ML safety gate. If flagged, formula rank was higher."),
         "Hospital": st.column_config.TextColumn("Hospital", width="medium"),
         "Category": st.column_config.TextColumn("Category", width="small"),
         "Type": st.column_config.TextColumn("Type", width="small"),
         "Km": st.column_config.NumberColumn("Distance", format="%.1f km"),
         "ETA min": st.column_config.NumberColumn("ETA", format="%d min"),
         "Free Beds": st.column_config.NumberColumn("Free Beds", format="%d"),
-        "Bed Chance": st.column_config.ProgressColumn("Bed Chance", min_value=0, max_value=100, format="%d%%"),
+        "Bed status (ML)": st.column_config.TextColumn("Bed status (ML)", width="medium", help="ML prediction for general ward at arrival (+1h to +6h). Model shortest forecast is +1 h."),
         "Fee/day": st.column_config.NumberColumn("Fee/day", format="₹%d"),
         "Rating": st.column_config.NumberColumn("Rating", format="%.1f ★"),
         "Reviews": st.column_config.NumberColumn("Reviews", format="%d"),
@@ -794,6 +864,86 @@ st.dataframe(
     use_container_width=True,
     height=520,
 )
+
+# ── Bed forecast (ML) ─────────────────────────────────────────────────
+st.markdown("---")
+st.markdown("#### 🔮 Bed forecast (ML)")
+st.markdown("The ML model predicts whether each hospital's general ward will be Full (<5% beds free), Limited (5–15%) or Available (>15%) about an hour from now.")
+
+hosp_names_list = list(ranked["hospital_name"].unique()) if not ranked.empty else list(snap["hospital_name"].unique())
+default_fc_name = ranked.iloc[0]["hospital_name"] if not ranked.empty else hosp_names_list[0]
+default_fc_idx = hosp_names_list.index(default_fc_name) if default_fc_name in hosp_names_list else 0
+
+selected_fc_name = st.selectbox(
+    "Select hospital for 6-hour forecast",
+    hosp_names_list,
+    index=default_fc_idx,
+    key="ml_forecast_hosp_select",
+)
+
+if model_bundle is not None:
+    fc_matched = snap[snap["hospital_name"] == selected_fc_name]
+    if not fc_matched.empty:
+        fc_row = fc_matched.iloc[0]
+        fc_df = forecast_hospital_horizons(fc_row, model_bundle, now)
+        fig_fc = go.Figure()
+        fig_fc.add_trace(go.Bar(
+            name="Available (>15%)",
+            x=fc_df["horizon_label"],
+            y=(fc_df["p_available"] * 100).round(1),
+            marker_color="#10B981",
+        ))
+        fig_fc.add_trace(go.Bar(
+            name="Limited (5–15%)",
+            x=fc_df["horizon_label"],
+            y=(fc_df["p_limited"] * 100).round(1),
+            marker_color="#F59E0B",
+        ))
+        fig_fc.add_trace(go.Bar(
+            name="Full (<5%)",
+            x=fc_df["horizon_label"],
+            y=(fc_df["p_full"] * 100).round(1),
+            marker_color="#EF4444",
+        ))
+        fig_fc.update_layout(
+            barmode="stack",
+            template="plotly_dark",
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            title=f"6-Hour Ward Availability Forecast: {selected_fc_name}",
+            yaxis=dict(title="Probability (%)", range=[0, 100]),
+            xaxis=dict(title="Forecast Horizon (hours from now)"),
+            height=340,
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            margin=dict(l=40, r=40, t=50, b=40),
+        )
+        st.plotly_chart(fig_fc, use_container_width=True)
+st.caption("Trained on a simulated 90-day history; see accuracy below.")
+
+with st.expander("🎯 How good is the ML model?"):
+    import json
+    num_file = Path("docs/numbers.json")
+    num_data = json.loads(num_file.read_text(encoding="utf-8")) if num_file.exists() else {}
+    m_f1 = num_data.get("macro_f1_model", 0.7769)
+    b_f1 = num_data.get("macro_f1_baseline", 0.7687)
+    brier = num_data.get("brier_model", 0.0601)
+
+    st.markdown(f"""
+    **Overall Model vs Persistence Baseline:**
+    - **Model Macro-F1:** {m_f1:.4f}
+    - **Persistence Baseline Macro-F1:** {b_f1:.4f}
+    - **Brier Score (Available class):** {brier:.4f}
+
+    | Horizon | Model Macro-F1 | Baseline Macro-F1 |
+    |---|---|---|
+    | +1 h | {num_data.get('h1_macro_f1_model', 0.8633):.4f} | {num_data.get('h1_macro_f1_baseline', 0.8696):.4f} |
+    | +2 h | {num_data.get('h2_macro_f1_model', 0.8123):.4f} | {num_data.get('h2_macro_f1_baseline', 0.8103):.4f} |
+    | +3 h | {num_data.get('h3_macro_f1_model', 0.7703):.4f} | {num_data.get('h3_macro_f1_baseline', 0.7668):.4f} |
+    | +4 h | {num_data.get('h4_macro_f1_model', 0.7405):.4f} | {num_data.get('h4_macro_f1_baseline', 0.7278):.4f} |
+    | +6 h | {num_data.get('h6_macro_f1_model', 0.6914):.4f} | {num_data.get('h6_macro_f1_baseline', 0.6675):.4f} |
+
+    Comparable overall: slightly worse at +1 h, better at +4 h to +6 h. Trained on simulated data, so this shows that the pipeline works, not real-world accuracy.
+    """)
 
 # ── Expanders ─────────────────────────────────────────────────────────
 
@@ -858,6 +1008,8 @@ with st.expander("🔬 Why two formulas?"):
 
     **Our improvement:** **Formula 2 (BedScore)** applies physics-based queue arrival probability `P`,
     log-damped review trust, and bounded distance and fee terms. The ranking genuinely responds to user location (12 distinct orders and 9 distinct Rank-1 hospitals across 12 landmarks).
+
+    **ML Safety Flag:** If a hospital's general ward is predicted to be Full (ml_p_full ≥ 50%), it is flagged ("Likely full — call first") and placed after all unflagged hospitals without altering any formula score.
     """)
 
 # About the data
