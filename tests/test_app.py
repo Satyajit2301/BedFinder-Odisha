@@ -174,3 +174,50 @@ def test_ui_contract_no_mentor_and_formulas_match_formula_text():
         matches = forbidden_pattern.findall(val)
         assert not matches, f"Found forbidden terms {matches} in rendered markdown: {val[:80]}"
 
+
+def test_v3_sort_table_by():
+    """V3 requirement: row count unchanged for every sort, Rank values unchanged, Cheapest uses effective fee."""
+    at = AppTest.from_file("app.py", default_timeout=30).run()
+    assert not at.exception
+
+    # Default sort
+    df_default = at.dataframe[0].value
+    assert len(df_default) == 25
+    rank_mapping = dict(zip(df_default["Hospital"], df_default["Rank"]))
+
+    sort_options = [
+        "Recommended rank",
+        "Nearest",
+        "Cheapest (effective fee)",
+        "Highest rated",
+        "Most beds free",
+    ]
+
+    # Find the sort selectbox
+    sort_sb_list = [s for s in at.selectbox if s.key == "sort_table_by"]
+    assert len(sort_sb_list) == 1, "sort_table_by selectbox not found"
+    sort_sb = sort_sb_list[0]
+
+    for opt in sort_options:
+        sort_sb.select(opt).run()
+        assert not at.exception
+        df_sorted = at.dataframe[0].value
+        # Row count unchanged
+        assert len(df_sorted) == 25, f"Row count changed for sort: {opt}"
+        # Rank column values unchanged for each hospital
+        for _, row in df_sorted.iterrows():
+            hosp = row["Hospital"]
+            assert row["Rank"] == rank_mapping[hosp], f"Rank value changed for {hosp} in sort {opt}"
+
+    # Test "Cheapest" with scheme card ON: cashless rows (fee 0) must appear first
+    at.sidebar.toggle[1].set_value(True).run()
+    assert not at.exception
+    sort_sb = [s for s in at.selectbox if s.key == "sort_table_by"][0]
+    sort_sb.select("Cheapest (effective fee)").run()
+    assert not at.exception
+    df_card_cheap = at.dataframe[0].value
+    first_hosp = df_card_cheap.iloc[0]
+    # Top rows must accept cashless scheme (PM-JAY or GJAY) or have Rs 0 fee
+    assert "✓" in str(first_hosp["PM-JAY"]) or "✓" in str(first_hosp["GJAY (Odisha)"]) or first_hosp["Fee/day"] == 0
+
+

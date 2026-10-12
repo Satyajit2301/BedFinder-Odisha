@@ -457,56 +457,8 @@ result = rank_hospitals(snap, user_lat, user_lon, method=method_key,
                         user_has_card=user_has_card, p_available=None,
                         include_specialty=show_specialty)
 
-# ── Alternatives strip ────────────────────────────────────────────────
+# ── Ranked subset ─────────────────────────────────────────────────────
 ranked = rankable(result, show_specialty).copy()
-if not ranked.empty:
-    st.markdown("#### 🏆 Quick Picks")
-    c1, c2, c3, c4 = st.columns(4)
-
-    # Quick picks follow rankable() with deterministic tie-breaking for identical behavior across modes
-    nearest = ranked.sort_values(["dist_km", "hospital_id"]).iloc[0]
-    cheapest = ranked.sort_values(["admission_fee_inr", "dist_km", "hospital_id"]).iloc[0]
-    best_rated = ranked.sort_values(["rating_5", "review_count", "hospital_id"], ascending=[False, False, True]).iloc[0]
-    most_beds = ranked.sort_values(["beds_free_now", "dist_km", "hospital_id"], ascending=[False, True, True]).iloc[0]
-
-    with c1:
-        st.markdown(render_html("""
-        <div class="alt-card">
-            <div class="label">📍 Nearest</div>
-            <div class="name" title="{full_name}">{name}</div>
-            <div class="value">{dist:.1f} km · ~{eta} min</div>
-        </div>
-        """, full_name=nearest['hospital_name'], name=nearest['hospital_name'],
-           dist=nearest['dist_km'], eta=nearest['eta_min']), unsafe_allow_html=True)
-    with c2:
-        st.markdown(render_html("""
-        <div class="alt-card">
-            <div class="label">💰 Cheapest</div>
-            <div class="name" title="{full_name}">{name}</div>
-            <div class="value">₹{fee}/day</div>
-        </div>
-        """, full_name=cheapest['hospital_name'], name=cheapest['hospital_name'],
-           fee=cheapest['admission_fee_inr']), unsafe_allow_html=True)
-    with c3:
-        st.markdown(render_html("""
-        <div class="alt-card">
-            <div class="label">⭐ Highest Rated</div>
-            <div class="name" title="{full_name}">{name}</div>
-            <div class="value">{rating:.1f}★ ({reviews:,} reviews)</div>
-        </div>
-        """, full_name=best_rated['hospital_name'], name=best_rated['hospital_name'],
-           rating=best_rated['rating_5'], reviews=best_rated['review_count']), unsafe_allow_html=True)
-    with c4:
-        st.markdown(render_html("""
-        <div class="alt-card">
-            <div class="label">🛏️ Most Beds Free</div>
-            <div class="name" title="{full_name}">{name}</div>
-            <div class="value">{beds} beds available</div>
-        </div>
-        """, full_name=most_beds['hospital_name'], name=most_beds['hospital_name'],
-           beds=most_beds['beds_free_now']), unsafe_allow_html=True)
-
-    st.caption("*The system recommends, but you may choose any hospital based on your preference.*")
 
 # ── Top picks cards ───────────────────────────────────────────────────
 st.markdown("---")
@@ -737,8 +689,17 @@ st.caption("🟢 Likely (≥80%) · 🟡 Tight (50–80%) · 🔴 Unlikely (<50%
 st.markdown("---")
 st.markdown("#### 📋 All Hospitals")
 
+sort_by = st.selectbox(
+    "Sort table by",
+    ["Recommended rank", "Nearest", "Cheapest (effective fee)", "Highest rated", "Most beds free"],
+    index=0,
+    help="Sorting only changes the order of this table. The recommendation above is unchanged.",
+    key="sort_table_by",
+)
+st.caption("Sorting only changes the order of this table. The recommendation above is unchanged.")
+
 table_data = result[[
-    "rank", "hospital_name", "category", "hospital_type", "dist_km", "eta_min",
+    "hospital_id", "rank", "hospital_name", "category", "hospital_type", "dist_km", "eta_min",
     "beds_free_now", "p_bed", "admission_fee_inr", "rating_5", "review_count",
     "accepts_pmjay", "accepts_state_scheme", "website", "google_maps_url"
 ]].copy()
@@ -775,6 +736,25 @@ table_data["Website"] = result.apply(
     axis=1,
 )
 table_data["Directions"] = table_data["google_maps_url"]
+
+# Apply table sorting (Rank column remains the original formula rank)
+if "fee_eff" in result.columns:
+    table_data["fee_eff"] = result["fee_eff"].values
+else:
+    is_cashless = (result.get("accepts_pmjay") == True) | (result.get("accepts_state_scheme") == True)
+    table_data["fee_eff"] = np.where(user_has_card & is_cashless, 0.0, table_data["Fee/day"].astype(float))
+
+if sort_by == "Recommended rank":
+    table_data["_sort_rank"] = table_data["rank"].apply(lambda r: r if r > 0 else 9999)
+    table_data = table_data.sort_values(["_sort_rank", "Km", "hospital_id"])
+elif sort_by == "Nearest":
+    table_data = table_data.sort_values(["Km", "hospital_id"])
+elif sort_by == "Cheapest (effective fee)":
+    table_data = table_data.sort_values(["fee_eff", "Km", "hospital_id"])
+elif sort_by == "Highest rated":
+    table_data = table_data.sort_values(["Rating", "Reviews", "hospital_id"], ascending=[False, False, True])
+elif sort_by == "Most beds free":
+    table_data = table_data.sort_values(["Free Beds", "Km", "hospital_id"], ascending=[False, True, True])
 
 display_cols = [
     "Rank", "Hospital", "Category", "Type", "Km", "ETA min", "Free Beds",

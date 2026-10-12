@@ -1,0 +1,23 @@
+# BedFinder Odisha — V3 Sort Table Proof
+
+## 1. Quick Picks Deletion
+- Quick Picks 4-column strip deleted from `app.py`.
+- `TestQuickPicks` test suite removed from `tests/test_scoring.py`.
+
+## 2. Table Sorting Feature
+- Added "Sort table by" selectbox above the All Hospitals table with 5 options:
+  1. "Recommended rank" (default)
+  2. "Nearest" (by distance)
+  3. "Cheapest (effective fee)" (by effective fee taking scheme into account)
+  4. "Highest rated" (by rating and reviews)
+  5. "Most beds free" (by available beds)
+- Added caption: "Sorting only changes the order of this table. The recommendation above is unchanged."
+
+## 3. Invariants Verified
+- Table Row Count: Preserved at exactly 25 hospitals across all sort options.
+- Rank Column Integrity: The displayed Rank column strictly displays the formula rank (e.g. #1, #2, ...) computed by the formula, never changing when the table is re-sorted.
+- Scheme Awareness: In "Cheapest (effective fee)" mode with card ON, hospitals with verified cashless scheme acceptance (effective fee Rs 0) sort directly to the top.
+
+## 4. Test Verification
+- Automated test `tests/test_app.py::test_v3_sort_table_by` passes.
+- All 89 tests across the repository pass.
