@@ -5,6 +5,7 @@ Built for Bhubaneswar, Odisha.
 
 Run:  streamlit run app.py
 """
+import base64
 import html
 import os
 from datetime import datetime, timezone, timedelta
@@ -55,42 +56,52 @@ st.markdown("""
 
     /* Header styling */
     .main-header {
+        position: relative;
+        overflow: hidden;
         background: linear-gradient(135deg, #0E1117 0%, #1A2332 100%);
-        padding: 1.5rem 2rem;
-        border-radius: 12px;
-        border: 1px solid rgba(0, 191, 166, 0.2);
+        padding: 1.6rem 2.2rem;
+        border-radius: 14px;
+        border: 1px solid rgba(0, 191, 166, 0.35);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), inset 0 0 40px rgba(0, 0, 0, 0.45);
         margin-bottom: 1rem;
     }
     .main-header h1 {
         color: #00BFA6;
         font-size: 2rem;
         margin: 0;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
     }
     .main-header p {
-        color: #B0B0B0;
+        color: #E0E7EF;
         font-size: 0.95rem;
-        margin: 0.3rem 0 0 0;
+        margin: 0.35rem 0 0 0;
+        text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7);
     }
     .demo-badge {
         display: inline-block;
-        background: rgba(255, 170, 0, 0.15);
+        background: rgba(255, 170, 0, 0.16);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
         color: #FFAA00;
-        padding: 0.2rem 0.7rem;
+        padding: 0.22rem 0.75rem;
         border-radius: 20px;
         font-size: 0.75rem;
-        margin-top: 0.5rem;
-        border: 1px solid rgba(255, 170, 0, 0.3);
+        margin-top: 0.6rem;
+        border: 1px solid rgba(255, 170, 0, 0.4);
+        text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
     }
     .datetime-badge {
         display: inline-flex;
         align-items: center;
-        background: rgba(0, 191, 166, 0.08);
-        border: 1px solid rgba(0, 191, 166, 0.28);
-        padding: 0.32rem 0.8rem;
+        background: rgba(8, 14, 24, 0.7);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(0, 191, 166, 0.38);
+        padding: 0.35rem 0.85rem;
         border-radius: 20px;
-        font-size: 0.8rem;
+        font-size: 0.82rem;
         color: #E8E8E8;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
         white-space: nowrap;
     }
     .live-pulse {
@@ -238,15 +249,33 @@ if sim_hosp and sim_beds is not None and sim_hosp in snap["hospital_name"].value
         snap.loc[snap["hospital_name"] == sim_hosp, "occ_pct"] = occ
         snap.loc[snap["hospital_name"] == sim_hosp, "general_ward_occupancy_pct"] = occ * 100.0
 
+@st.cache_data
+def get_header_bg_css() -> str:
+    img_name = "subtle-blue-medical-background-ideal-health-reports-blogs-informational-graphics-sophisticated-low-light-calming-349281786.webp"
+    img_path = Path(__file__).parent / img_name
+    if img_path.exists():
+        try:
+            b64 = base64.b64encode(img_path.read_bytes()).decode()
+            return (
+                "background: "
+                "linear-gradient(135deg, rgba(8, 14, 24, 0.84) 0%, rgba(12, 22, 38, 0.74) 45%, rgba(6, 12, 22, 0.88) 100%), "
+                f"url('data:image/webp;base64,{b64}') center / cover no-repeat;"
+            )
+        except Exception:
+            pass
+    return "background: linear-gradient(135deg, #0E1117 0%, #1A2332 100%);"
+
+
 # ── Date and time calculation (IST) ──────────────────────────────────
 ist_tz = timezone(timedelta(hours=5, minutes=30))
 now_ist = datetime.now(ist_tz)
 current_date_str = now_ist.strftime("%A, %d %b %Y")
 current_time_str = now_ist.strftime("%I:%M %p IST")
+header_bg_style = get_header_bg_css()
 
 # ── Header ────────────────────────────────────────────────────────────
 st.markdown(f"""
-<div class="main-header">
+<div class="main-header" style="{header_bg_style}">
     <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
         <div style="flex: 1; min-width: 280px;">
             <h1>🏥 BedFinder Odisha</h1>
