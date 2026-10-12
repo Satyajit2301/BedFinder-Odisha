@@ -472,10 +472,36 @@ else:
     snap["pred_status_name"] = "Available"
     snap["p_bed"] = 1.0
 
-# ── Rank hospitals ────────────────────────────────────────────────────
-result = rank_hospitals(snap, user_lat, user_lon, method=method_key,
-                        user_has_card=user_has_card, p_available=None,
-                        include_specialty=show_specialty)
+# ── Baseline rankings (card OFF) for rank arrows & summary metrics ──
+ranks_off = rank_hospitals(
+    snap, user_lat, user_lon, method=method_key,
+    user_has_card=False, p_available=None,
+    include_specialty=show_specialty,
+)
+rank_map_off = dict(zip(ranks_off["hospital_id"], ranks_off["rank"]))
+
+# ── Active rankings (with current user_has_card toggle) ────────────────
+result = rank_hospitals(
+    snap, user_lat, user_lon, method=method_key,
+    user_has_card=user_has_card, p_available=None,
+    include_specialty=show_specialty,
+)
+rank_map_on = dict(zip(result["hospital_id"], result["rank"]))
+
+# Rank arrows (▲n / ▼n beside rank when card is ON)
+def compute_arrow(hid):
+    if not user_has_card:
+        return ""
+    r_off = rank_map_off.get(hid, 0)
+    r_on = rank_map_on.get(hid, 0)
+    if r_off > 0 and r_on > 0:
+        if r_off > r_on:
+            return f" ▲{r_off - r_on}"
+        elif r_off < r_on:
+            return f" ▼{r_on - r_off}"
+    return ""
+
+result["rank_arrow"] = result["hospital_id"].apply(compute_arrow)
 
 # ── Ranked subset ─────────────────────────────────────────────────────
 ranked = rankable(result, show_specialty).copy()
@@ -491,6 +517,24 @@ loc_src = loc.get("source", "area search")
 acc_txt = f" ±{int(loc['accuracy_m'])} m" if loc.get("accuracy_m") and loc_src == "GPS" else ""
 res_header_str = f"{'Formula 1' if 'formula1' in method_key else 'Formula 2'} · {loc['label']} ({loc_src}{acc_txt}) · {card_str} · {flagged_str}"
 st.markdown(f'<div style="color:#A0AEC0; font-size:0.92rem; font-weight:500; margin-bottom:8px;">{html.escape(res_header_str)}</div>', unsafe_allow_html=True)
+
+if user_has_card:
+    n_free = int((result["fee_eff"] == 0).sum())
+    n_changed = sum(
+        1 for hid in rank_map_off
+        if rank_map_off[hid] > 0 and rank_map_on.get(hid, 0) > 0 and rank_map_off[hid] != rank_map_on.get(hid, 0)
+    )
+    top3_off = list(ranks_off[ranks_off["rank"] > 0].head(3)["hospital_id"])
+    top3_on = list(result[result["rank"] > 0].head(3)["hospital_id"])
+    top3_status = "Top 3 changed" if top3_off != top3_on else "Top 3 unchanged"
+    ch_str = f"{n_changed} hospital{'s' if n_changed != 1 else ''} changed rank"
+    card_summary_line = f"Card ON: Rs 0 fee at {n_free} hospitals · {ch_str} · {top3_status}"
+    st.markdown(
+        f'<div style="background:rgba(34,170,94,0.12); color:#22AA5E; border:1px solid rgba(34,170,94,0.3); '
+        f'border-radius:6px; padding:6px 14px; font-size:0.85rem; font-weight:600; margin-bottom:12px;">'
+        f'💳 {html.escape(card_summary_line)}</div>',
+        unsafe_allow_html=True,
+    )
 
 st.caption(f"📐 Active formula: **{formula_text(method)}**")
 
@@ -533,8 +577,17 @@ else:
                 f_rank_txt = f" (Formula rank: #{int(r['formula_rank'])})" if r.get("formula_rank") else ""
                 safety_badge = safe_html(f'<div style="background:rgba(239,68,68,0.2); color:#F87171; border:1px solid #EF4444; padding:2px 8px; border-radius:12px; font-size:0.78rem; font-weight:600; margin-top:4px;">⚠️ Likely full — call first{f_rank_txt}</div>')
 
-            pmjay_status = scheme_icon(r.get('accepts_pmjay', 'unknown'), is_html=True)
-            state_status = scheme_icon(r.get('accepts_state_scheme', 'unknown'), is_html=True)
+            # Fee display on card
+            fee_val = int(r["admission_fee_inr"])
+            if user_has_card and r.get("scheme_flag"):
+                fee_card_html = safe_html(f'💰 <del style="color:#888;">Rs {fee_val:,}</del> <strong style="color:#22AA5E;">Rs 0</strong>/day <span class="badge-yes">Cashless (demo)</span>')
+            elif user_has_card:
+                fee_card_html = safe_html(f'💰 Rs {fee_val:,}/day <span style="color:#888; font-size:0.78rem;">(scheme: not confirmed)</span>')
+            else:
+                fee_card_html = safe_html(f'💰 Rs {fee_val:,}/day')
+
+            arrow_str = r.get("rank_arrow", "")
+            scheme_val = "✓ (demo flag)" if r.get("scheme_flag") else "?"
             live_text = f" · {r['live_update']}" if r.get('live_update') else ""
 
             # UI rule D3: show phone only if phone_confirmed == 'yes'
@@ -556,29 +609,29 @@ else:
 
             card_html = render_html("""
             <div class="hospital-card">
-                <h3>#{rank} {name}{spec_tag}{est_tag}</h3>
+                <h3>#{rank}{arrow} {name}{spec_tag}{est_tag}</h3>
                 <div class="stat" style="color: {ml_col};">{ml_display_str} — {beds} beds free now</div>
                 {safety_badge}
                 {est_disclosure}
                 <div class="detail">
-                    📍 {dist:.1f} km · ~{eta} min &nbsp; 💰 ₹{fee}/day &nbsp; ⭐ {rating:.1f}★ ({reviews:,} reviews)
+                    📍 {dist:.1f} km · ~{eta} min &nbsp; {fee_card} &nbsp; ⭐ {rating:.1f}★ ({reviews:,} reviews)
                 </div>
                 <div class="detail">
                     🛏️ {beds} beds free now · {type_str}{live_text}
                 </div>
                 <div class="detail">
-                    PM-JAY: {pmjay} &nbsp; GJAY (Odisha): {state_sch}
+                    Scheme: {scheme_val}
                 </div>
                 <div class="detail">
                     {phone_card} &nbsp; {web_card}
                 </div>
             </div>
-            """, rank=int(r["rank"]), name=r["hospital_name"][:32], spec_tag=spec_tag, est_tag=est_tag,
+            """, rank=int(r["rank"]), arrow=arrow_str, name=r["hospital_name"][:32], spec_tag=spec_tag, est_tag=est_tag,
                est_disclosure=est_disclosure,
                ml_col=ml_col, ml_display_str=ml_display_str, beds=r["beds_free_now"],
-               safety_badge=safety_badge, dist=r["dist_km"], eta=r["eta_min"], fee=r["admission_fee_inr"],
+               safety_badge=safety_badge, dist=r["dist_km"], eta=r["eta_min"], fee_card=fee_card_html,
                rating=r["rating_5"], reviews=r["review_count"], type_str=r["hospital_type"],
-               live_text=live_text, pmjay=pmjay_status, state_sch=state_status,
+               live_text=live_text, scheme_val=scheme_val,
                phone_card=phone_card, web_card=web_card)
 
             st.markdown(card_html, unsafe_allow_html=True)
@@ -757,14 +810,15 @@ sort_by = st.selectbox(
 st.caption("Sorting only changes the order of this table. The recommendation above is unchanged.")
 
 table_data = result[[
-    "hospital_id", "rank", "formula_rank", "is_flagged", "hospital_name", "category", "hospital_type", "dist_km", "eta_min",
+    "hospital_id", "rank", "formula_rank", "rank_arrow", "is_flagged", "hospital_name", "category", "hospital_type", "dist_km", "eta_min",
     "beds_free_now", "p_bed", "ml_status", "ml_confidence", "admission_fee_inr", "rating_5", "review_count",
-    "accepts_pmjay", "accepts_state_scheme", "website", "google_maps_url"
+    "scheme_flag", "accepts_pmjay", "accepts_state_scheme", "website", "google_maps_url"
 ]].copy()
 
 def format_table_rank(r):
     if r["rank"] > 0:
-        return f"#{int(r['rank'])}"
+        arrow = r.get("rank_arrow", "")
+        return f"#{int(r['rank'])}{arrow}"
     if str(r.get("category", "")).lower() == "specialty":
         return "Specialty — not ranked"
     return "—"
@@ -789,9 +843,17 @@ def format_ml_status(r):
         return f"🟢 Available {conf_pct}%"
 
 table_data["Bed status (ML)"] = result.apply(format_ml_status, axis=1)
-table_data["Fee/day"] = table_data["admission_fee_inr"]
+
+def format_table_fee(r):
+    fee_val = int(r["admission_fee_inr"])
+    if user_has_card and r.get("scheme_flag"):
+        return f"~~Rs {fee_val:,}~~ Rs 0"
+    return f"Rs {fee_val:,}"
+
+table_data["Fee/day"] = result.apply(format_table_fee, axis=1)
 table_data["Rating"] = table_data["rating_5"]
 table_data["Reviews"] = table_data["review_count"]
+table_data["Scheme"] = result["scheme_flag"].apply(lambda f: "✓" if f else "?")
 table_data["PM-JAY"] = table_data["accepts_pmjay"].apply(scheme_icon)
 table_data["GJAY (Odisha)"] = table_data["accepts_state_scheme"].apply(scheme_icon)
 # Phone column: show number only if phone_confirmed == 'yes'
@@ -811,8 +873,7 @@ table_data["Directions"] = table_data["google_maps_url"]
 if "fee_eff" in result.columns:
     table_data["fee_eff"] = result["fee_eff"].values
 else:
-    is_cashless = (result.get("accepts_pmjay") == True) | (result.get("accepts_state_scheme") == True)
-    table_data["fee_eff"] = np.where(user_has_card & is_cashless, 0.0, table_data["Fee/day"].astype(float))
+    table_data["fee_eff"] = np.where(user_has_card & result["scheme_flag"], 0.0, result["admission_fee_inr"].astype(float))
 
 if sort_by == "Recommended rank":
     table_data["_sort_rank"] = table_data["rank"].apply(lambda r: r if r > 0 else 9999)
@@ -828,7 +889,7 @@ elif sort_by == "Most beds free":
 
 display_cols = [
     "Rank", "Hospital", "Category", "Type", "Km", "ETA min", "Free Beds",
-    "Bed status (ML)", "Fee/day", "Rating", "Reviews", "PM-JAY", "GJAY (Odisha)",
+    "Bed status (ML)", "Fee/day", "Rating", "Reviews", "Scheme",
     "Phone", "Website", "Directions",
 ]
 display_df = table_data[display_cols]
@@ -836,14 +897,14 @@ display_df = table_data[display_cols]
 # Highlight top N rows
 def highlight_top(row):
     val = str(row["Rank"])
-    if val.startswith("#") and int(val[1:]) <= top_n:
+    if val.startswith("#") and int(val[1:].split()[0]) <= top_n:
         return ["background-color: rgba(0,191,166,0.10)"] * len(row)
     return [""] * len(row)
 
 st.dataframe(
     display_df.style.apply(highlight_top, axis=1),
     column_config={
-        "Rank": st.column_config.TextColumn("Rank", width="medium", help="Final rank after ML safety gate. If flagged, formula rank was higher."),
+        "Rank": st.column_config.TextColumn("Rank", width="medium", help="Final rank after ML safety gate. Shows ▲/▼ rank shifts when Scheme Card is ON."),
         "Hospital": st.column_config.TextColumn("Hospital", width="medium"),
         "Category": st.column_config.TextColumn("Category", width="small"),
         "Type": st.column_config.TextColumn("Type", width="small"),
@@ -851,11 +912,10 @@ st.dataframe(
         "ETA min": st.column_config.NumberColumn("ETA", format="%d min"),
         "Free Beds": st.column_config.NumberColumn("Free Beds", format="%d"),
         "Bed status (ML)": st.column_config.TextColumn("Bed status (ML)", width="medium", help="ML prediction for general ward at arrival (+1h to +6h). Model shortest forecast is +1 h."),
-        "Fee/day": st.column_config.NumberColumn("Fee/day", format="₹%d"),
+        "Fee/day": st.column_config.TextColumn("Fee/day", help="Listed admission fee per day. Struck through if cashless under active scheme card."),
         "Rating": st.column_config.NumberColumn("Rating", format="%.1f ★"),
         "Reviews": st.column_config.NumberColumn("Reviews", format="%d"),
-        "PM-JAY": st.column_config.TextColumn("PM-JAY", help="✓ Accepts | ✗ Does not accept | ? Confirm"),
-        "GJAY (Odisha)": st.column_config.TextColumn("GJAY", help="✓ Accepts Gopabandhu Jan Arogya Yojana | ✗ Does not accept | ? Confirm"),
+        "Scheme": st.column_config.TextColumn("Scheme", help="✓ Verified cashless acceptance (demo flag) | ? Scheme acceptance not confirmed"),
         "Phone": st.column_config.TextColumn("Phone", width="small", help="Verified phone number or 'Not verified'"),
         "Website": st.column_config.LinkColumn("Website", display_text="Visit"),
         "Directions": st.column_config.LinkColumn("Directions", display_text="Navigate"),

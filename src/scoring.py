@@ -113,14 +113,15 @@ def closeness(dist_km) -> np.ndarray:
     return np.exp(-np.asarray(dist_km, float) / DIST_SCALE_KM)
 
 
-def effective_fee(fee, accepts_scheme, user_has_card: bool) -> np.ndarray:
+def effective_fee(fee, flag, card_on: bool = False, user_has_card: bool | None = None) -> np.ndarray:
     """Card-holders pay Rs 0 at accepting hospitals (cashless); otherwise listed fee.
     Unknown is NOT cashless.
     """
+    active = card_on if user_has_card is None else (card_on or user_has_card)
     f = np.asarray(fee, float)
-    if not user_has_card:
+    if not active:
         return f
-    acc = np.asarray(accepts_scheme, dtype=object)
+    acc = np.asarray(flag, dtype=object)
     # Check if string "true" or boolean True
     is_true = np.array([x is True or str(x).strip().lower() == "true" for x in acc])
     return np.where(is_true, 0.0, f)
@@ -147,8 +148,10 @@ def bedscore(df: pd.DataFrame, user_lat: float, user_lon: float, *,
     d["eta_min"] = eta_minutes(d["dist_km"])
     d["p_bed"] = p_bed(d[avail_col], d[total_col], d["eta_min"])
 
-    acc = d[accepts_col] if accepts_col and accepts_col in d.columns else np.zeros(len(d), bool)
-    d["fee_eff"] = effective_fee(d[fee_col], acc, user_has_card)
+    pmjay_flag = d["accepts_pmjay"].astype(str).str.lower() == "true" if "accepts_pmjay" in d.columns else pd.Series(False, index=d.index)
+    state_flag = d["accepts_state_scheme"].astype(str).str.lower() == "true" if "accepts_state_scheme" in d.columns else pd.Series(False, index=d.index)
+    d["scheme_flag"] = pmjay_flag | state_flag
+    d["fee_eff"] = effective_fee(d[fee_col], d["scheme_flag"], user_has_card)
 
     est_flags = np.zeros(len(d), bool)
     if "fields_estimated" in d.columns:
@@ -202,7 +205,7 @@ def explain_terms(d: pd.DataFrame) -> pd.DataFrame:
 
 
 # ── Formula 1 calculation ─────────────────────────────────────────────
-def formula1_literal(df: pd.DataFrame, dist_km: pd.Series | np.ndarray) -> pd.Series:
+def formula1_literal(df: pd.DataFrame, dist_km: pd.Series | np.ndarray, user_has_card: bool = False) -> pd.Series:
     """Formula 1 (problem statement baseline): 1000*A + X - Y - Z, A in %."""
     avail_col = "general_ward_available_beds" if "general_ward_available_beds" in df.columns else "beds_free_now"
     total_col = "general_ward_total_beds" if "general_ward_total_beds" in df.columns else "general_beds"
@@ -210,9 +213,14 @@ def formula1_literal(df: pd.DataFrame, dist_km: pd.Series | np.ndarray) -> pd.Se
     reviews_col = "review_count" if "review_count" in df.columns else "reviews"
     fee_col = "admission_fee_inr" if "admission_fee_inr" in df.columns else "fee"
 
+    pmjay_flag = df["accepts_pmjay"].astype(str).str.lower() == "true" if "accepts_pmjay" in df.columns else pd.Series(False, index=df.index)
+    state_flag = df["accepts_state_scheme"].astype(str).str.lower() == "true" if "accepts_state_scheme" in df.columns else pd.Series(False, index=df.index)
+    scheme_flag = pmjay_flag | state_flag
+    fee_eff = effective_fee(df[fee_col], scheme_flag, user_has_card)
+
     a_pct = 100.0 * df[avail_col] / np.maximum(df[total_col], 1)
     x = df[rating_col] * df[reviews_col]
-    return A_WEIGHT * a_pct + x - dist_km - df[fee_col]
+    return A_WEIGHT * a_pct + x - dist_km - fee_eff
 
 
 def formula1_score(rating: pd.Series, reviews: pd.Series,
@@ -327,9 +335,10 @@ def rank_hospitals(df: pd.DataFrame, user_lat: float, user_lon: float,
 
     # Effective fee based on scheme card toggle (cashless Rs 0 if cardholder and accepts)
     card_active = user_has_card or (scheme_filter is not None and scheme_filter != "None")
-    acc_col = accepts_col or "accepts_pmjay"
-    acc = result[acc_col] if acc_col in result.columns else pd.Series(False, index=result.index)
-    result["fee_eff"] = effective_fee(result[fee_col].values, acc.values, card_active)
+    pmjay_flag = result["accepts_pmjay"].astype(str).str.lower() == "true" if "accepts_pmjay" in result.columns else pd.Series(False, index=result.index)
+    state_flag = result["accepts_state_scheme"].astype(str).str.lower() == "true" if "accepts_state_scheme" in result.columns else pd.Series(False, index=result.index)
+    result["scheme_flag"] = pmjay_flag | state_flag
+    result["fee_eff"] = effective_fee(result[fee_col].values, result["scheme_flag"].values, card_active)
 
     # Check for estimated rating/reviews
     est_flags = np.zeros(len(result), bool)

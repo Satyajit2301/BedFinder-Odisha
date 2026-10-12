@@ -217,7 +217,25 @@ def test_v3_sort_table_by():
     assert not at.exception
     df_card_cheap = at.dataframe[0].value
     first_hosp = df_card_cheap.iloc[0]
-    # Top rows must accept cashless scheme (PM-JAY or GJAY) or have Rs 0 fee
-    assert "✓" in str(first_hosp["PM-JAY"]) or "✓" in str(first_hosp["GJAY (Odisha)"]) or first_hosp["Fee/day"] == 0
+    # Top rows must accept cashless scheme (PM-JAY or GJAY or Scheme column) or have Rs 0 fee
+    assert "✓" in str(first_hosp.get("Scheme", "")) or "✓" in str(first_hosp.get("PM-JAY", "")) or "Rs 0" in str(first_hosp["Fee/day"]) or first_hosp["Fee/day"] == 0
+
+
+def test_v5_ui_card_effects():
+    """V5: with card ON, displayed fee contains Rs 0 for flagged rows, cashless badge, and rank arrows."""
+    at = AppTest.from_file("app.py", default_timeout=30).run()
+    assert not at.exception
+    # Toggle card ON
+    at.sidebar.toggle[1].set_value(True).run()
+    assert not at.exception
+    df = at.dataframe[0].value
+    # Find flagged hospital (Scheme == ✓)
+    flagged_rows = df[df["Scheme"] == "✓"]
+    assert len(flagged_rows) == 12, f"Expected 12 flagged hospitals in table, got {len(flagged_rows)}"
+    first_flagged = flagged_rows.iloc[0]
+    assert "Rs 0" in str(first_flagged["Fee/day"])
+    # Check that rank arrows ▲ or ▼ appear in table for hospitals that changed rank
+    has_arrow = any("▲" in str(r) or "▼" in str(r) for r in df["Rank"])
+    assert has_arrow, "Expected rank arrows (▲/▼) in Rank column when card is ON"
 
 

@@ -274,3 +274,55 @@ class TestBedscoreRegressionG1:
         assert (abs(m["t_close_1"] - m["t_close_2"]) > 1e-4).all(), "t_close must change for all hospitals when user moves 10 km"
 
 
+class TestV5SchemeCardEffects:
+    def test_effective_fee_zero_only_for_flag_true(self):
+        """V5: Both formulas use effective_fee: card on and flag True -> Rs 0. Unknown/False -> listed fee."""
+        from src.scoring import effective_fee
+        fees = [1500.0, 2000.0, 500.0]
+        flags = [True, False, "unknown"]
+        # Card OFF: all pay listed fee
+        eff_off = effective_fee(fees, flags, card_on=False)
+        assert list(eff_off) == [1500.0, 2000.0, 500.0]
+
+        # Card ON: only flag True pays 0.0
+        eff_on = effective_fee(fees, flags, card_on=True)
+        assert eff_on[0] == 0.0
+        assert eff_on[1] == 2000.0
+        assert eff_on[2] == 500.0
+
+    def test_v5_summary_counts_equal_recomputed_counts(self):
+        """V5: summary counts (Rs 0 count, changed rank count, top 3 change) equal real recomputed counts."""
+        from src.config import ENRICHED_CSV, LANDMARKS
+        from src.scoring import rank_hospitals
+        df = pd.read_csv(ENRICHED_CSV)
+        lat, lon = LANDMARKS["Bhubaneswar Railway Station"]
+
+        r_off = rank_hospitals(df, lat, lon, method="formula2", user_has_card=False)
+        r_on = rank_hospitals(df, lat, lon, method="formula2", user_has_card=True)
+
+        n_free = int((r_on["fee_eff"] == 0).sum())
+        assert n_free == 12, f"Expected 12 hospitals with Rs 0 fee, got {n_free}"
+
+        m_off = dict(zip(r_off["hospital_id"], r_off["rank"]))
+        m_on = dict(zip(r_on["hospital_id"], r_on["rank"]))
+        n_changed = sum(1 for h in m_off if m_off[h] > 0 and m_on.get(h, 0) > 0 and m_off[h] != m_on[h])
+        assert n_changed > 0, "Card ON must change ranks"
+
+        top3_off = list(r_off[r_off["rank"] > 0].head(3)["hospital_id"])
+        top3_on = list(r_on[r_on["rank"] > 0].head(3)["hospital_id"])
+        top3_changed = (top3_off != top3_on)
+        assert top3_changed is True
+
+    def test_v5_row_count_identical_card_on_off(self):
+        """V5: row count remains identical (25) card ON and OFF for both formulas."""
+        from src.config import ENRICHED_CSV, LANDMARKS
+        from src.scoring import rank_hospitals
+        df = pd.read_csv(ENRICHED_CSV)
+        lat, lon = LANDMARKS["Patia / KIIT Square"]
+        for m in ["formula1", "formula2"]:
+            r_off = rank_hospitals(df, lat, lon, method=m, user_has_card=False)
+            r_on = rank_hospitals(df, lat, lon, method=m, user_has_card=True)
+            assert len(r_off) == 25
+            assert len(r_on) == 25
+
+

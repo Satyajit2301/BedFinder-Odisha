@@ -1,0 +1,42 @@
+V5 — Scheme Card Visible Effects Proof
+===========================================
+Generated: 2026-10-12
+
+1. Unified effective_fee Implementation
+---------------------------------------
+In src/scoring.py:
+- effective_fee(fee, flag, card_on) unified across BedScore and Formula 1
+- When card_on is True and flag is True (12 hospitals with verified/demo acceptance): effective fee = Rs 0.0
+- When card_on is False or flag is False/unknown: effective fee = listed fee
+- Formula 1 uses effective_fee as Z (fee component)
+
+2. Visible Card & Table Effects
+-------------------------------
+In app.py:
+- Top picks cards:
+  * Flagged hospital with card ON shows: ~~Rs {fee}~~ Rs 0/day with badge 'Cashless (demo)'
+  * Unflagged hospital with card ON shows: Rs {fee}/day (scheme: not confirmed)
+- Table:
+  * Fee/day column shows ~~Rs {fee}~~ Rs 0 for cashless hospitals when card ON
+  * Scheme column shows '✓' (demo flag) for 12 accepting hospitals, '?' for others
+  * Rank column displays rank arrows (▲n / ▼n) beside rank when card ON
+- Summary line under results header when card ON:
+  * Example: 'Card ON: Rs 0 fee at 12 hospitals · 22 hospitals changed rank · Top 3 changed'
+  * Built dynamically from actual recomputed rank differences and fee counts
+
+3. Invariants Verified
+----------------------
+- Total hospital row count strictly remains 25 regardless of scheme card toggle
+- Non-accepting hospitals remain visible and ranked at listed fee
+- Rank arrows reflect genuine rank shift between card OFF and card ON
+
+4. Test Suite Verification
+--------------------------
+tests/test_scoring.py (TestV5SchemeCardEffects):
+- test_effective_fee_zero_only_for_flag_true PASSED
+- test_v5_summary_counts_equal_recomputed_counts PASSED
+- test_v5_row_count_identical_card_on_off PASSED
+
+tests/test_app.py:
+- test_v5_ui_card_effects PASSED
+- test_v3_sort_table_by PASSED
