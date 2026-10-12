@@ -7,7 +7,7 @@ Run:  streamlit run app.py
 """
 import html
 import os
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 import folium
@@ -81,6 +81,33 @@ st.markdown("""
         margin-top: 0.5rem;
         border: 1px solid rgba(255, 170, 0, 0.3);
     }
+    .datetime-badge {
+        display: inline-flex;
+        align-items: center;
+        background: rgba(0, 191, 166, 0.08);
+        border: 1px solid rgba(0, 191, 166, 0.28);
+        padding: 0.32rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        color: #E8E8E8;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+        white-space: nowrap;
+    }
+    .live-pulse {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #00BFA6;
+        box-shadow: 0 0 8px #00BFA6;
+        margin-right: 8px;
+        display: inline-block;
+        animation: pulse-glow 2s infinite ease-in-out;
+    }
+    @keyframes pulse-glow {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.35; transform: scale(0.85); }
+    }
+
 
     /* Card styling */
     .hospital-card {
@@ -211,11 +238,27 @@ if sim_hosp and sim_beds is not None and sim_hosp in snap["hospital_name"].value
         snap.loc[snap["hospital_name"] == sim_hosp, "occ_pct"] = occ
         snap.loc[snap["hospital_name"] == sim_hosp, "general_ward_occupancy_pct"] = occ * 100.0
 
+# ── Date and time calculation (IST) ──────────────────────────────────
+ist_tz = timezone(timedelta(hours=5, minutes=30))
+now_ist = datetime.now(ist_tz)
+current_date_str = now_ist.strftime("%A, %d %b %Y")
+current_time_str = now_ist.strftime("%I:%M %p IST")
+
 # ── Header ────────────────────────────────────────────────────────────
-st.markdown("""
+st.markdown(f"""
 <div class="main-header">
-    <h1>🏥 BedFinder Odisha</h1>
-    <p style="margin-bottom: 6px;">Demo project. 20 hospitals come from the provided dataset; 5 added hospitals and the scheme flags are illustrative; bed counts are simulated.</p>
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
+        <div style="flex: 1; min-width: 280px;">
+            <h1>🏥 BedFinder Odisha</h1>
+            <p style="margin-bottom: 6px;">Demo project. 20 hospitals come from the provided dataset; 5 added hospitals and the scheme flags are illustrative; bed counts are simulated.</p>
+        </div>
+        <div class="datetime-badge" title="Live System Time (IST)">
+            <span class="live-pulse"></span>
+            <span style="font-weight: 500; color: #E8E8E8;">{current_date_str}</span>
+            <span style="color: #6C7A89; margin: 0 6px;">&bull;</span>
+            <span style="font-weight: 700; color: #00BFA6;">{current_time_str}</span>
+        </div>
+    </div>
     <span class="demo-badge">📊 Demo snapshot — historical occupancy simulated from snapshot</span>
 </div>
 """, unsafe_allow_html=True)
