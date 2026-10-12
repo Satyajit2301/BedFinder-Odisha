@@ -24,7 +24,10 @@ from src.config import (
     W_TRUST, W_CLOSE, W_FEE,
 )
 from src.data import build_snapshot, load_history_snapshot, load_hospitals, load_ml_model
-from src.geo import road_distance_km, eta_minutes
+from src.geo import (
+    road_distance_km, eta_minutes, load_gazetteer, set_location,
+    validate_location, BHUBANESWAR_CENTER, MAX_CITY_DIST_KM, haversine_km,
+)
 from src.llm import build_facts, explain
 from src.ml import predict_availability
 from src.scoring import formula_text, formula_latex, formula_legend, get_score_breakdown, rank_hospitals, rankable
@@ -194,61 +197,117 @@ st.markdown("""
 
 # ── Sidebar controls ─────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("### 📍 Location & Search")
+    st.markdown("### 1 📍 Your Location")
 
-    # Location input mode
-    loc_mode = st.radio(
-        "Location input mode",
-        ["Select landmark", "Enter manually", "Use my current location"],
-        index=0,
-        help="Choose a pre-defined landmark, type your coordinates/address, or use device location."
+    gaz_df = load_gazetteer()
+    area_names = gaz_df["name"].tolist()
+
+    if "loc" not in st.session_state:
+        st.session_state["loc"] = {
+            "lat": 20.3540,
+            "lon": 85.8190,
+            "label": "Patia / KIIT Square",
+            "source": "area search",
+            "accuracy_m": 500.0,
+        }
+
+    cur_label = st.session_state["loc"]["label"]
+    default_area_idx = area_names.index(cur_label) if cur_label in area_names else 0
+
+    selected_area = st.selectbox(
+        "Search area or landmark (approximate ±500 m)",
+        area_names,
+        index=default_area_idx,
+        help="Coordinates are area centres: approximate (±500 m).",
+        key="area_selectbox",
     )
 
-    if loc_mode == "Select landmark":
-        place = st.selectbox("Where are you?", list(LANDMARKS.keys()), index=0)
-        user_lat, user_lon = LANDMARKS[place]
-    elif loc_mode == "Enter manually":
-        manual_input = st.text_input(
-            "Enter coordinates (lat, lon) or area",
-            value="20.2961, 85.8245",
-            help="e.g. 20.2961, 85.8245 or Master Canteen"
+    if "prev_area_selection" not in st.session_state:
+        st.session_state["prev_area_selection"] = selected_area
+
+    if selected_area != st.session_state["prev_area_selection"]:
+        st.session_state["prev_area_selection"] = selected_area
+        matched_row = gaz_df[gaz_df["name"] == selected_area].iloc[0]
+        set_location(
+            float(matched_row["lat"]),
+            float(matched_row["lon"]),
+            label=selected_area,
+            source="area search",
+            accuracy_m=500.0,
         )
-        place = f"Manual ({manual_input})"
-        matched_landmark = False
-        for lm_name, (l_lat, l_lon) in LANDMARKS.items():
-            if manual_input.strip().lower() in lm_name.lower():
-                user_lat, user_lon = l_lat, l_lon
-                place = lm_name
-                matched_landmark = True
-                break
-        if not matched_landmark:
-            try:
-                parts = manual_input.replace(" ", "").split(",")
-                user_lat, user_lon = float(parts[0]), float(parts[1])
-                if not (ODISHA_BOUNDS["lat_min"] <= user_lat <= ODISHA_BOUNDS["lat_max"] and
-                        ODISHA_BOUNDS["lon_min"] <= user_lon <= ODISHA_BOUNDS["lon_max"]):
-                    st.markdown(
-                        '<div class="location-error-box">'
-                        '<strong>⚠️ Location Out of Bounds:</strong><br>'
-                        'Coordinates must be within Odisha bounds (lat 17.8–22.6, lon 81.3–87.5). '
-                        'Please enter valid coordinates inside Odisha.'
-                        '</div>',
-                        unsafe_allow_html=True
+
+    # Button "Use my current location" (Browser Geolocation API)
+    gps_pressed = st.button("📡 Use my current location", use_container_width=True)
+    if gps_pressed:
+        st.session_state["request_browser_gps"] = True
+
+    if st.session_state.get("request_browser_gps"):
+        try:
+            from streamlit_js_eval import streamlit_js_eval
+            gps_payload = streamlit_js_eval(
+                js_expressions="""new Promise((resolve) => {
+                    if (!navigator.geolocation) {
+                        resolve({error: {code: 0, message: "Browser does not support geolocation"}});
+                    } else {
+                        navigator.geolocation.getCurrentPosition(
+                            (pos) => resolve({coords: {latitude: pos.coords.latitude, longitude: pos.coords.longitude, accuracy: pos.coords.accuracy}}),
+                            (err) => resolve({error: {code: err.code, message: err.message}}),
+                            {enableHighAccuracy: true, timeout: 10000, maximumAge: 0}
+                        );
+                    }
+                })""",
+                key="gps_eval_runner",
+            )
+            if gps_payload:
+                st.session_state["request_browser_gps"] = False
+                if isinstance(gps_payload, dict) and "coords" in gps_payload:
+                    coords = gps_payload["coords"]
+                    acc_val = float(coords.get("accuracy", 35.0))
+                    loc_res, loc_err, loc_warn = set_location(
+                        coords["latitude"],
+                        coords["longitude"],
+                        label="My location (GPS, ±35 m)",
+                        source="GPS",
+                        accuracy_m=acc_val,
                     )
-                    st.stop()
-            except (ValueError, IndexError):
+                    if loc_err:
+                        st.error(loc_err)
+                    elif loc_warn:
+                        st.warning(loc_warn)
+                    st.rerun()
+                elif isinstance(gps_payload, dict) and "error" in gps_payload:
+                    err_info = gps_payload["error"]
+                    err_text = err_info.get("message", "Permission denied or unavailable")
+                    st.error(
+                        f"⚠️ Geolocation error ({err_text}). "
+                        "Options: 1) Search area above, 2) Click on the map, 3) Enter coordinates below."
+                    )
+        except Exception as e:
+            st.error(f"Geolocation component unavailable: {e}. Please use area search, map click, or coordinate input.")
+
+    # Collapsed expander for manual coordinates
+    with st.expander("Enter coordinates (lat, lon)", expanded=False):
+        c1, c2 = st.columns(2)
+        coord_lat = c1.number_input("Latitude", value=float(st.session_state["loc"]["lat"]), format="%.4f", key="man_lat")
+        coord_lon = c2.number_input("Longitude", value=float(st.session_state["loc"]["lon"]), format="%.4f", key="man_lon")
+        if st.button("Apply coordinates", key="btn_apply_coords", use_container_width=True):
+            loc_res, loc_err, loc_warn = set_location(
+                coord_lat,
+                coord_lon,
+                label=f"{coord_lat:.4f}, {coord_lon:.4f}",
+                source="manual",
+                accuracy_m=None,
+            )
+            if loc_err:
                 st.markdown(
-                    '<div class="location-error-box">'
-                    '<strong>⚠️ Invalid Format:</strong><br>'
-                    'Please enter valid coordinates in format: <code>lat, lon</code> (e.g. <code>20.2961, 85.8245</code>) or a known area name.'
-                    '</div>',
-                    unsafe_allow_html=True
+                    f'<div class="location-error-box">'
+                    f'<strong>⚠️ Location Out of Bounds:</strong><br>{loc_err}</div>',
+                    unsafe_allow_html=True,
                 )
-                st.stop()
-    else:  # "Use my current location"
-        place = "Device Location (Bhubaneswar Central)"
-        user_lat, user_lon = 20.2961, 85.8245
-        st.info("📍 Using device location: Bhubaneswar Central (20.2961°N, 85.8245°E)")
+            else:
+                if loc_warn:
+                    st.warning(loc_warn)
+                st.rerun()
 
     st.markdown("---")
 
@@ -330,6 +389,40 @@ with st.sidebar:
     # Explain button
     explain_clicked = st.button("🤖 Explain this ranking", use_container_width=True)
 
+
+# ── Location state ───────────────────────────────────────────────────
+loc = st.session_state["loc"]
+user_lat = loc["lat"]
+user_lon = loc["lon"]
+place = loc["label"]
+
+# Location chip text
+if loc.get("source") == "area search":
+    chip_text = f"Location: {loc['label']} (area search)"
+elif loc.get("source") == "GPS":
+    chip_text = f"Location: {loc['label']}"
+elif loc.get("source") == "map click":
+    chip_text = "Location: map click"
+else:
+    chip_text = f"Location: {loc['label']} ({loc.get('source', 'manual')})"
+
+# Location Chip
+st.markdown(
+    f'<div style="display:inline-block; background:rgba(0,191,166,0.12); color:#00BFA6; '
+    f'border:1px solid rgba(0,191,166,0.3); border-radius:16px; padding:4px 14px; '
+    f'font-size:0.85rem; font-weight:600; margin-bottom:12px;">'
+    f'📍 {html.escape(chip_text)}'
+    f'</div>',
+    unsafe_allow_html=True,
+)
+
+if loc.get("accuracy_m") and loc["accuracy_m"] > 1000:
+    rough_km = int(round(loc["accuracy_m"] / 1000))
+    st.warning(f"Your device gave a rough location (±{rough_km} km). Click the map to place the pin where you are.")
+
+dist_from_city = float(haversine_km(user_lat, user_lon, BHUBANESWAR_CENTER[0], BHUBANESWAR_CENTER[1]))
+if dist_from_city > MAX_CITY_DIST_KM:
+    st.warning(f"This demo covers Bhubaneswar; distances will be large ({dist_from_city:.1f} km from city center).")
 
 # ── Compute distances and ML predictions ──────────────────────────────
 snap["dist_km"] = road_distance_km(
@@ -614,7 +707,29 @@ locations = [[r["latitude"], r["longitude"]] for _, r in result.iterrows()]
 locations.append([user_lat, user_lon])
 m.fit_bounds(locations, padding=(25, 25))
 
-st_folium(m, width=None, height=500, use_container_width=True)
+map_state = st_folium(
+    m,
+    width=None,
+    height=500,
+    use_container_width=True,
+    returned_objects=["last_clicked"],
+)
+if map_state and map_state.get("last_clicked"):
+    clicked = map_state["last_clicked"]
+    last_click = st.session_state.get("last_map_click")
+    if clicked != last_click:
+        st.session_state["last_map_click"] = clicked
+        clat, clon = float(clicked["lat"]), float(clicked["lng"])
+        loc_res, loc_err, loc_warn = set_location(
+            clat,
+            clon,
+            label=f"{clat:.4f}, {clon:.4f}",
+            source="map click",
+            accuracy_m=10.0,
+        )
+        if loc_err:
+            st.error(loc_err)
+        st.rerun()
 
 st.caption("🟢 Likely (≥80%) · 🟡 Tight (50–80%) · 🔴 Unlikely (<50%) · 🔵 Your location · Numbered pins = Top N · Grey = Specialty / Unranked")
 

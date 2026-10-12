@@ -38,6 +38,14 @@ streamlit run app.py
 
 ---
 
+## 📍 Location
+- **Laptops vs Phones:** Laptops lack GPS hardware; browsers infer position via Wi-Fi/IP (often several km off). Phones provide true GPS.
+- **Origins:** Browser Geolocation API strictly requires `https://` or `http://localhost` (blocked on `http://<LAN-IP>`).
+- **Windows Settings:** *Settings → Privacy & security → Location* must be toggled ON and access allowed for your browser.
+- **Alternative Controls:** If GPS is rough or denied, use area search (30+ neighbourhoods), map click, or manual coordinates.
+
+---
+
 ## 🌟 Key Features
 
 1. **Two Complementary Scoring Methods:**

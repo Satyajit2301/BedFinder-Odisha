@@ -1,0 +1,30 @@
+# BedFinder Odisha — V2 Location Evidence & Proof
+
+## 1. Root Cause Analysis
+- Pre-v3 Implementation: The "Use my current location" option previously hardcoded coordinates (20.2961, 85.8245) in app.py without executing any browser Geolocation API, navigator.geolocation, or device GPS query.
+- Root Cause (One sentence): Pre-v3 "Use my current location" simply hardcoded coordinates (20.2961, 85.8245) without invoking the browser Geolocation API or querying device GPS hardware.
+
+## 2. V2 Architecture & Canonical Location State
+- Canonical State: `st.session_state["loc"] = {"lat": float, "lon": float, "label": str, "source": str, "accuracy_m": float | None}`
+- Mutator: `src.geo::set_location(lat, lon, label, source, accuracy_m, session_state)` is the sole entrypoint for updating location.
+- Invariants Enforced:
+  * Strict bounds check against Odisha box (lat 17.78–22.57, lon 81.34–87.53). Invalid input produces a high-contrast error and keeps the last valid location (never silently falls back to a default).
+  * Proximity warning if > 40 km from Bhubaneswar center (20.2961, 85.8245): "This demo covers Bhubaneswar; distances will be large".
+  * Accuracy handling: device accuracy > 1000 m displays a warning prompting the user to click the map.
+
+## 3. Four Input Channels
+1. Search Area or Landmark: Searchable selectbox from `data/gazetteer_bhubaneswar.csv` (33 areas, labeled "approximate (±500 m)").
+2. Browser Geolocation (GPS): "Use my current location" button calls browser `navigator.geolocation.getCurrentPosition` via `streamlit-js-eval` with `{enableHighAccuracy: true, timeout: 10000, maximumAge: 0}` and displays "My location (GPS, ±35 m)".
+3. Interactive Map Pinning: Clicking on the Folium map sets `source="map click"`, guarded against rerun loops.
+4. Manual Coordinate Entry: Collapsed expander with decimal lat/lon inputs and bounds validation.
+
+## 4. UI Indicators
+- Prominent location chip rendered directly above results:
+  * `Location: Patia / KIIT Square (area search)`
+  * `Location: My location (GPS, ±35 m)`
+  * `Location: map click`
+
+## 5. Verification
+- 6 unit/AppTest tests in `tests/test_geo.py` covering valid coordinates, out-of-bounds rejection, distance warnings, 33-row gazetteer invariants, area switching sensitivity, and map click simulation.
+- 90/90 tests in test suite passing.
+- Playwright screenshot captured with browser geolocation context: `docs/screenshots/11_gps_location_chip.png`.

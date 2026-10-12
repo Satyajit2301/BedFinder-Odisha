@@ -19,6 +19,7 @@ PRODUCED_FILES = [
     "08_full_page_mobile_390.png",
     "09_bedscore_top3_railway_station.png",
     "10_bedscore_top3_patia.png",
+    "11_gps_location_chip.png",
 ]
 
 
@@ -172,16 +173,18 @@ def main():
                 print(f"   [err] Simulate warning capture failed: {e}")
 
             # 7. Invalid location error high contrast close-up
+            # 7. Close-up of Invalid Location Contrast Banner
             print("7. Capturing 07_closeup_invalid_location_contrast.png...")
             try:
-                manual_opt = page.locator('label:has-text("Enter manually")').first
-                manual_opt.scroll_into_view_if_needed()
-                manual_opt.click()
-                page.wait_for_timeout(2000)
-                input_box = page.locator('input[type="text"]').first
-                if input_box.count() > 0:
-                    input_box.fill("28.6139, 77.2090")
-                    input_box.press("Enter")
+                expander = page.locator('details:has-text("Enter coordinates")').first
+                if expander.count() > 0:
+                    expander.click()
+                    page.wait_for_timeout(1000)
+                lat_input = page.locator('input[aria-label="Latitude"]').first
+                if lat_input.count() > 0:
+                    lat_input.fill("28.6139")
+                    apply_btn = page.locator('button:has-text("Apply coordinates")').first
+                    apply_btn.click()
                     page.wait_for_timeout(3000)
                     page.wait_for_selector(".location-error-box", timeout=10000)
                     assert_no_badge_leak(page, "07_closeup_invalid_location_contrast")
@@ -196,8 +199,12 @@ def main():
             try:
                 page.goto(url)
                 page.wait_for_selector(".hospital-card", timeout=30000)
-                bedscore_radio = page.locator('label:has-text("BedScore (recommended)")').first
-                bedscore_radio.click()
+                page.wait_for_timeout(2000)
+                selectbox = page.locator('div[data-testid="stSelectbox"]').first
+                selectbox.click()
+                page.wait_for_timeout(1000)
+                rly_opt = page.locator('li:has-text("Bhubaneswar Railway Station")').first
+                rly_opt.click()
                 page.wait_for_timeout(3000)
                 assert_no_badge_leak(page, "09_bedscore_top3_railway_station")
                 page.evaluate("window.scrollTo(0, 0)")
@@ -209,7 +216,7 @@ def main():
             # 10. BedScore Top 3 at Patia / KIIT Square
             print("10. Capturing 10_bedscore_top3_patia.png...")
             try:
-                selectbox = page.locator('div[data-testid="stSelectbox"]:has-text("Where are you?")').first
+                selectbox = page.locator('div[data-testid="stSelectbox"]').first
                 selectbox.click()
                 page.wait_for_timeout(1000)
                 patia_opt = page.locator('li:has-text("Patia / KIIT Square")').first
@@ -223,6 +230,28 @@ def main():
                 print(f"   [err] BedScore patia capture failed: {e}")
 
             desktop.close()
+
+            # --- GEOLOCATION CONTEXT (GPS ±35 m) ---
+            print("11. Capturing 11_gps_location_chip.png with Playwright GPS mock...")
+            try:
+                gps_context = browser.new_context(
+                    viewport={"width": 1440, "height": 900},
+                    geolocation={"latitude": 20.3540, "longitude": 85.8190, "accuracy": 35},
+                    permissions=["geolocation"],
+                )
+                gps_page = gps_context.new_page()
+                gps_page.goto(url)
+                gps_page.wait_for_selector(".hospital-card", timeout=30000)
+                gps_btn = gps_page.locator('button:has-text("Use my current location")').first
+                if gps_btn.count() > 0:
+                    gps_btn.click()
+                    gps_page.wait_for_timeout(3500)
+                assert_no_badge_leak(gps_page, "11_gps_location_chip")
+                gps_page.screenshot(path=str(SCREENSHOTS_DIR / "11_gps_location_chip.png"))
+                gps_context.close()
+                print("   [ok] Saved 11_gps_location_chip.png")
+            except Exception as e:
+                print(f"   [err] GPS screenshot failed: {e}")
 
             # --- MOBILE VIEWPORT (390x844) ---
             print("8. Capturing 08_full_page_mobile_390.png...")

@@ -42,8 +42,8 @@ def test_app_control_matrix(method_label, has_card, top_n, location_name):
         assert not at.exception
 
     # Select method
-    if len(at.sidebar.radio) > 1:
-        at.sidebar.radio[1].set_value(method_label).run()
+    if len(at.sidebar.radio) > 0:
+        at.sidebar.radio[0].set_value(method_label).run()
         assert not at.exception
 
     # Set scheme card toggle
@@ -121,8 +121,8 @@ def test_g1_bedscore_ui_matches_rank_hospitals_for_6_landmarks():
 
     at = AppTest.from_file("app.py", default_timeout=30).run()
     assert not at.exception
-    if len(at.sidebar.radio) > 1:
-        at.sidebar.radio[1].set_value(f2_label).run()
+    if len(at.sidebar.radio) > 0:
+        at.sidebar.radio[0].set_value(f2_label).run()
 
     for lm in landmarks_to_test:
         at.sidebar.selectbox[0].select(lm).run()
@@ -163,7 +163,7 @@ def test_ui_contract_no_mentor_and_formulas_match_formula_text():
     assert not at.exception
 
     # Check radio options in sidebar
-    radio = at.sidebar.radio[1]
+    radio = at.sidebar.radio[0]
     expected_f1 = formula_text("formula1")
     expected_f2 = formula_text("formula2")
     assert radio.options == [expected_f1, expected_f2], f"Radio options mismatch: {radio.options}"
