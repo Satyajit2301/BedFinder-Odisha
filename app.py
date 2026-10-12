@@ -432,6 +432,7 @@ with st.sidebar:
                         "Options: 1) Search area above, 2) Click on the map, 3) Enter coordinates below."
                     )
         except Exception as e:
+            st.session_state["request_browser_gps"] = False
             st.error(f"Geolocation component unavailable: {e}. Please use area search, map click, or coordinate input.")
 
     # Collapsed expander for manual coordinates
