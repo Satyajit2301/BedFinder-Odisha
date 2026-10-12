@@ -6,6 +6,7 @@ Built for Bhubaneswar, Odisha.
 Run:  streamlit run app.py
 """
 import html
+import os
 from datetime import datetime
 from pathlib import Path
 
@@ -764,12 +765,41 @@ else:
 st.markdown("---")
 st.markdown("#### 🗺️ Hospital Map")
 
+# Check for CARTO API key in environment
+carto_key = os.getenv("CARTO_API_KEY", "").strip()
+carto_dark_url = f"https://{{s}}.basemaps.cartocdn.com/dark_all/{{z}}/{{x}}/{{y}}{{r}}.png" + (f"?key={carto_key}" if carto_key else "")
+
 m = folium.Map(
     location=[user_lat, user_lon],
     zoom_start=MAP_ZOOM,
-    tiles="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-    attr='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    tiles=None,
 )
+
+# Layer 1: Dark Canvas (Esri - Free, clean, no watermark, dark theme)
+folium.TileLayer(
+    tiles="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
+    name="Dark Canvas (Default, no key required)",
+    attr="Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ",
+    control=True,
+).add_to(m)
+
+# Layer 2: OpenStreetMap (Detailed streets, free, no key required)
+folium.TileLayer(
+    tiles="https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    name="OpenStreetMap (Standard)",
+    attr='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    control=True,
+).add_to(m)
+
+# Layer 3: CARTO Dark Matter (canonical cartocdn.com/dark_all endpoint; unwatermarked with key)
+folium.TileLayer(
+    tiles=carto_dark_url,
+    name="CARTO Dark Matter (Requires free key)",
+    attr='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    control=True,
+).add_to(m)
+
+folium.LayerControl(position="topright").add_to(m)
 
 
 # User marker: distinct prominent pin on top
