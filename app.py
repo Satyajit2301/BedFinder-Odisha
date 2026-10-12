@@ -28,7 +28,7 @@ from src.geo import (
     road_distance_km, eta_minutes, load_gazetteer, set_location,
     validate_location, BHUBANESWAR_CENTER, MAX_CITY_DIST_KM, haversine_km,
 )
-from src.llm import build_facts, explain
+from src.llm import check_emergency, format_understood_summary, parse_request, parse_request_rules
 from src.ml import predict_availability, forecast_hospital_horizons
 from src.scoring import (
     formula_text, formula_latex, formula_legend, get_score_breakdown, rank_hospitals, rankable,
@@ -219,6 +219,130 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+# ── Smart Search state initialization ─────────────────────────────────
+if "user_has_card_toggle" not in st.session_state:
+    st.session_state["user_has_card_toggle"] = False
+if "specialty_toggle" not in st.session_state:
+    st.session_state["specialty_toggle"] = False
+if "top_n_slider" not in st.session_state:
+    st.session_state["top_n_slider"] = 3
+if "sort_table_by" not in st.session_state:
+    st.session_state["sort_table_by"] = "Recommended rank"
+if "smart_search_understood" not in st.session_state:
+    st.session_state["smart_search_understood"] = None
+if "smart_search_unknown_place" not in st.session_state:
+    st.session_state["smart_search_unknown_place"] = None
+if "smart_search_emergency" not in st.session_state:
+    st.session_state["smart_search_emergency"] = False
+
+
+def on_smart_search_apply():
+    query = st.session_state.get("smart_search_input", "").strip()
+    if not query:
+        return
+    st.session_state["smart_search_emergency"] = check_emergency(query)
+    st.session_state["smart_search_prev"] = {
+        "loc": dict(st.session_state.get("loc", {})),
+        "area_selectbox": st.session_state.get("area_selectbox"),
+        "user_has_card_toggle": st.session_state.get("user_has_card_toggle", False),
+        "specialty_toggle": st.session_state.get("specialty_toggle", False),
+        "top_n_slider": st.session_state.get("top_n_slider", 3),
+        "sort_table_by": st.session_state.get("sort_table_by", "Recommended rank"),
+    }
+    parsed, source = parse_request(query, return_source=True)
+    _, unk_place = parse_request_rules(query)
+    if not parsed.get("place") and unk_place:
+        st.session_state["smart_search_unknown_place"] = f"I could not find '{unk_place}'. Pick an area, click the map or use GPS."
+    else:
+        st.session_state["smart_search_unknown_place"] = None
+
+    if parsed.get("place"):
+        g_df = load_gazetteer()
+        m_rows = g_df[g_df["name"] == parsed["place"]]
+        if not m_rows.empty:
+            m_r = m_rows.iloc[0]
+            set_location(
+                float(m_r["lat"]),
+                float(m_r["lon"]),
+                label=parsed["place"],
+                source="area search",
+                accuracy_m=500.0,
+            )
+            st.session_state["area_selectbox"] = parsed["place"]
+            st.session_state["prev_area_selection"] = parsed["place"]
+
+    if parsed.get("has_card") is not None:
+        st.session_state["user_has_card_toggle"] = parsed["has_card"]
+
+    if parsed.get("include_specialty") is not None:
+        st.session_state["specialty_toggle"] = parsed["include_specialty"]
+
+    if parsed.get("top_n") is not None:
+        st.session_state["top_n_slider"] = parsed["top_n"]
+
+    if parsed.get("sort") is not None:
+        sort_label_map = {
+            "recommended": "Recommended rank",
+            "nearest": "Nearest",
+            "cheapest": "Cheapest (effective fee)",
+            "rating": "Highest rated",
+            "beds": "Most beds free",
+        }
+        if parsed["sort"] in sort_label_map:
+            st.session_state["sort_table_by"] = sort_label_map[parsed["sort"]]
+
+    st.session_state["smart_search_understood"] = format_understood_summary(parsed, source)
+
+
+def on_smart_search_undo():
+    prev = st.session_state.get("smart_search_prev")
+    if prev:
+        if "loc" in prev and prev["loc"]:
+            st.session_state["loc"] = prev["loc"]
+        if "area_selectbox" in prev and prev["area_selectbox"]:
+            st.session_state["area_selectbox"] = prev["area_selectbox"]
+            st.session_state["prev_area_selection"] = prev["area_selectbox"]
+        if "user_has_card_toggle" in prev:
+            st.session_state["user_has_card_toggle"] = prev["user_has_card_toggle"]
+        if "specialty_toggle" in prev:
+            st.session_state["specialty_toggle"] = prev["specialty_toggle"]
+        if "top_n_slider" in prev:
+            st.session_state["top_n_slider"] = prev["top_n_slider"]
+        if "sort_table_by" in prev:
+            st.session_state["sort_table_by"] = prev["sort_table_by"]
+    st.session_state["smart_search_understood"] = None
+    st.session_state["smart_search_unknown_place"] = None
+    st.session_state["smart_search_emergency"] = False
+
+
+# ── Smart Search UI box ──────────────────────────────────────────────
+st.markdown("##### 💬 Tell me what you need")
+c_search_box, c_search_btn = st.columns([5, 1])
+with c_search_box:
+    st.text_input(
+        "Tell me what you need",
+        max_chars=300,
+        placeholder="near Patia, I have an Ayushman card, cheapest first",
+        key="smart_search_input",
+        help="Type in English, Hindi, Odia, or mixed to auto-fill search controls.",
+        label_visibility="collapsed",
+    )
+with c_search_btn:
+    st.button("Apply", key="btn_smart_search_apply", on_click=on_smart_search_apply, use_container_width=True)
+
+if st.session_state.get("smart_search_emergency"):
+    st.error("🚨 **MEDICAL EMERGENCY DETECTED:** Call **108** (free ambulance) or **112** immediately! Do not wait for hospital bed availability.")
+
+if st.session_state.get("smart_search_unknown_place"):
+    st.warning(st.session_state["smart_search_unknown_place"])
+
+if st.session_state.get("smart_search_understood"):
+    c_under, c_undo = st.columns([5, 1])
+    with c_under:
+        st.info(st.session_state["smart_search_understood"])
+    with c_undo:
+        st.button("Undo", key="btn_smart_search_undo", on_click=on_smart_search_undo, use_container_width=True)
+
 # ── Sidebar controls ─────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("### 1 📍 Your Location")
@@ -355,7 +479,7 @@ with st.sidebar:
     # Scheme toggle: card-holder toggle replaces dropdown
     user_has_card = st.toggle(
         SCHEME_TOGGLE_LABEL,
-        value=False,
+        key="user_has_card_toggle",
         help="Hospitals with verified cashless acceptance get effective fee Rs 0. Non-accepting hospitals remain visible and ranked at listed fee."
     )
     st.caption("Confirm cashless acceptance with the hospital before travelling.")
@@ -363,13 +487,13 @@ with st.sidebar:
     # Specialty hospital toggle (default to general only)
     show_specialty = st.toggle(
         "Include specialty hospitals",
-        value=False,
+        key="specialty_toggle",
         help="When OFF, specialty hospitals (e.g. eye/cancer centers) remain visible but unranked for general emergency beds. When ON, all hospitals are ranked."
     )
 
     # Top N slider
     n_hospitals = len(snap)
-    top_n = st.slider("Top N hospitals to highlight", 1, n_hospitals, 3)
+    top_n = st.slider("Top N hospitals to highlight", 1, n_hospitals, key="top_n_slider")
 
 
 
@@ -795,10 +919,13 @@ st.markdown("#### 📋 All Hospitals")
 
 col_sort, col_toggle = st.columns([3, 2])
 with col_sort:
+    sort_options = ["Recommended rank", "Nearest", "Cheapest (effective fee)", "Highest rated", "Most beds free"]
+    cur_sort = st.session_state.get("sort_table_by", "Recommended rank")
+    sort_idx = sort_options.index(cur_sort) if cur_sort in sort_options else 0
     sort_by = st.selectbox(
         "Sort table by",
-        ["Recommended rank", "Nearest", "Cheapest (effective fee)", "Highest rated", "Most beds free"],
-        index=0,
+        sort_options,
+        index=sort_idx,
         help="Sorting only changes the order of this table. The recommendation above is unchanged.",
         key="sort_table_by",
     )

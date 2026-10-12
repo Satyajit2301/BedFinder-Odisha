@@ -293,3 +293,48 @@ def test_v6_demo_tools_hidden_when_demo_mode_false(monkeypatch):
     assert len(demo_tools_expanders) == 0, "Demo tools expander must be hidden when DEMO_MODE is False"
 
 
+def test_v9_smart_search_controls_flow():
+    """V9: Smart search extracts place, card, and sort, updating widgets and allowing Undo."""
+    at = AppTest.from_file("app.py", default_timeout=30).run()
+    assert not at.exception
+
+    # Apply search query
+    search_input = [t for t in at.text_input if t.key == "smart_search_input"][0]
+    search_input.input("near Patia, I have an Ayushman card, cheapest first").run()
+    apply_btn = [b for b in at.button if b.key == "btn_smart_search_apply"][0]
+    apply_btn.click().run()
+    assert not at.exception
+
+    # Assert controls updated
+    loc = at.session_state["loc"]
+    assert "Patia" in loc["label"]
+    assert at.session_state["user_has_card_toggle"] is True
+    assert at.session_state["sort_table_by"] == "Cheapest (effective fee)"
+
+    # Assert understood feedback message displayed
+    understood_found = any("I understood:" in str(info.value) for info in at.info)
+    assert understood_found
+
+    # Test Undo button
+    undo_btn = [b for b in at.button if b.key == "btn_smart_search_undo"][0]
+    undo_btn.click().run()
+    assert not at.exception
+    assert at.session_state["user_has_card_toggle"] is False
+
+
+def test_v9_smart_search_emergency_banner():
+    """V9: Emergency keywords in smart search trigger immediate 108/112 alert."""
+    at = AppTest.from_file("app.py", default_timeout=30).run()
+    assert not at.exception
+
+    search_input = [t for t in at.text_input if t.key == "smart_search_input"][0]
+    search_input.input("severe chest pain and bleeding from accident").run()
+    apply_btn = [b for b in at.button if b.key == "btn_smart_search_apply"][0]
+    apply_btn.click().run()
+    assert not at.exception
+
+    emergency_alert_found = any("MEDICAL EMERGENCY DETECTED" in str(err.value) for err in at.error)
+    assert emergency_alert_found
+
+
+

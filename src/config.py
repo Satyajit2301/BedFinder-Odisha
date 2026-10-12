@@ -125,3 +125,10 @@ EMERGENCY_TEXT = "🚑 In a medical emergency call <b>108</b> (free emergency am
 # ── Data generation ───────────────────────────────────────────────────
 HISTORY_DAYS = 90
 RANDOM_SEED = 42
+
+# ── LLM Smart Search configuration ───────────────────────────────────
+LLM_DAILY_CAP = 200
+LLM_SESSION_CAP = 10
+LLM_TIMEOUT_SEC = 6
+LLM_DEFAULT_MODEL = "llama-3.3-70b-versatile"
+

@@ -1,78 +1,148 @@
-"""Test script to execute LLM provider call with grounded data and save proof."""
+"""Live proof script for LLM Smart Search (V9).
+
+Sends 3 real sentences (English, Hindi, Hinglish) and saves:
+- raw response
+- parsed result
+- validation status
+- latency
+to docs/llm_proof.json.
+If no key/network, records provider 'rules' and notes live call not verified.
+Never prints, logs, or commits any API key.
+"""
 import json
 import os
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-import pandas as pd
-from src.config import LANDMARKS
-from src.data import load_hospitals
-from src.llm import build_facts, call_groq_detailed, explain, post_check_numbers
-from src.scoring import rank_hospitals
+from dotenv import load_dotenv
+load_dotenv()
+
+from src.geo import load_gazetteer
+from src.llm import clean_llm_json, parse_request, parse_request_rules, validate_parsed
 
 
 def main():
-    # 1. Load real hospitals dataset — NO hand-typed facts!
-    hospitals = load_hospitals()
-    location_name = "Bhubaneswar Railway Station"
-    landmark = LANDMARKS.get(location_name, (20.2687, 85.8427))
-    user_lat, user_lon = landmark[0], landmark[1]
+    gaz_df = load_gazetteer()
+    api_key = os.getenv("GROQ_API_KEY", "")
 
-    # 2. Run app's own ranking function on real dataframe
-    method = "BedScore (recommended)"
-    ranked = rank_hospitals(hospitals, user_lat, user_lon, method=method)
+    test_sentences = [
+        {
+            "id": "english",
+            "text": "Near Patia, I have an Ayushman card, cheapest first",
+            "lang": "en",
+        },
+        {
+            "id": "hindi",
+            "text": "Patia ke paas, mere paas ayushman card hai, sabse sasta dikhao",
+            "lang": "hi",
+        },
+        {
+            "id": "hinglish",
+            "text": "Near KIIT square, no card, top 5 hospitals nearest",
+            "lang": "mixed",
+        },
+    ]
 
-    # 3. Build grounded facts dictionary directly from dataframe
-    input_facts = build_facts(ranked, method=method, location_name=location_name, top_n=3)
+    results = []
+    groq_client = None
+    provider = "rules"
 
-    print(f"Generated grounded input facts for {location_name} (Top 3 hospitals):")
-    for h in input_facts["top_hospitals"]:
-        print(f"  #{h['rank']} {h['name']} - Dist: {h['distance']}km, Fee: Rs{h['fee']}, "
-              f"Rating: {h['rating']}, Free beds: {h['beds_free']}")
+    if api_key:
+        try:
+            from groq import Groq
+            groq_client = Groq(api_key=api_key, timeout=6.0)
+            provider = "groq"
+        except Exception as e:
+            provider = "rules"
 
-    # 4. Call Groq directly (key from environment, never printed)
-    print("\nCalling Groq API...")
-    result = call_groq_detailed(input_facts, language="en")
-    raw_response = result.get("raw_response")
-    provider = result.get("provider", "template_fallback")
-    latency_ms = result.get("latency_ms", 0)
-    model = result.get("model")
-    num_passed = result.get("number_check_passed", False)
+    all_ai = True
+    for item in test_sentences:
+        sentence = item["text"]
+        t0 = time.time()
+        raw_response = None
+        parsed = None
+        source = "rules"
+        validation_status = "UNKNOWN"
 
-    if provider == "groq" and raw_response and num_passed:
-        print(f"Groq API call succeeded using model '{model}' in {latency_ms}ms!")
-        print(f"Number check: PASSED ({len(result.get('numbers_extracted', []))} numbers verified)")
-        final_output = raw_response
-    else:
-        print(f"Provider: {provider} (model: {model}, latency: {latency_ms}ms, error: {result.get('error')})")
-        print("Falling back to deterministic template...")
-        final_output = explain(input_facts, "en")
-        num_passed = post_check_numbers(final_output, input_facts)
+        if groq_client is not None:
+            models_to_try = [
+                os.getenv("GROQ_MODEL"),
+                "openai/gpt-oss-120b",
+                "openai/gpt-oss-20b",
+                "qwen/qwen3.8-27b",
+                "llama-3.3-70b-versatile",
+            ]
+            candidates = list(dict.fromkeys([m for m in models_to_try if m]))
+            from src.llm import _build_system_prompt
+            prompt = _build_system_prompt(gaz_df)
+            call_ok = False
+            last_err = None
 
-    proof = {
-        "provider": provider,
-        "model": model,
-        "latency_ms": latency_ms,
-        "input_facts": input_facts,
-        "raw_response": raw_response,
-        "numbers_extracted": result.get("numbers_extracted", []),
-        "allowed_numbers": result.get("allowed_numbers", []),
-        "suspicious_numbers": result.get("suspicious_numbers", []),
-        "number_check_passed": num_passed,
-        "final_output": final_output,
-        "code_lines_highlight": {
-            "post_check_numbers": "src/llm.py:114-131",
-            "call_groq_detailed": "src/llm.py:157-227",
-            "build_facts": "src/llm.py:89-111",
-        }
+            for model in candidates:
+                try:
+                    resp = groq_client.chat.completions.create(
+                        model=model,
+                        messages=[
+                            {"role": "system", "content": prompt},
+                            {"role": "user", "content": sentence[:300]},
+                        ],
+                        max_tokens=150,
+                        temperature=0.0,
+                    )
+                    raw_response = resp.choices[0].message.content or ""
+                    cleaned = clean_llm_json(raw_response)
+                    raw_json = json.loads(cleaned)
+                    parsed, unk = validate_parsed(raw_json, gaz_df)
+                    source = "AI"
+                    validation_status = f"VALID ({model})"
+                    call_ok = True
+                    break
+                except Exception as ex:
+                    last_err = ex
+                    continue
+
+            if not call_ok:
+                all_ai = False
+                source = "rules"
+                parsed, unk = parse_request_rules(sentence, gaz_df)
+                validation_status = f"FALLBACK_RULES ({type(last_err).__name__ if last_err else 'Unknown'})"
+        else:
+            all_ai = False
+            source = "rules"
+            parsed, unk = parse_request_rules(sentence, gaz_df)
+            validation_status = "RULES_ONLY (NO_API_KEY)"
+
+        latency_ms = int((time.time() - t0) * 1000)
+
+        results.append({
+            "id": item["id"],
+            "language": item["lang"],
+            "input_text": sentence,
+            "provider": source,
+            "latency_ms": latency_ms,
+            "raw_response": raw_response,
+            "parsed_result": parsed,
+            "validation_status": validation_status,
+        })
+
+    proof_doc = {
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%SZ", time.gmtime()),
+        "overall_provider": "groq" if (groq_client and all_ai) else "rules_fallback",
+        "live_call_verified": bool(groq_client and all_ai),
+        "results": results,
     }
 
-    out_file = Path("docs/llm_proof.json")
-    out_file.write_text(json.dumps(proof, indent=2), encoding="utf-8")
-    print(f"\nSaved proof to {out_file}!")
+    out_file = ROOT / "docs" / "llm_proof.json"
+    out_file.parent.mkdir(parents=True, exist_ok=True)
+    out_file.write_text(json.dumps(proof_doc, indent=2, ensure_ascii=False), encoding="utf-8")
+    print(f"Saved {len(results)} test cases to {out_file}")
+    for r in results:
+        print(f"  [{r['id']}] Provider: {r['provider']}, Latency: {r['latency_ms']}ms, Place: {r['parsed_result']['place']}, Card: {r['parsed_result']['has_card']}, Sort: {r['parsed_result']['sort']}")
+
     return 0
 
 
