@@ -239,3 +239,49 @@ def test_v5_ui_card_effects():
     assert has_arrow, "Expected rank arrows (▲/▼) in Rank column when card is ON"
 
 
+def test_v6_demo_tools_and_simulation():
+    """V6: simulation banner appears when active; reset restores snapshot; 0 beds at Apollo triggers Full, flagged, placed after unflagged; row count unchanged."""
+    at = AppTest.from_file("app.py", default_timeout=30)
+    # Start with active simulation of 0 beds for Apollo
+    at.session_state["sim_hosp"] = "Apollo Hospitals Bhubaneswar"
+    at.session_state["sim_beds"] = 0
+    at.run()
+    assert not at.exception
+
+    # 1. Coloured banner appears at the TOP of results
+    banner_found = any("SIMULATION ACTIVE: Apollo Hospitals Bhubaneswar set to 0 free beds" in str(md.value) for md in at.markdown)
+    assert banner_found, "Simulation banner not found when simulation is active"
+
+    # 2. Table row count strictly remains 25
+    df = at.dataframe[0].value
+    assert len(df) == 25, f"Row count changed during simulation: {len(df)}"
+
+    # 3. Apollo status is 'Likely full' and placed after unflagged hospitals
+    apollo_row = df[df["Hospital"].str.contains("Apollo")].iloc[0]
+    assert "Likely full" in str(apollo_row["Bed status (ML)"])
+    apollo_rank = int(str(apollo_row["Rank"]).replace("#", "").split()[0])
+    unflagged_rows = df[~df["Hospital"].str.contains("Apollo")]
+    ranked_unflagged = [int(str(r).replace("#", "").split()[0]) for r in unflagged_rows["Rank"] if str(r).startswith("#")]
+    assert apollo_rank > max(ranked_unflagged), "Flagged Apollo must be placed after all unflagged ranked hospitals"
+
+    # 4. Reset restores snapshot exactly
+    reset_btn = [b for b in at.button if b.key == "btn_reset_simulation"][0]
+    reset_btn.click().run()
+    assert not at.exception
+    # After reset, banner is gone and Apollo beds restored
+    df_reset = at.dataframe[0].value
+    apollo_reset = df_reset[df_reset["Hospital"].str.contains("Apollo")].iloc[0]
+    assert apollo_reset["Free Beds"] == 22
+    assert not any("SIMULATION ACTIVE:" in str(md.value) for md in at.markdown)
+
+
+def test_v6_demo_tools_hidden_when_demo_mode_false(monkeypatch):
+    """V6: Whole demo tools panel is hidden when DEMO_MODE is False."""
+    import src.config
+    monkeypatch.setattr(src.config, "DEMO_MODE", False)
+    at = AppTest.from_file("app.py", default_timeout=30).run()
+    assert not at.exception
+    demo_tools_expanders = [e for e in at.expander if "Demo tools" in str(e.label)]
+    assert len(demo_tools_expanders) == 0, "Demo tools expander must be hidden when DEMO_MODE is False"
+
+

@@ -7,3 +7,4 @@
 | V3 | DONE | docs/evidence/v3_sort_proof.txt | Removed Quick Picks, added Sort table by with 5 criteria, rank preservation verified |
 | V4 | DONE | docs/evidence/v4_ml_proof.txt | ML fields renamed, clamped horizon, bed status visible on cards & table, safety flag places after unflagged, 6h forecast & accuracy expander |
 | V5 | DONE | docs/evidence/v5_scheme_proof.txt | Unified effective_fee for both formulas, ~~Rs fee~~ Rs 0 with cashless badge, rank arrows ▲/▼, card ON summary line, Scheme column |
+| V6 | DONE | docs/evidence/v6_simulation_proof.txt | Simulation moved to Demo tools expander at bottom, top active banner with reset, feeds ML features, DEMO_MODE toggle |

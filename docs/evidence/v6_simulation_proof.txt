@@ -1,0 +1,30 @@
+V6 — Demo Tools and Simulation Proof
+======================================
+Generated: 2026-10-12
+
+1. Relocated to Bottom Expander
+-------------------------------
+- Removed simulation tool from sidebar (sidebar now restricted strictly to Location, Ranking Formula, and Options).
+- Placed in bottom collapsed expander: '🧪 Demo tools (for the live demo only)'.
+- Standardized wording: 'Change one hospital's free beds to see how the recommendation and the ML status react.'
+- Completely hidden when DEMO_MODE is False.
+
+2. Active Simulation Banner & ML Feed
+--------------------------------------
+- Top of results shows high-contrast warning banner:
+  '⚠️ SIMULATION ACTIVE: <hospital> set to N free beds' with 'Reset to snapshot' button.
+- Simulated beds feed directly into ML inference features (occ_pct and occupancy fraction).
+- Setting 0 free beds on Apollo updates occ_pct to 1.0, causing the ML model to predict 'Full' (ml_p_full > 0.99).
+- Triggers safety flag 'Likely full — call first' and places Apollo after all unflagged hospitals without altering its formula score.
+
+3. Invariants & Reset Behavior
+------------------------------
+- Clicking 'Reset to snapshot' clears the session override and restores exact original snapshot bed counts and ranks.
+- Row count remains invariant at 25 hospitals during simulation and after reset.
+
+4. Test Suite Verification
+--------------------------
+tests/test_app.py:
+- test_v6_demo_tools_and_simulation PASSED
+- test_v6_demo_tools_hidden_when_demo_mode_false PASSED
+Total tests in test_app.py: 22 passed.

@@ -21,7 +21,7 @@ from src.config import (
     A_WEIGHT,
     ODISHA_BOUNDS, STATUS_COLOURS, STATUS_NAMES, SCHEME_PMJAY, SCHEME_STATE,
     SCHEME_TOGGLE_LABEL,
-    W_TRUST, W_CLOSE, W_FEE,
+    W_TRUST, W_CLOSE, W_FEE, DEMO_MODE,
 )
 from src.data import build_snapshot, load_history_snapshot, load_hospitals, load_ml_model
 from src.geo import (
@@ -186,6 +186,22 @@ now = pd.Timestamp(datetime.now()).floor("min")
 
 snap = build_snapshot(hosp, last)
 
+# Check active simulation override
+sim_hosp = st.session_state.get("sim_hosp")
+sim_beds = st.session_state.get("sim_beds")
+is_sim_active = False
+if sim_hosp and sim_beds is not None and sim_hosp in snap["hospital_name"].values:
+    orig_h_row = snap[snap["hospital_name"] == sim_hosp].iloc[0]
+    orig_free = int(orig_h_row.get("general_ward_available_beds", orig_h_row.get("beds_free_now", 20)))
+    if sim_beds != orig_free:
+        is_sim_active = True
+        snap.loc[snap["hospital_name"] == sim_hosp, "general_ward_available_beds"] = sim_beds
+        snap.loc[snap["hospital_name"] == sim_hosp, "beds_free_now"] = sim_beds
+        tot_beds = int(orig_h_row.get("general_ward_total_beds", orig_h_row.get("general_beds", 100)))
+        occ = np.clip((tot_beds - sim_beds) / max(tot_beds, 1), 0.0, 1.0)
+        snap.loc[snap["hospital_name"] == sim_hosp, "occ_pct"] = occ
+        snap.loc[snap["hospital_name"] == sim_hosp, "general_ward_occupancy_pct"] = occ * 100.0
+
 # ── Header ────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="main-header">
@@ -346,49 +362,6 @@ with st.sidebar:
     )
     st.caption("Confirm cashless acceptance with the hospital before travelling.")
 
-    st.markdown("---")
-
-    # Simulate hospital filling up (session-only override)
-    with st.expander("🧪 Simulate a hospital filling up", expanded=False):
-        st.caption("Override available beds for this session only to demonstrate the bed gate. Never writes to disk.")
-        hosp_names = sorted(rankable(snap, show_specialty)["hospital_name"].unique())
-        sim_hosp = st.selectbox("Select hospital", hosp_names, key="sim_hosp_select")
-        h_row = snap[snap["hospital_name"] == sim_hosp].iloc[0]
-        cur_free = int(h_row.get("general_ward_available_beds", h_row.get("beds_free_now", 20)))
-        tot_beds = int(h_row.get("general_ward_total_beds", h_row.get("general_beds", 100)))
-        sim_free = st.number_input(
-            "Available general-ward beds",
-            min_value=0, max_value=max(tot_beds, 500), value=cur_free,
-            key=f"sim_beds_input_{sim_hosp}"
-        )
-        if sim_free != cur_free:
-            snap.loc[snap["hospital_name"] == sim_hosp, "general_ward_available_beds"] = sim_free
-            snap.loc[snap["hospital_name"] == sim_hosp, "beds_free_now"] = sim_free
-            st.info(f"Simulating {sim_hosp[:24]}: {sim_free} beds free.")
-            if sim_free == 0:
-                st.markdown(
-                    '<div class="sim-warning-badge" style="background: rgba(239, 68, 68, 0.2); color: #F87171; '
-                    'border: 1px solid #EF4444; padding: 8px 12px; border-radius: 6px; font-weight: 600; '
-                    'font-size: 0.82rem; margin-top: 8px;">'
-                    '⚠️ P(bed arrival) &lt; 50%: Facility critical / zero beds available on arrival.'
-                    '</div>',
-                    unsafe_allow_html=True
-                )
-        elif sim_free == 0:
-            st.markdown(
-                '<div class="sim-warning-badge" style="background: rgba(239, 68, 68, 0.2); color: #F87171; '
-                'border: 1px solid #EF4444; padding: 8px 12px; border-radius: 6px; font-weight: 600; '
-                'font-size: 0.82rem; margin-top: 8px;">'
-                '⚠️ P(bed arrival) &lt; 50%: Facility critical / zero beds available on arrival.'
-                '</div>',
-                unsafe_allow_html=True
-            )
-
-    st.markdown("---")
-
-    # Explain button
-    explain_clicked = st.button("🤖 Explain this ranking", use_container_width=True)
-
 
 # ── Location state ───────────────────────────────────────────────────
 loc = st.session_state["loc"]
@@ -508,6 +481,24 @@ ranked = rankable(result, show_specialty).copy()
 
 # ── Top picks cards ───────────────────────────────────────────────────
 st.markdown("---")
+
+# ── Simulation Active Banner ──────────────────────────────────────────
+if is_sim_active:
+    c_banner, c_reset = st.columns([4, 1])
+    with c_banner:
+        st.markdown(
+            f'<div style="background:rgba(239,68,68,0.2); color:#F87171; border:2px solid #EF4444; '
+            f'border-radius:8px; padding:8px 14px; font-weight:700; font-size:0.92rem; margin-bottom:8px;">'
+            f'⚠️ SIMULATION ACTIVE: {html.escape(sim_hosp)} set to {sim_beds} free beds'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+    with c_reset:
+        if st.button("Reset to snapshot", key="btn_reset_simulation", use_container_width=True):
+            st.session_state.pop("sim_hosp", None)
+            st.session_state.pop("sim_beds", None)
+            st.rerun()
+
 st.markdown(f"#### 🏅 Top {min(top_n, len(ranked))} Hospitals ({method})")
 
 flagged_count = int(ranked["is_flagged"].sum()) if "is_flagged" in ranked.columns else 0
@@ -1087,6 +1078,7 @@ with st.expander("📋 About the data"):
     """)
 
 # ── LLM explanation ───────────────────────────────────────────────────
+explain_clicked = False
 if explain_clicked and not ranked.empty:
     facts = build_facts(ranked, method=method, location_name=place, top_n=3)
 
@@ -1099,3 +1091,44 @@ if explain_clicked and not ranked.empty:
 # ── Emergency footer ──────────────────────────────────────────────────
 st.markdown("---")
 st.markdown(f'<div class="emergency-bar">{EMERGENCY_TEXT}</div>', unsafe_allow_html=True)
+
+# ── Demo tools (bottom expander, hidden when DEMO_MODE is False) ───────
+if DEMO_MODE:
+    with st.expander("🧪 Demo tools (for the live demo only)", expanded=False):
+        st.caption("Change one hospital's free beds to see how the recommendation and the ML status react.")
+        hosp_names = sorted(rankable(snap, show_specialty)["hospital_name"].unique())
+        cur_sim_hosp = st.session_state.get("sim_hosp", hosp_names[0] if hosp_names else "")
+        sim_hosp_idx = hosp_names.index(cur_sim_hosp) if cur_sim_hosp in hosp_names else 0
+        sel_hosp = st.selectbox("Select hospital", hosp_names, index=sim_hosp_idx, key="demo_tools_hosp_select")
+
+        orig_row = snap[snap["hospital_name"] == sel_hosp].iloc[0]
+        cur_free_beds = int(orig_row.get("general_ward_available_beds", orig_row.get("beds_free_now", 20)))
+        tot_beds_val = int(orig_row.get("general_ward_total_beds", orig_row.get("general_beds", 100)))
+
+        input_val = int(st.session_state.get("sim_beds", cur_free_beds)) if st.session_state.get("sim_hosp") == sel_hosp else cur_free_beds
+
+        sel_beds = st.number_input(
+            "Available general-ward beds",
+            min_value=0,
+            max_value=max(tot_beds_val, 500),
+            value=input_val,
+            key=f"demo_tools_beds_input_{sel_hosp}",
+        )
+        if sel_beds != cur_free_beds:
+            if st.session_state.get("sim_hosp") != sel_hosp or st.session_state.get("sim_beds") != sel_beds:
+                st.session_state["sim_hosp"] = sel_hosp
+                st.session_state["sim_beds"] = sel_beds
+                st.rerun()
+
+        c_apply, c_reset_bottom = st.columns([1, 1])
+        with c_apply:
+            if st.button("Apply simulation", key="btn_apply_sim", use_container_width=True):
+                st.session_state["sim_hosp"] = sel_hosp
+                st.session_state["sim_beds"] = sel_beds
+                st.rerun()
+        with c_reset_bottom:
+            if is_sim_active:
+                if st.button("Reset to snapshot", key="btn_reset_sim_bottom", use_container_width=True):
+                    st.session_state.pop("sim_hosp", None)
+                    st.session_state.pop("sim_beds", None)
+                    st.rerun()
