@@ -21,5 +21,24 @@
   "macro_f1_baseline": 0.7687,
   "accuracy_model": 0.783,
   "accuracy_baseline": 0.7734,
-  "brier_model": 0.0601
+  "brier_model": 0.0601,
+  "provided_hospitals": 20,
+  "hospitals_flagged_base_snapshot": 0,
+  "hospitals_flagged_after_0_bed_demo": 1,
+  "card_on_rank_changes_per_landmark": {
+    "Bhubaneswar Railway Station": 22,
+    "Biju Patnaik Airport": 24,
+    "Master Canteen Square": 23,
+    "Jaydev Vihar Square": 23,
+    "Patia / KIIT Square": 19,
+    "Khandagiri Square": 23,
+    "Nayapalli": 24,
+    "Rasulgarh Square": 24,
+    "Vani Vihar / Utkal University": 23,
+    "Saheed Nagar": 23,
+    "Baramunda Bus Stand": 23,
+    "Kalinga Nagar / Ghatikia": 23
+  },
+  "card_on_rank_changes_min": 19,
+  "card_on_rank_changes_max": 24
 }

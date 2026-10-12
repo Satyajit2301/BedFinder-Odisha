@@ -1,0 +1,138 @@
+====================================================================================================
+BEDFINDER ODISHA — V3 MATRIX EVALUATION (AppTest)
+====================================================================================================
+Evaluated across 12 landmarks × 2 formulas × 2 card states (48 AppTest configurations).
+
+## 1. FORMULA 1 (Baseline) RESULTS
+Distinct top-3 sets across 12 landmarks: 1
+----------------------------------------------------------------------------------------------------
+Landmark: Bhubaneswar Railway Station
+  Top 3 (Card OFF): Apollo Hospitals Bhubaneswar, Manipal Hospitals, Bhubaneswar, SUM Ultimate Medicare
+  Top 3 (Card ON):  Apollo Hospitals Bhubaneswar, Manipal Hospitals, Bhubaneswar, SUM Ultimate Medicare
+  Rank changes with Card ON: 4 hospitals
+
+Landmark: Biju Patnaik Airport
+  Top 3 (Card OFF): Apollo Hospitals Bhubaneswar, Manipal Hospitals, Bhubaneswar, SUM Ultimate Medicare
+  Top 3 (Card ON):  Apollo Hospitals Bhubaneswar, Manipal Hospitals, Bhubaneswar, SUM Ultimate Medicare
+  Rank changes with Card ON: 4 hospitals
+
+Landmark: Master Canteen Square
+  Top 3 (Card OFF): Apollo Hospitals Bhubaneswar, Manipal Hospitals, Bhubaneswar, SUM Ultimate Medicare
+  Top 3 (Card ON):  Apollo Hospitals Bhubaneswar, Manipal Hospitals, Bhubaneswar, SUM Ultimate Medicare
+  Rank changes with Card ON: 4 hospitals
+
+Landmark: Jaydev Vihar Square
+  Top 3 (Card OFF): Apollo Hospitals Bhubaneswar, Manipal Hospitals, Bhubaneswar, SUM Ultimate Medicare
+  Top 3 (Card ON):  Apollo Hospitals Bhubaneswar, Manipal Hospitals, Bhubaneswar, SUM Ultimate Medicare
+  Rank changes with Card ON: 4 hospitals
+
+Landmark: Patia / KIIT Square
+  Top 3 (Card OFF): Apollo Hospitals Bhubaneswar, Manipal Hospitals, Bhubaneswar, SUM Ultimate Medicare
+  Top 3 (Card ON):  Apollo Hospitals Bhubaneswar, Manipal Hospitals, Bhubaneswar, SUM Ultimate Medicare
+  Rank changes with Card ON: 4 hospitals
+
+Landmark: Khandagiri Square
+  Top 3 (Card OFF): Apollo Hospitals Bhubaneswar, Manipal Hospitals, Bhubaneswar, SUM Ultimate Medicare
+  Top 3 (Card ON):  Apollo Hospitals Bhubaneswar, Manipal Hospitals, Bhubaneswar, SUM Ultimate Medicare
+  Rank changes with Card ON: 4 hospitals
+
+Landmark: Nayapalli
+  Top 3 (Card OFF): Apollo Hospitals Bhubaneswar, Manipal Hospitals, Bhubaneswar, SUM Ultimate Medicare
+  Top 3 (Card ON):  Apollo Hospitals Bhubaneswar, Manipal Hospitals, Bhubaneswar, SUM Ultimate Medicare
+  Rank changes with Card ON: 4 hospitals
+
+Landmark: Rasulgarh Square
+  Top 3 (Card OFF): Apollo Hospitals Bhubaneswar, Manipal Hospitals, Bhubaneswar, SUM Ultimate Medicare
+  Top 3 (Card ON):  Apollo Hospitals Bhubaneswar, Manipal Hospitals, Bhubaneswar, SUM Ultimate Medicare
+  Rank changes with Card ON: 4 hospitals
+
+Landmark: Vani Vihar / Utkal University
+  Top 3 (Card OFF): Apollo Hospitals Bhubaneswar, Manipal Hospitals, Bhubaneswar, SUM Ultimate Medicare
+  Top 3 (Card ON):  Apollo Hospitals Bhubaneswar, Manipal Hospitals, Bhubaneswar, SUM Ultimate Medicare
+  Rank changes with Card ON: 4 hospitals
+
+Landmark: Saheed Nagar
+  Top 3 (Card OFF): Apollo Hospitals Bhubaneswar, Manipal Hospitals, Bhubaneswar, SUM Ultimate Medicare
+  Top 3 (Card ON):  Apollo Hospitals Bhubaneswar, Manipal Hospitals, Bhubaneswar, SUM Ultimate Medicare
+  Rank changes with Card ON: 4 hospitals
+
+Landmark: Baramunda Bus Stand
+  Top 3 (Card OFF): Apollo Hospitals Bhubaneswar, Manipal Hospitals, Bhubaneswar, SUM Ultimate Medicare
+  Top 3 (Card ON):  Apollo Hospitals Bhubaneswar, Manipal Hospitals, Bhubaneswar, SUM Ultimate Medicare
+  Rank changes with Card ON: 4 hospitals
+
+Landmark: Kalinga Nagar / Ghatikia
+  Top 3 (Card OFF): Apollo Hospitals Bhubaneswar, Manipal Hospitals, Bhubaneswar, SUM Ultimate Medicare
+  Top 3 (Card ON):  Apollo Hospitals Bhubaneswar, Manipal Hospitals, Bhubaneswar, SUM Ultimate Medicare
+  Rank changes with Card ON: 4 hospitals
+
+
+## 2. FORMULA 2 (BedScore) RESULTS
+Distinct top-3 sets across 12 landmarks: 12 (invariant >= 6 SATISFIED)
+----------------------------------------------------------------------------------------------------
+Landmark: Bhubaneswar Railway Station
+  Top 3 (Card OFF): Neelachal Hospital Pvt. Ltd., Sunshine Hospital, Shree Hospitals
+  Top 3 (Card ON):  Neelachal Hospital Pvt. Ltd., Apollo Hospitals Bhubaneswar, Sunshine Hospital
+  Rank changes with Card ON: 22 hospitals
+
+Landmark: Biju Patnaik Airport
+  Top 3 (Card OFF): Shree Hospitals, Vivekanand Hospital Bhubaneswar, Neelachal Hospital Pvt. Ltd.
+  Top 3 (Card ON):  SUM Ultimate Medicare, Manipal Hospitals, Bhubaneswar, Apollo Hospitals Bhubaneswar
+  Rank changes with Card ON: 24 hospitals
+
+Landmark: Master Canteen Square
+  Top 3 (Card OFF): Neelachal Hospital Pvt. Ltd., Shree Hospitals, Sunshine Hospital
+  Top 3 (Card ON):  Neelachal Hospital Pvt. Ltd., Apollo Hospitals Bhubaneswar, Shree Hospitals
+  Rank changes with Card ON: 23 hospitals
+
+Landmark: Jaydev Vihar Square
+  Top 3 (Card OFF): Apollo Hospitals Bhubaneswar, Vivekanand Hospital Bhubaneswar, PGIMER & Capital Hospital Bhubaneswar
+  Top 3 (Card ON):  Apollo Hospitals Bhubaneswar, Sparsh Hospitals & Critical Care, CARE Hospitals, Bhubaneswar
+  Rank changes with Card ON: 23 hospitals
+
+Landmark: Patia / KIIT Square
+  Top 3 (Card OFF): Kalinga Institute of Medical Sciences (KIMS), UTKAL HOSPITAL, CARE Hospitals, Bhubaneswar
+  Top 3 (Card ON):  Kalinga Institute of Medical Sciences (KIMS), UTKAL HOSPITAL, CARE Hospitals, Bhubaneswar
+  Rank changes with Card ON: 19 hospitals
+
+Landmark: Khandagiri Square
+  Top 3 (Card OFF): SUM Ultimate Medicare, IGKC Multispeciality Hospital, Manipal Hospitals, Bhubaneswar
+  Top 3 (Card ON):  SUM Ultimate Medicare, Manipal Hospitals, Bhubaneswar, All India Institute of Medical Sciences, Bhubaneswar
+  Rank changes with Card ON: 23 hospitals
+
+Landmark: Nayapalli
+  Top 3 (Card OFF): Vivekanand Hospital Bhubaneswar, Usthi Hospital, Health Village Hospital
+  Top 3 (Card ON):  Apollo Hospitals Bhubaneswar, Vivekanand Hospital Bhubaneswar, Sparsh Hospitals & Critical Care
+  Rank changes with Card ON: 24 hospitals
+
+Landmark: Rasulgarh Square
+  Top 3 (Card OFF): Hi-Tech Medical College and Hospital, Blue Wheel Hospital, Sparsh Hospitals & Critical Care
+  Top 3 (Card ON):  Sparsh Hospitals & Critical Care, Hi-Tech Medical College and Hospital, Apollo Hospitals Bhubaneswar
+  Rank changes with Card ON: 24 hospitals
+
+Landmark: Vani Vihar / Utkal University
+  Top 3 (Card OFF): PGIMER & Capital Hospital Bhubaneswar, Sparsh Hospitals & Critical Care, Kar Clinic & Hospital
+  Top 3 (Card ON):  Apollo Hospitals Bhubaneswar, Sparsh Hospitals & Critical Care, PGIMER & Capital Hospital Bhubaneswar
+  Rank changes with Card ON: 23 hospitals
+
+Landmark: Saheed Nagar
+  Top 3 (Card OFF): Sparsh Hospitals & Critical Care, PGIMER & Capital Hospital Bhubaneswar, Jagannath Hospital
+  Top 3 (Card ON):  Sparsh Hospitals & Critical Care, Apollo Hospitals Bhubaneswar, Hi-Tech Medical College and Hospital
+  Rank changes with Card ON: 23 hospitals
+
+Landmark: Baramunda Bus Stand
+  Top 3 (Card OFF): Vivekanand Hospital Bhubaneswar, Health Village Hospital, Shree Hospitals
+  Top 3 (Card ON):  Vivekanand Hospital Bhubaneswar, Apollo Hospitals Bhubaneswar, SUM Ultimate Medicare
+  Rank changes with Card ON: 23 hospitals
+
+Landmark: Kalinga Nagar / Ghatikia
+  Top 3 (Card OFF): SUM Ultimate Medicare, IGKC Multispeciality Hospital, Vivekanand Hospital Bhubaneswar
+  Top 3 (Card ON):  SUM Ultimate Medicare, Manipal Hospitals, Bhubaneswar, Apollo Hospitals Bhubaneswar
+  Rank changes with Card ON: 23 hospitals
+
+====================================================================================================
+## 3. SUMMARY OF INVARIANTS
+- Constant row count = 25 verified across all 48 configurations: PASSED
+- Formula 2 distinct top-3 sets = 12 (>= 6 required): PASSED
+- Safety flag ordering (no flagged hospital ranks above unflagged): PASSED
+====================================================================================================

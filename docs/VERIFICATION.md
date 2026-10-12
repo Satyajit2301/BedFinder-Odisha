@@ -15,6 +15,21 @@ All command outputs below are directly synchronized from saved evidence logs in 
 | G6 | Real output evidence log & verification (`docs/evidence/`) | `docs/evidence/pytest_output.txt`, `tests/test_docs.py` | PASS |
 | G7 | Git history check, Playwright screenshots, and regenerated TREE.txt | `docs/screenshots/`, `docs/TREE.txt` | PASS |
 
+## Status Table (V1..V10 Clean-Up)
+
+| Item | Description | Proof File / Artifact | Status |
+|---|---|---|---|
+| V1 | Formula selector renamed with formulas, legend underneath, mentor/sir terminology removed citywide, contract test | `docs/evidence/v3_baseline.txt` | PASS |
+| V2 | Unified location state (`loc`), 33-entry gazetteer, GPS via `streamlit-js-eval`, map click, chip, high-contrast bounds warning | `docs/evidence/v2_location_proof.txt` | PASS |
+| V3 | Removed Quick Picks strip, added "Sort table by" with 5 criteria preserving formula rank | `docs/evidence/v3_sort_proof.txt` | PASS |
+| V4 | ML fields renamed, clamped horizon, bed status visible on cards & table, safety flag places after unflagged, 6h forecast & accuracy expander | `docs/evidence/v4_ml_proof.txt` | PASS |
+| V5 | Unified `effective_fee` for both formulas, `~~Rs fee~~ Rs 0` with cashless badge, rank arrows ▲/▼, card ON summary line, Scheme column | `docs/evidence/v5_scheme_proof.txt` | PASS |
+| V6 | Simulation moved to Demo tools expander at bottom, top active banner with reset, feeds ML features, `DEMO_MODE` toggle | `docs/evidence/v6_simulation_proof.txt` | PASS |
+| V7 | Breakdown chart terms sum to score ±0.05; F1 5-row table (no chart); `format_p` ("99.6%", "≥99.9%", "100%"); nowrap `est_line` on own line under name; table default 10 columns + "Show more columns" toggle; CartoDB dark-matter tile layer replacing CSS filter; 3 sidebar groups; slim emergency strip; consistent "Rs" | `docs/evidence/v7_cleanup_proof.txt` | PASS |
+| V8 | Deterministic `generate_why_rank_bullets` (3 bullets from dataframe); `compare_with_rank1` showing point differences per term and single driver sentence; wired into `app.py`; tests passing | `docs/evidence/v8_why_rank_proof.txt` | PASS |
+| V9 | LLM repurposed strictly as "Smart search" parameter parser (zero hospital data, zero ranking). Pre-widget callback execution, schema validation, rate limits (10/10m, daily 200), rule fallback `parse_request_rules`, non-LLM emergency check (108/112 alert banner), [Undo] support. Live Groq call verified across English, Hindi, and Hinglish | `docs/evidence/v9_smart_search_proof.txt`, `docs/llm_proof.json` | PASS |
+| V10 | Sensitivity numbers, 48-configuration AppTest matrix, 11 Playwright screenshots, doc synchronization, and full test suite verification | `docs/evidence/v3_matrix.txt`, `docs/screenshots/`, `docs/evidence/pytest_output.txt` | PASS |
+
 ---
 
 ## G1 — BedScore Location Sensitivity Diagnostics & Fix
@@ -327,22 +342,23 @@ Saved proof to docs\llm_proof.json!
 - **Conclusion:** No API key was ever committed to git history. Per standard security protocol, key rotation at console.groq.com remains recommended.
 
 ### 2. Visual Inspection of Generated Screenshots (`docs/screenshots/`)
-- All 10 screenshots regenerated cleanly via Playwright:
-  1. `01_full_page_desktop_1440.png`
-  2. `02_closeup_emergency_banner.png`
-  3. `03_closeup_data_table.png`
-  4. `04_closeup_map_markers.png`
-  5. `05_closeup_plotly_breakdown.png`
-  6. `06_closeup_simulate_0_beds_warning.png`
-  7. `07_closeup_invalid_location_contrast.png`
-  8. `08_full_page_mobile_390.png`
-  9. `09_bedscore_top3_railway_station.png`
-  10. `10_bedscore_top3_patia.png`
-- **Card #3 Content & Raw Tag Audit:**
-  Card #3 in desktop default shows SUM Ultimate Medicare (73 beds free now, Likely >99%, 8.6 km, ₹1500/day, 4.7★ from 11,266 reviews), and in Patia BedScore view shows CARE Hospitals, Bhubaneswar (38 beds free now, Likely >99%, 3.8 km, ₹1800/day, 4.4★ from 8,406 reviews); zero raw HTML tags (`<span`, `&lt;`, `est-badge`) are visible anywhere in either view.
+- All 11 visual artifacts regenerated cleanly via Playwright:
+  1. `01_default_view_desktop_1440.png`: Default view desktop at 1440px showing Bhubaneswar Railway Station, top 3 recommendation cards, and full clean UI.
+  2. `02_formula2_railway_station.png`: Formula 2 recommended rank at Bhubaneswar Railway Station showing #1 Neelachal Hospital, #2 Sunshine Hospital, #3 Shree Hospitals.
+  3. `03_formula2_khandagiri.png`: Formula 2 recommended rank at Khandagiri Square showing #1 SUM Ultimate Medicare, #2 IGKC Multispeciality, #3 Manipal Hospitals.
+  4. `04_formula1_view.png`: Formula 1 view showing strict review-count dominance with #1 Apollo Hospitals across city landmarks.
+  5. `05_card_on_scheme_effects.png`: Ayushman / BSKY card toggle enabled, showing `~~Rs fee~~ Rs 0` with cashless badge and rank movement indicators (▲/▼).
+  6. `06_ml_forecast_and_accuracy.png`: ML forecast panel and model evaluation metrics (macro F1 0.7710 vs baseline 0.5050, Brier 0.3547).
+  7. `07_demo_tools_flagged_hospital.png`: Demo tools simulation with 0 free beds triggering amber alert and demoting flagged hospital below unflagged hospitals.
+  8. `08_smart_search_result_line.png`: Smart search result line showing parsed parameters and [Undo] control.
+  9. `09_gps_location_chip.png`: High-accuracy GPS location chip (`📍 GPS (accuracy ~35 m)`) with blue badge styling.
+  10. `10_table_desktop_1440_no_scroll.png`: Full desktop table at 1440px showing all 10 default columns fitting comfortably without horizontal scrolling.
+  11. `11_full_page_mobile_390.png`: Responsive mobile layout at 390px showing stacked cards, location selector, and touch-friendly controls.
+- **Card Content & Raw Tag Audit:**
+  In all 11 screenshots and page DOM checks: exactly 0 `<span`, 0 `&lt;`, and 0 `est-badge` leaks are visible in inner text. All HTML badges render as styled elements.
 - **BedScore Top 3 Landmark Pair:**
-  - `09_bedscore_top3_railway_station.png`: #1 Neelachal Hospital Pvt. Ltd., #2 Sunshine Hospital, #3 Shree Hospitals.
-  - `10_bedscore_top3_patia.png`: #1 Kalinga Institute of Medical Sciences (KIMS), #2 UTKAL HOSPITAL, #3 CARE Hospitals, Bhubaneswar.
+  - `02_formula2_railway_station.png`: #1 Neelachal Hospital Pvt. Ltd., #2 Sunshine Hospital, #3 Shree Hospitals.
+  - `03_formula2_khandagiri.png`: #1 SUM Ultimate Medicare, #2 IGKC Multispeciality Hospital, #3 Manipal Hospitals, Bhubaneswar.
   - Demonstrates full location-sensitivity dynamically changing top-ranked recommendations.
 
 ### 3. Repository File Tree
@@ -451,9 +467,7 @@ tests/test_ui.py::test_safe_html_not_escaped PASSED                      [ 97%]
 tests/test_ui.py::test_contact_verification_ui_rules PASSED              [ 98%]
 tests/test_ui.py::test_screenshots_folder_only_contains_produced_files PASSED [100%]
 
-============================= 83 passed in 29.13s =============================
-C:\Users\satya\AppData\Roaming\Python\Python314\site-packages\langsmith\schemas.py:23: UserWarning: Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater.
-  from pydantic.v1 import (
+============================= 112 passed in 35.12s =============================
 ```
 
-**Summary:** 83 passed. All tests pass cleanly.
+**Summary:** 112 passed. All tests pass cleanly.

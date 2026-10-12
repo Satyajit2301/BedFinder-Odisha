@@ -42,54 +42,59 @@ streamlit run app.py
 - **Laptops vs Phones:** Laptops lack GPS hardware; browsers infer position via Wi-Fi/IP (often several km off). Phones provide true GPS.
 - **Origins:** Browser Geolocation API strictly requires `https://` or `http://localhost` (blocked on `http://<LAN-IP>`).
 - **Windows Settings:** *Settings → Privacy & security → Location* must be toggled ON and access allowed for your browser.
-- **Alternative Controls:** If GPS is rough or denied, use area search (30+ neighbourhoods), map click, or manual coordinates.
+- **Alternative Controls:** If GPS is rough or denied, use area search (33 neighbourhoods), map click, or manual coordinates.
 
 ---
 
 ## 🌟 Key Features
 
 1. **Two Complementary Scoring Methods:**
-   - **Formula 1 (problem statement baseline):** Exact implementation of `Score = 1000*A + X - Y - Z`. Transparently demonstrates why review volume dominates distance across Bhubaneswar.
-   - **BedScore (recommended):** Balanced multi-criteria score weighting Closeness (35%), Bayesian Trust (40%), Affordability (25%), gated by arrival bed probability $p_{\text{bed\_arrival}}$. Yields location-sensitive recommendations across 12 landmarks.
-2. **Predictive ML Classification:**
-   - Classifies bed status at estimated time of arrival into 3 classes: `Available (>=15%)`, `Limited (5-15%)`, and `Full (<5%)`.
+   - **Formula 1 (problem statement baseline):** Exact implementation of `Score = 1000·A + X − Y − Z`. Transparently demonstrates why review volume dominates distance across Bhubaneswar.
+   - **Formula 2 (BedScore, recommended):** Balanced multi-criteria score weighting Closeness (40%), Bayesian Trust (35%), Affordability (25%), gated by arrival bed probability $P$. Yields location-sensitive recommendations across 12 landmarks.
+2. **Predictive ML Classification & Safety Flag:**
+   - Classifies bed status at estimated time of arrival into 3 classes: `Available (>15%)`, `Limited (5–15%)`, and `Likely full (<5%)`.
    - Re-anchored to the baseline snapshot data with a 48-hour smooth bridge so ML predictions and on-screen bed counts never conflict.
    - Honestly audited against persistence baseline in `docs/ML_REPORT.md` (Macro-F1 0.7769 vs 0.7687 baseline).
-3. **Interactive Dark Leaflet Map:**
-   - OpenStreetMap tiles darkened via `.leaflet-tile-pane` CSS filter without inverting marker pins or badges.
-   - Numbered circular badges for Top N recommendations, small markers for remaining hospitals, distinct user location pin.
-4. **Three-State Scheme Transparency (PM-JAY / BSKY-GJAY):**
-   - Displays illustrative participation with `✓` (Yes), `✗` (No), or `?` (Unknown).
-   - "I have a PM-JAY / State Scheme card" toggle boosts participating hospitals without hiding non-participating ones.
+   - Safety flag: if a hospital is predicted `Likely full` ($\ge 50\%$ confidence), it is placed after unflagged hospitals so patients are not directed to saturated wards.
+3. **Interactive CartoDB Dark Matter Map:**
+   - Dark-themed CartoDB map tiles without CSS inversion filter artifacts.
+   - Numbered circular badges for Top N recommendations, pins colored by ML arrival status, distinct user pin; click map to set location.
+4. **Scheme Acceptance Transparency (PM-JAY / State Scheme):**
+   - Displays illustrative cashless acceptance.
+   - Card ON toggle sets effective fee to Rs 0 for accepting hospitals (showing struck-through listed fee and cashless badge) and shows rank shift arrows (▲/▼).
    - Prominent disclaimer: *"Confirm cashless acceptance with the hospital before travelling."*
 5. **Hospital Contacts & Specialty Triage:**
-   - 25 total hospitals (20 core snapshot hospitals + 5 illustrative facilities). 7 candidate entries were dropped because their location or name could not be matched to Bhubaneswar.
+   - 25 total hospitals (20 core snapshot hospitals + 5 illustrative facilities).
    - Specialty institutions (Hemalata Cancer Hospital) are tagged and unranked for general emergency beds.
-   - Contact guards: unconfirmed phone numbers and dead links are displayed as plain text ("Not verified").
-6. **Direct Groq LLM Explainer with Strict Numerical Guardrails:**
-   - Lightweight direct `groq.Groq` client (no langchain overhead).
-   - Deterministic template fallback with 8-second timeout.
-   - Regex-based numerical check (`post_check_numbers`) validates that every number in the LLM response is grounded in verified data.
+   - Contact guards: unconfirmed phone numbers and unverified links are protected.
+6. **LLM Smart Search with Deterministic Rule-Based Fallback:**
+   - Plain-English/Hindi/Odia natural search ("near Patia, I have an Ayushman card, cheapest first") auto-fills normal controls.
+   - The LLM never sees hospital data and never computes scores or ranks.
+   - 6-second timeout with deterministic rule-based fallback (`parse_request_rules`).
+   - Rule-based safety detector checks emergency keywords (chest pain, accident, etc.) and triggers immediate 108/112 ambulance banner.
 7. **Emergency Banner:**
-   - Dedicated helpline citations: **108** (free ambulance) and **112** (police/fire/medical) operated by Department of Health & Family Welfare, Government of Odisha.
+   - Dedicated helpline citations: **108** (free ambulance) and **112** (unified emergency) operated by Department of Health & Family Welfare, Government of Odisha.
 
 ---
 
 ## 🧪 Testing & Verification
 
-Run the full pytest suite (49 automated unit, integration, and UI tests):
+Run the full pytest suite:
 
 ```bash
 pytest tests/ -v
 ```
 
-All 49 tests pass:
-- `tests/test_app.py`: Streamlit smoke, control matrix across methods and landmarks, PM-JAY no-crash regression, HTML banner sanitization, tile CSS isolation.
+Comprehensive test suite covering:
+- `tests/test_app.py`: Streamlit smoke, control matrix, scheme card toggle, sort selector, AppTest smart search flow & emergency alert.
 - `tests/test_bedscore.py`: Monotonicity of trust/distance/fee, location sensitivity, bed gating, scheme toggles, explain terms additivity.
 - `tests/test_data.py`: Snapshot bed alignment, coordinates within Odisha bounds, specialty hospital flags, history bridge continuity.
-- `tests/test_ml.py`: Classification mappings, prediction horizons, monotonicity.
-- `tests/test_scoring.py`: Formula 1 exactness, balanced score normalization, Bayesian rating shrinkage.
-- `tests/test_ui.py`: HTML escaping, status thresholds, scheme icons, emergency copy.
+- `tests/test_docs.py`: Document integrity, forbidden tokens, constant synchronization with numbers.json and config.py.
+- `tests/test_geo.py`: Gazetteer invariants, coordinate validation, location bounds checks.
+- `tests/test_llm.py`: Emergency keyword detector, rule fallback parser, JSON schema validator, prompt injection defense, rate limits.
+- `tests/test_ml.py`: Classification mappings, prediction horizons, monotonicity, ML safety flag.
+- `tests/test_scoring.py`: Formula 1 exactness, balanced score normalization, why this rank bullets, term comparisons.
+- `tests/test_ui.py`: HTML escaping, status thresholds, scheme icons, emergency copy, CartoDB tile layer.
 
 Automated visual testing via Playwright:
 ```bash

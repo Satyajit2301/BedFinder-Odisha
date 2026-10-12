@@ -2,7 +2,7 @@
 BEDFINDER ODISHA — FORMULA SENSITIVITY ANALYSIS (25 HOSPITALS)
 =====================================================================================
 
---- 1. MENTOR FORMULA (Literal: 1000*A + X - Y - Z) ---
+--- 1. FORMULA 1 (Baseline: 1000·A + X − Y − Z) ---
   Bhubaneswar Railway Station   : #1 Apollo Hospitals Bhubanesw #2 Manipal Hospitals, Bhubane #3 SUM Ultimate Medicare     
   Biju Patnaik Airport          : #1 Apollo Hospitals Bhubanesw #2 Manipal Hospitals, Bhubane #3 SUM Ultimate Medicare     
   Master Canteen Square         : #1 Apollo Hospitals Bhubanesw #2 Manipal Hospitals, Bhubane #3 SUM Ultimate Medicare     
@@ -19,7 +19,7 @@ BEDFINDER ODISHA — FORMULA SENSITIVITY ANALYSIS (25 HOSPITALS)
   >>> Distinct Rank-1 hospitals: 1 (Apollo Hospitals Bhubaneswar)
   >>> Full ranking IDENTICAL at all locations: True
 
---- 2. BEDSCORE METHOD (Recommended) ---
+--- 2. FORMULA 2 (BedScore, Recommended) ---
   Bhubaneswar Railway Station   : #1 Neelachal Hospital Pvt. Lt #2 Sunshine Hospital          #3 Shree Hospitals           
   Biju Patnaik Airport          : #1 Shree Hospitals            #2 Vivekanand Hospital Bhuban #3 Neelachal Hospital Pvt. Lt
   Master Canteen Square         : #1 Neelachal Hospital Pvt. Lt #2 Shree Hospitals            #3 Sunshine Hospital         
@@ -34,20 +34,37 @@ BEDFINDER ODISHA — FORMULA SENSITIVITY ANALYSIS (25 HOSPITALS)
   Kalinga Nagar / Ghatikia      : #1 SUM Ultimate Medicare      #2 IGKC Multispeciality Hospi #3 Vivekanand Hospital Bhuban
 
   >>> Distinct full rank orders: 12 across 12 locations
-  >>> Distinct Rank-1 hospitals: 9 (Sparsh Hospitals & C, SUM Ultimate Medicar, Shree Hospitals, Vivekanand Hospital , Hi-Tech Medical Coll, PGIMER & Capital Hos, Apollo Hospitals Bhu, Neelachal Hospital P, Kalinga Institute of)
+  >>> Distinct Rank-1 hospitals: 9 (SUM Ultimate Medicar, Apollo Hospitals Bhu, Neelachal Hospital P, Kalinga Institute of, Sparsh Hospitals & C, Hi-Tech Medical Coll, Shree Hospitals, Vivekanand Hospital , PGIMER & Capital Hos)
   >>> Ranking dynamically responds to user location: True
 
---- 3. WHY MENTOR FORMULA DOES NOT RESPOND TO LOCATION ---
+--- 3. WHY FORMULA 1 DOES NOT RESPOND TO LOCATION ---
   X (rating * reviews) range: 1,228.5 to 149,544.6
   A (availability %) range: 7.3 to 19.1
-  1000*A term range: 7,333.3 to 19,148.9
+  1000·A term range: 7,333.3 to 19,148.9
   Smallest gap between top consecutive X: 59.2
   Max possible road distance (Y) variation across city: ~25 km
   Conclusion: Because X ranges up to 149,545, review count dominates completely.
 
 --- 4. PAIRWISE FLIPPABLE PAIRS ANALYSIS (12 LANDMARKS) ---
   Total general hospital pairs evaluated: 276
-  Theoretically flippable pairs (base score gap < max distance difference change): 0
-  Actually flipped pairs across 12 landmarks under mentor formula: 0
-  Summary finding: Moving the user changes each score only by the change in distance (tens of points at most), while hospitals differ by hundreds or thousands of points, so in our 12 test locations no pair of hospitals swapped places.
+  Theoretically flippable pairs: 0
+  Actually flipped pairs across 12 landmarks under Formula 1: 0
+
+--- 5. SCHEME CARD RANK-CHANGE ANALYSIS (12 LANDMARKS) ---
+  Bhubaneswar Railway Station   : 22 hospitals changed rank with Card ON
+  Biju Patnaik Airport          : 24 hospitals changed rank with Card ON
+  Master Canteen Square         : 23 hospitals changed rank with Card ON
+  Jaydev Vihar Square           : 23 hospitals changed rank with Card ON
+  Patia / KIIT Square           : 19 hospitals changed rank with Card ON
+  Khandagiri Square             : 23 hospitals changed rank with Card ON
+  Nayapalli                     : 24 hospitals changed rank with Card ON
+  Rasulgarh Square              : 24 hospitals changed rank with Card ON
+  Vani Vihar / Utkal University : 23 hospitals changed rank with Card ON
+  Saheed Nagar                  : 23 hospitals changed rank with Card ON
+  Baramunda Bus Stand           : 23 hospitals changed rank with Card ON
+  Kalinga Nagar / Ghatikia      : 23 hospitals changed rank with Card ON
+
+--- 6. SAFETY FLAG AUDIT ---
+  Flagged hospitals in base snapshot: 0
+  Flagged hospitals after 0-bed demo simulation at Apollo: 1
 =====================================================================================
