@@ -1,8 +1,8 @@
-# BedFinder Odisha — Mentor Defense & QA Preparation
+# BedFinder Odisha — Technical Defense & QA Preparation
 
 ## 1. "Why doesn't the ranking change when I move location?"
 **Answer:**
-"That is the mentor formula working exactly as specified:
+"That is Formula 1 (the baseline formula given in the problem statement) working as specified:
 $$\text{Score} = 1000 \times A + X - Y - Z$$
 Where $X = \text{Rating} \times \text{Reviews}$ and $A = \text{bed availability in \%}$.
 We verified this mathematically and empirically across 12 Bhubaneswar landmarks:
@@ -12,14 +12,14 @@ We verified this mathematically and empirically across 12 Bhubaneswar landmarks:
 - Across Bhubaneswar, travel distance varies by at most ~25 km ($Y$). Note that fee does not change with patient location, only distance does.
 - Moving the user changes each score only by the change in distance (tens of points at most), while hospitals differ by hundreds or thousands of points, so in our 12 test locations no pair of hospitals swapped places (0 of 276 pairs can be flipped by location).
 - In our pairwise analysis across 276 pairs of general hospitals evaluated across the 12 landmarks, exactly 0 pairs are theoretically flippable (base score gap < max distance difference change) and 0 pairs actually swapped places.
-We honored the mentor specification by keeping this formula as the exact default, and added **BedScore** as a recommended option where each dimension (Bayesian trust, closeness, affordability, arrival bed probability) is normalized to $[0, 1]$."
+We kept Formula 1 as an option, and added **Formula 2 (BedScore)** as a recommended option where each dimension (Bayesian trust, closeness, affordability, arrival bed probability) is normalized to $[0, 1]$."
 
 ---
 
 ## 2. "Where does the hospital data come from?"
 **Answer:**
-"Mentor hospitals: real (from the mentor CSV). Added hospitals and scheme flags: illustrative demo data compiled from public listings, not independently verified. Occupancy: simulated.
-- The core 20 hospitals come directly from the mentor dataset (`data/raw/dataset_npn_7.csv`). We preserved 100% of the available general ward bed counts so that the on-screen numbers match the original dataset exactly.
+"Baseline hospitals: real (from the provided CSV). Added hospitals and scheme flags: illustrative demo data compiled from public listings, not independently verified. Occupancy: simulated.
+- The core 20 hospitals come directly from the provided dataset (`data/raw/dataset_npn_7.csv`). We preserved 100% of the available general ward bed counts so that the on-screen numbers match the original dataset exactly.
 - 7 candidate entries were dropped because their location or name could not be matched to Bhubaneswar.
 - 5 added facilities in Bhubaneswar were retained (KIMS, Blue Wheel, Hemalata, Kar Clinic, Ayush), bringing the dataset to exactly 25 hospitals (24 general, 1 specialty).
 - For contact info, a phone is shown only if marked confirmed; a dead website link is shown as plain text.
@@ -40,7 +40,7 @@ We honored the mentor specification by keeping this formula as the exact default
 
 ## 4. "How did you ensure the ML model matches the displayed beds?"
 **Answer:**
-"In our initial audit, synthetic history drifted freely, creating instances where a hospital showed 14 free beds on screen but the model predicted 'Full'. To eliminate this contradiction, we regenerated the 90-day hourly history using a 48-hour smooth bridge anchored to your snapshot. At timestamp $T=0$, the simulated occupancy aligns 100% with the displayed bed counts, and the model was retrained on this anchored dataset."
+"In our initial audit, synthetic history drifted freely, creating instances where a hospital showed 14 free beds on screen but the model predicted 'Full'. To eliminate this contradiction, we regenerated the 90-day hourly history using a 48-hour smooth bridge anchored to the baseline snapshot. At timestamp $T=0$, the simulated occupancy aligns 100% with the displayed bed counts, and the model was retrained on this anchored dataset."
 
 ---
 

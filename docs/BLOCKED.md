@@ -2,7 +2,7 @@
 
 *BedFinder Odisha Verification Log*
 
-> **Data Notice:** Mentor hospitals: real (from the mentor CSV). Added hospitals and scheme flags: illustrative demo data compiled from public listings, not independently verified. Occupancy: simulated. 7 candidate entries were dropped because their location or name could not be matched to Bhubaneswar.
+> **Data Notice:** 20 hospitals come from the provided dataset; 5 added hospitals and the scheme flags are illustrative; bed counts are simulated. 7 candidate entries were dropped because their location or name could not be matched to Bhubaneswar.
 
 ---
 

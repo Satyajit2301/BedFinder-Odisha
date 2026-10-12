@@ -36,7 +36,7 @@ def test_input_facts_grounded_in_dataframe():
 def test_facts_never_contain_availability_key():
     """D7: Facts must distinguish bed chance from availability and never contain key 'availability'."""
     hospitals = load_hospitals()
-    for method in ["mentor", "bedscore"]:
+    for method in ["formula1", "formula2"]:
         ranked = rank_hospitals(hospitals, 20.2687, 85.8427, method=method)
         facts = build_facts(ranked, method=method, location_name="Test Loc", top_n=5)
         assert "availability" not in facts
@@ -72,7 +72,7 @@ def test_number_checker_rejects_hallucination():
 def test_fallback_on_exception_or_timeout():
     """Assert that explain() falls back to deterministic template if provider fails."""
     facts = {
-        "method": "Mentor formula (as given)",
+        "method": "Formula 1",
         "location_name": "Test Station",
         "top_hospitals": [
             {

@@ -11,7 +11,7 @@ import re
 import time
 
 from dotenv import load_dotenv
-from src.config import MENTOR_A_WEIGHT
+from src.config import A_WEIGHT
 
 load_dotenv()
 
@@ -37,7 +37,7 @@ def _hash_facts(facts: dict) -> str:
 
 def _template_fallback(facts: dict, language: str = "en") -> str:
     """Deterministic f-string fallback — always works, no network needed."""
-    method = facts.get("method", "Mentor formula (as given)")
+    method = facts.get("method", "Formula 1")
     top = facts.get("top_hospitals", [])
     location = facts.get("location_name", "your location")
 
@@ -47,9 +47,9 @@ def _template_fallback(facts: dict, language: str = "en") -> str:
     h1 = top[0] if len(top) > 0 else {}
     lines = [f"📊 **Ranking Explanation** ({method})", ""]
 
-    if "mentor" in method.lower():
+    if "1" in method.lower() or "formula 1" in method.lower() or "mentor" in method.lower():
         lines.append(
-            f"Using the mentor's formula `Score = {int(MENTOR_A_WEIGHT)}·A + X − Y − Z` "
+            f"Using Formula 1 `Score = {int(A_WEIGHT)}·A + X − Y − Z` "
             f"(where A is bed availability %, X is rating × reviews, Y is distance, Z is fee), "
             f"**{h1.get('name', '?')}** ranks #1 from {location} with a score of "
             f"{h1.get('score', 0):,.1f} "
@@ -59,7 +59,7 @@ def _template_fallback(facts: dict, language: str = "en") -> str:
         lines.append("")
         lines.append(
             "⚠️ Note: Review volume (X) reaches up to 149,545 and dominates the calculation. "
-            "Switch to the **BedScore (recommended)** method to see location and live bed availability influence the rank."
+            "Switch to **Formula 2 (BedScore)** to see location and live bed availability influence the rank."
         )
     else:
         lines.append(

@@ -2,6 +2,10 @@
 import pytest
 from streamlit.testing.v1 import AppTest
 from src.config import EMERGENCY_TEXT
+from src.scoring import formula_text
+
+f1_label = formula_text("formula1")
+f2_label = formula_text("formula2")
 
 
 def test_app_smoke_default():
@@ -15,14 +19,14 @@ def test_app_smoke_default():
 
 
 @pytest.mark.parametrize("method_label,has_card,top_n,location_name", [
-    ("Mentor formula (as given)", False, 3, "Bhubaneswar Railway Station"),
-    ("Mentor formula (as given)", True, 1, "Patia / KIIT Square"),
-    ("Mentor formula (as given)", False, 25, "Khandagiri Square"),
-    ("BedScore (recommended)", True, 3, "Bhubaneswar Railway Station"),
-    ("BedScore (recommended)", False, 1, "Patia / KIIT Square"),
-    ("BedScore (recommended)", True, 25, "Khandagiri Square"),
-    ("BedScore (recommended)", False, 3, "Master Canteen Square"),
-    ("Mentor formula (as given)", True, 3, "Nayapalli"),
+    (f1_label, False, 3, "Bhubaneswar Railway Station"),
+    (f1_label, True, 1, "Patia / KIIT Square"),
+    (f1_label, False, 25, "Khandagiri Square"),
+    (f2_label, True, 3, "Bhubaneswar Railway Station"),
+    (f2_label, False, 1, "Patia / KIIT Square"),
+    (f2_label, True, 25, "Khandagiri Square"),
+    (f2_label, False, 3, "Master Canteen Square"),
+    (f1_label, True, 3, "Nayapalli"),
 ])
 def test_app_control_matrix(method_label, has_card, top_n, location_name):
     """AppTest control matrix covering methods, card toggle, top_n (1, 3, all), and locations.
@@ -118,7 +122,7 @@ def test_g1_bedscore_ui_matches_rank_hospitals_for_6_landmarks():
     at = AppTest.from_file("app.py", default_timeout=30).run()
     assert not at.exception
     if len(at.sidebar.radio) > 1:
-        at.sidebar.radio[1].set_value("BedScore (recommended)").run()
+        at.sidebar.radio[1].set_value(f2_label).run()
 
     for lm in landmarks_to_test:
         at.sidebar.selectbox[0].select(lm).run()
@@ -127,8 +131,46 @@ def test_g1_bedscore_ui_matches_rank_hospitals_for_6_landmarks():
         ui_top3 = ui_df[ui_df["Rank"].str.startswith("#")].head(3)["Hospital"].tolist()
 
         lat, lon = LANDMARKS[lm]
-        fn_df = rank_hospitals(df, lat, lon, method="bedscore", include_specialty=False)
+        fn_df = rank_hospitals(df, lat, lon, method="formula2", include_specialty=False)
         fn_top3 = fn_df[fn_df["rank"] > 0].head(3)["hospital_name"].tolist()
 
         assert ui_top3 == fn_top3, f"Mismatch at {lm}: UI={ui_top3} vs Fn={fn_top3}"
+
+
+def test_ui_contract_no_mentor_and_formulas_match_formula_text():
+    """V1 UI-contract test: fails if rendered text or docs contain mentor, Mentor, sir , Sir's;
+    and asserts that both formula strings on screen equal formula_text()."""
+    from pathlib import Path
+    import re
+
+    root = Path(__file__).resolve().parent.parent
+    doc_paths = [
+        root / "README.md",
+        root / "docs" / "DEMO_SCRIPT.md",
+        root / "docs" / "QA_PREP.md",
+        root / "docs" / "DATA_CARD.md",
+        root / "docs" / "ML_REPORT.md",
+        root / "docs" / "BLOCKED.md",
+    ]
+    forbidden_pattern = re.compile(r"\b(mentor|sir|sir's)\b", re.IGNORECASE)
+    for p in doc_paths:
+        if p.exists():
+            text = p.read_text(encoding="utf-8")
+            matches = forbidden_pattern.findall(text)
+            assert not matches, f"Found forbidden terms {matches} in {p.name}"
+
+    at = AppTest.from_file("app.py", default_timeout=30).run()
+    assert not at.exception
+
+    # Check radio options in sidebar
+    radio = at.sidebar.radio[1]
+    expected_f1 = formula_text("formula1")
+    expected_f2 = formula_text("formula2")
+    assert radio.options == [expected_f1, expected_f2], f"Radio options mismatch: {radio.options}"
+
+    # Check rendered markdown in app
+    for md in at.markdown:
+        val = str(md.value)
+        matches = forbidden_pattern.findall(val)
+        assert not matches, f"Found forbidden terms {matches} in rendered markdown: {val[:80]}"
 

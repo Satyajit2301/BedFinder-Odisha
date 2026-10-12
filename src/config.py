@@ -10,7 +10,8 @@ DATA_DIR = ROOT / "data"
 RAW_DIR = DATA_DIR / "raw"
 MODELS_DIR = ROOT / "models"
 
-MENTOR_CSV = RAW_DIR / "dataset_npn_7.csv"
+PROVIDED_CSV = RAW_DIR / "dataset_npn_7.csv"
+RAW_CSV = PROVIDED_CSV
 ENRICHED_CSV = DATA_DIR / "hospitals_enriched.csv"
 HISTORY_CSV = DATA_DIR / "history.csv"
 MODEL_PATH = MODELS_DIR / "bed_model.joblib"
@@ -67,13 +68,13 @@ BALANCED_WEIGHTS = {
 }
 BAYESIAN_M = 1000.0
 
-# ── Mentor Formula Variants ────────────────────────────────────────────
-MENTOR_A_WEIGHT = 1000      # User request G2: weight on bed availability A in % (was 100)
-# "literal":  1000*A + X - Y - Z   (Sir's exact update: A in %, X=r*v, Y=km, Z=fee)
+# ── Formula 1 Variants ────────────────────────────────────────────────
+A_WEIGHT = 1000             # Weight on bed availability A in %
+# "literal":  1000*A + X - Y - Z   (A in %, X=r*v, Y=km, Z=fee)
 # "x100":     1000*A + 100*X - Y - Z
 # "fraction": 1000*(A_frac) + X - Y - Z
 # "legacy":   (rating * reviews) * 100 - distance_km - fee_inr
-MENTOR_VARIANT = "literal"
+FORMULA1_VARIANT = "literal"
 
 # ── ML: bed availability classes ──────────────────────────────────────
 STATUS_THRESHOLDS = {

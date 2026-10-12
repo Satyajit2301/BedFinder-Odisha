@@ -42,7 +42,7 @@ def read_live_updates() -> pd.DataFrame:
 
 
 def build_snapshot(hosp: pd.DataFrame, last: pd.DataFrame) -> pd.DataFrame:
-    """Merge hospital info with latest occupancy, anchored to mentor snapshot."""
+    """Merge hospital info with latest occupancy, anchored to baseline snapshot."""
     snap = last.merge(hosp, on="hospital_id", how="right", suffixes=("_hist", ""))
 
     # Ensure dynamic helper columns exist

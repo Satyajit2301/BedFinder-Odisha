@@ -11,9 +11,9 @@ Launch offline with a single click: double-click `run_demo.bat` or run `streamli
 
 ---
 
-## 2. Default View: Mentor Formula (45 seconds)
-- Point out that **"Mentor formula (as given)"** is selected as the default method.
-- Show the displayed ranking: Apollo Hospitals is #1, followed by Manipal Hospital.
+## 2. Formula Selection & Default View (45 seconds)
+- Point out that **"Formula 2 (recommended)"** is selected as the default method, with **"Formula 1: 1000·A + X − Y − Z"** available for direct comparison.
+- Show the displayed ranking: Apollo Hospitals is #1 under Formula 1.
 - Point out the active formula shown right under the ranking:
   $$\text{Score} = 1000 \times A + X - Y - Z$$
   Where $A = \text{bed availability \%}$ ($\text{free} / \text{total}$), $X = \text{rating} \times \text{reviews}$, $Y = \text{distance (km)}$, $Z = \text{fee (INR)}$.
@@ -24,11 +24,11 @@ Launch offline with a single click: double-click `run_demo.bat` or run `streamli
 
 ## 3. The Sensitivity Finding (45 seconds)
 - Switch location from **Bhubaneswar Railway Station** to **Khandagiri Square**, then **Patia / KIIT Square**.
-- **The observation:** The ranking remains unchanged across Bhubaneswar!
-- Open the **"Why we added BedScore"** expander:
-  - *"We proved mathematically why this happens: Apollo has 31,818 reviews and 4.7 rating ($X \approx 149,545$). Even with bed availability weighted at 1000 ($1000 \times A$, changing rank for 16 of 24 hospitals), the top 8 stay identical (Apollo, Manipal, SUM, Utkal, CARE, Sunshine, Sparsh, Vivekanand), and exactly 0 of 276 pairs can be flipped by location. Moving the user changes each score only by the change in distance (tens of points at most), while hospitals differ by hundreds or thousands of points, so across all 12 test locations no pair of hospitals swapped places."*
+- **The observation:** Under Formula 1, the ranking remains unchanged across Bhubaneswar!
+- Open the **"Why two formulas?"** expander:
+  - *"We proved mathematically why Formula 1 does not respond to location: Apollo has 31,818 reviews and 4.7 rating ($X \approx 149,545$). Even with bed availability weighted at 1000 ($1000 \times A$, changing rank for 16 of 24 hospitals), the top 8 stay identical (Apollo, Manipal, SUM, Utkal, CARE, Sunshine, Sparsh, Vivekanand), and exactly 0 of 276 pairs can be flipped by location. Moving the user changes each score only by the change in distance (tens of points at most), while hospitals differ by hundreds or thousands of points, so across all 12 test locations no pair of hospitals swapped places."*
   - *"Across 276 pairs of general hospitals evaluated across the 12 landmarks, exactly 0 pairs are flippable (base score gap < max distance difference change) and 0 pairs actually swapped places."*
-  - Show the 12-location sensitivity table proving Apollo is #1 at every single location under the raw mentor formula.
+  - Show the 12-location sensitivity table proving Apollo is #1 at every single location under Formula 1.
 
 ---
 
@@ -65,7 +65,7 @@ Launch offline with a single click: double-click `run_demo.bat` or run `streamli
 
 ## 7. Data Honesty & Conclusion (30 seconds)
 - Point to the **Data Card**:
-  - Mentor hospitals: real (from the mentor CSV). Added hospitals and scheme flags: illustrative demo data compiled from public listings, not independently verified. Occupancy: simulated.
+  - 20 hospitals come from the provided dataset; 5 added hospitals and the scheme flags are illustrative; bed counts are simulated.
   - 7 candidate entries were dropped because their location or name could not be matched to Bhubaneswar (5 kept; 25 total).
   - 1 specialty hospital (Hemalata Cancer Hospital) is tagged and excluded by default from general emergency bed ranking.
   - ML performance is honestly reported: HistGradientBoosting achieves Macro-F1 0.7769 vs 0.7687 persistence baseline ("comparable to the baseline").
@@ -75,9 +75,9 @@ Launch offline with a single click: double-click `run_demo.bat` or run `streamli
 ---
 
 ## Quick Q&A Reference
-- **Q: Why didn't you just fix the mentor formula?**  
-  *A: We kept the mentor formula untouched as the default to honor the specification, and provided BedScore as an opt-in balanced alternative.*
+- **Q: Why provide two formulas?**  
+  *A: We kept Formula 1 (the baseline formula given in the problem statement) untouched to honor the specification, and provided BedScore as an opt-in balanced alternative.*
 - **Q: Why does the ML model use simulated data?**  
-  *A: Odisha currently lacks a public real-time hospital occupancy API. We synthesized 90-day history with a 48-hour smooth bridge anchored to the mentor's snapshot. The ML inference pipeline is fully functional and ready to ingest live feeds.*
+  *A: Odisha currently lacks a public real-time hospital occupancy API. We synthesized 90-day history with a 48-hour smooth bridge anchored to the baseline snapshot. The ML inference pipeline is fully functional and ready to ingest live feeds.*
 - **Q: Why not use LLM for ranking?**  
   *A: LLMs are non-deterministic and can hallucinate numbers. We use deterministic algorithms for scoring, and use direct Groq LLM with regex numerical validation strictly for explaining rankings.*

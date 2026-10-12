@@ -1,14 +1,14 @@
-"""Scoring engine — Mentor formula + BedScore ranking.
+"""Scoring engine — Formula 1 (Baseline) + Formula 2 (BedScore).
 
-Mentor formula (as given):
-    Score = 100*A + X - Y - Z
+Formula 1 (as given in problem statement):
+    Score = 1000*A + X - Y - Z
     A = bed availability in percent (available_beds / total_beds * 100)
     X = rating * reviews
     Y = road distance in km
     Z = admission fee in INR
     Ties broken by distance (closer wins).
 
-BedScore (recommended):
+Formula 2 (recommended BedScore):
     Score = 100 * P * (wT*Trust + wC*Closeness + wF*Affordability)
     P = chance general-ward bed is free at arrival time
     Trust = rating * ln(1+reviews) / (5 * ln(1+10000))
@@ -22,7 +22,7 @@ import numpy as np
 import pandas as pd
 
 from src.config import (
-    ALOS_DAYS, DIST_SCALE_KM, FEE_CAP_INR, MENTOR_A_WEIGHT, MENTOR_VARIANT, MIN_ETA_MIN,
+    ALOS_DAYS, DIST_SCALE_KM, FEE_CAP_INR, A_WEIGHT, FORMULA1_VARIANT, MIN_ETA_MIN,
     REVIEW_CAP, ROAD_FACTOR, SPEED_KMPH, W_CLOSE, W_FEE, W_TRUST,
     BALANCED_WEIGHTS, BAYESIAN_M,
 )
@@ -96,7 +96,7 @@ p_bed_arrival = p_bed  # Alias for explicit naming
 
 
 def trust(rating, reviews, is_estimated: bool | np.ndarray = False) -> np.ndarray:
-    """Mentor's X = rating x reviews, log-damped so review count does not dominate.
+    """X = rating x reviews, log-damped so review count does not dominate.
     If rating or reviews are estimated, applies a 0.5 discount factor to review weight.
     """
     r = np.asarray(rating, float)
@@ -109,7 +109,7 @@ def trust(rating, reviews, is_estimated: bool | np.ndarray = False) -> np.ndarra
 
 
 def closeness(dist_km) -> np.ndarray:
-    """Mentor's Y with exponential distance decay."""
+    """Distance Y with exponential distance decay."""
     return np.exp(-np.asarray(dist_km, float) / DIST_SCALE_KM)
 
 
@@ -127,7 +127,7 @@ def effective_fee(fee, accepts_scheme, user_has_card: bool) -> np.ndarray:
 
 
 def affordability(fee_eff) -> np.ndarray:
-    """Mentor's Z normalized: 1 - effective_fee / 2500."""
+    """Fee Z normalized: 1 - effective_fee / 2500."""
     return 1.0 - np.clip(np.asarray(fee_eff, float) / FEE_CAP_INR, 0.0, 1.0)
 
 
@@ -183,9 +183,9 @@ def explain_terms(d: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
-# ── Mentor formula calculation ─────────────────────────────────────────
-def mentor_literal(df: pd.DataFrame, dist_km: pd.Series | np.ndarray) -> pd.Series:
-    """Mentor's updated formula: 1000*A + X - Y - Z, A in %."""
+# ── Formula 1 calculation ─────────────────────────────────────────────
+def formula1_literal(df: pd.DataFrame, dist_km: pd.Series | np.ndarray) -> pd.Series:
+    """Formula 1 (problem statement baseline): 1000*A + X - Y - Z, A in %."""
     avail_col = "general_ward_available_beds" if "general_ward_available_beds" in df.columns else "beds_free_now"
     total_col = "general_ward_total_beds" if "general_ward_total_beds" in df.columns else "general_beds"
     rating_col = "rating_5" if "rating_5" in df.columns else "rating"
@@ -194,16 +194,16 @@ def mentor_literal(df: pd.DataFrame, dist_km: pd.Series | np.ndarray) -> pd.Seri
 
     a_pct = 100.0 * df[avail_col] / np.maximum(df[total_col], 1)
     x = df[rating_col] * df[reviews_col]
-    return MENTOR_A_WEIGHT * a_pct + x - dist_km - df[fee_col]
+    return A_WEIGHT * a_pct + x - dist_km - df[fee_col]
 
 
-def mentor_score(rating: pd.Series, reviews: pd.Series,
-                 distance_km: pd.Series, fee_inr: pd.Series,
-                 available_beds: pd.Series | None = None,
-                 total_beds: pd.Series | None = None,
-                 variant: str = MENTOR_VARIANT,
-                 a_weight: float = MENTOR_A_WEIGHT) -> pd.Series:
-    """Mentor formula with variant support."""
+def formula1_score(rating: pd.Series, reviews: pd.Series,
+                   distance_km: pd.Series, fee_inr: pd.Series,
+                   available_beds: pd.Series | None = None,
+                   total_beds: pd.Series | None = None,
+                   variant: str = FORMULA1_VARIANT,
+                   a_weight: float = A_WEIGHT) -> pd.Series:
+    """Formula 1 with variant support."""
     r = pd.Series(rating, dtype=float)
     v = pd.Series(reviews, dtype=float)
     d = pd.Series(distance_km, dtype=float)
@@ -230,12 +230,34 @@ def mentor_score(rating: pd.Series, reviews: pd.Series,
         return a_weight * a_pct + x - d - f
 
 
-# ── Canonical Formula Text & Rankable Filter ───────────────────────────
-def formula_text(method: str = "mentor") -> str:
-    """Return canonical mathematical formula text for docs and UI."""
-    if "mentor" in str(method).lower():
-        return f"Score = {int(MENTOR_A_WEIGHT)}·A + X − Y − Z"
-    return "Score = 100 · P · (0.35·Trust + 0.40·Closeness + 0.25·Affordability)"
+# Compatibility aliases
+mentor_literal = formula1_literal
+mentor_score = formula1_score
+
+
+# ── Canonical Formula Text, LaTeX & Legends ────────────────────────────
+def formula_text(method: str = "formula2") -> str:
+    """Return canonical formula text for selector options and documentation."""
+    m = str(method).lower()
+    if "1" in m or "baseline" in m or "formula1" in m or "mentor" in m:
+        return f"Formula 1:  {int(A_WEIGHT)}·A + X − Y − Z"
+    return f"Formula 2 (recommended):  BedScore = 100 × P × ({W_TRUST:.2f}·Trust + {W_CLOSE:.2f}·Closeness + {W_FEE:.2f}·Affordability)"
+
+
+def formula_latex(method: str = "formula2") -> str:
+    """Return LaTeX equation string for display."""
+    m = str(method).lower()
+    if "1" in m or "baseline" in m or "formula1" in m or "mentor" in m:
+        return r"\text{Score} = " + f"{int(A_WEIGHT)}" + r" \cdot A + X - Y - Z"
+    return r"\text{BedScore} = 100 \times P \times (" + f"{W_TRUST:.2f}" + r" \cdot \text{Trust} + " + f"{W_CLOSE:.2f}" + r" \cdot \text{Closeness} + " + f"{W_FEE:.2f}" + r" \cdot \text{Affordability})"
+
+
+def formula_legend(method: str = "formula2") -> str:
+    """Return compact legend explaining terms in the selected formula."""
+    m = str(method).lower()
+    if "1" in m or "baseline" in m or "formula1" in m or "mentor" in m:
+        return "A = free beds ÷ total beds, in percent (e.g. 19.1) · X = rating × number of reviews · Y = distance in km · Z = admission fee in Rs per day."
+    return f"P = chance a general bed is still free when you arrive · Trust = rating and reviews (log-scaled) · Closeness = e^(−km/{int(DIST_SCALE_KM)}) · Affordability = 1 − fee/Rs {int(FEE_CAP_INR):,}."
 
 
 def rankable(df: pd.DataFrame, include_specialty: bool = False) -> pd.DataFrame:
@@ -256,14 +278,15 @@ def rankable(df: pd.DataFrame, include_specialty: bool = False) -> pd.DataFrame:
 
 # ── Unified ranking interface ──────────────────────────────────────────
 def rank_hospitals(df: pd.DataFrame, user_lat: float, user_lon: float,
-                   method: str = "mentor",
+                   method: str = "formula2",
                    user_has_card: bool = False,
                    p_available: pd.Series | None = None,
                    accepts_col: str | None = "accepts_pmjay",
                    scheme_filter: str | None = None,
-                   mentor_variant: str = MENTOR_VARIANT,
+                   formula1_variant: str = FORMULA1_VARIANT,
+                   a_weight: float = A_WEIGHT,
                    include_specialty: bool = False) -> pd.DataFrame:
-    """Rank hospitals using either Mentor formula or BedScore.
+    """Rank hospitals using either Formula 1 or Formula 2 (BedScore).
 
     Recommends, never restricts. All rows are kept in the returned DataFrame.
     Specialty hospitals get rank = 0 (unranked) unless include_specialty is True.
@@ -300,14 +323,15 @@ def rank_hospitals(df: pd.DataFrame, user_lat: float, user_lon: float,
 
     # Compute score based on selected method
     normalized_method = str(method).lower()
-    if "mentor" in normalized_method:
-        result["score"] = mentor_score(
+    if "formula 1" in normalized_method or "formula1" in normalized_method or "1" in normalized_method or "mentor" in normalized_method:
+        result["score"] = formula1_score(
             result[rating_col], result[reviews_col],
             result["dist_km"], result["fee_eff"],
             available_beds=result[avail_col], total_beds=result[total_col],
-            variant=mentor_variant,
+            variant=formula1_variant,
+            a_weight=a_weight,
         )
-    else:  # BedScore / Balanced
+    else:  # Formula 2 / BedScore / Balanced
         result["t_trust"] = trust(result[rating_col].values, result[reviews_col].values, is_estimated=est_flags)
         result["t_close"] = closeness(result["dist_km"].values)
         result["t_afford"] = affordability(result["fee_eff"].values)
@@ -351,12 +375,12 @@ def get_score_breakdown(df: pd.DataFrame, user_lat: float, user_lon: float,
     reviews_col = "review_count" if "review_count" in d.columns else "reviews"
     fee_col = "fee_eff" if "fee_eff" in d.columns else "admission_fee_inr"
 
-    if "mentor" in str(method).lower():
-        a_pct = 100.0 * d[avail_col] / np.maximum(d[total_col], 1)
+    if "1" in str(method).lower() or "formula1" in str(method).lower() or "mentor" in str(method).lower():
+        a_pct = 100.0 * d[avail_col] / np.maximum(df_tot := d[total_col], 1)
         x = d[rating_col] * d[reviews_col]
         breakdown = pd.DataFrame({
             "hospital_name": d["hospital_name"].values,
-            f"Availability ({int(MENTOR_A_WEIGHT)}·A)": (MENTOR_A_WEIGHT * a_pct).values,
+            f"Availability ({int(A_WEIGHT)}·A)": (A_WEIGHT * a_pct).values,
             "Reputation (X)": x.values,
             "Distance (-Y)": (-d["dist_km"]).values,
             "Fee (-Z)": (-d[fee_col]).values,

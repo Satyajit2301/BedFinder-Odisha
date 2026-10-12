@@ -6,8 +6,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import numpy as np
 import pandas as pd
 import pytest
-from src.config import MENTOR_A_WEIGHT
-from src.scoring import mentor_score, balanced_score, bayesian_rating, rank_hospitals, rankable
+from src.config import A_WEIGHT
+from src.scoring import formula1_score, balanced_score, bayesian_rating, rank_hospitals, rankable
 
 
 @pytest.fixture
@@ -29,48 +29,48 @@ def sample_df():
     })
 
 
-class TestMentorFormula:
+class TestFormula1:
     def test_hand_computed_apollo(self):
-        """Verify mentor formula for Apollo: 1000*A + X - Y - Z."""
-        score = mentor_score(
+        """Verify Formula 1 for Apollo: 1000*A + X - Y - Z."""
+        score = formula1_score(
             pd.Series([4.7]), pd.Series([31818]),
             pd.Series([5.0]), pd.Series([2200]),
             available_beds=pd.Series([22]), total_beds=pd.Series([300])
         )
         a_pct = 100.0 * 22 / 300
-        expected = MENTOR_A_WEIGHT * a_pct + (4.7 * 31818) - 5.0 - 2200
+        expected = A_WEIGHT * a_pct + (4.7 * 31818) - 5.0 - 2200
         assert abs(score.iloc[0] - expected) < 0.01
 
     def test_hand_computed_capital(self):
-        """Verify mentor formula for Capital Hospital: 1000*A + X - Y - Z."""
-        score = mentor_score(
+        """Verify Formula 1 for Capital Hospital: 1000*A + X - Y - Z."""
+        score = formula1_score(
             pd.Series([3.8]), pd.Series([1028]),
             pd.Series([3.0]), pd.Series([0]),
             available_beds=pd.Series([64]), total_beds=pd.Series([720])
         )
         a_pct = 100.0 * 64 / 720
-        expected = MENTOR_A_WEIGHT * a_pct + (3.8 * 1028) - 3.0 - 0
+        expected = A_WEIGHT * a_pct + (3.8 * 1028) - 3.0 - 0
         assert abs(score.iloc[0] - expected) < 0.01
 
     def test_hand_computed_small(self):
-        """Verify mentor formula for Small Clinic: 1000*A + X - Y - Z."""
-        score = mentor_score(
+        """Verify Formula 1 for Small Clinic: 1000*A + X - Y - Z."""
+        score = formula1_score(
             pd.Series([4.9]), pd.Series([12]),
             pd.Series([10.0]), pd.Series([500]),
             available_beds=pd.Series([9]), total_beds=pd.Series([30])
         )
         a_pct = 100.0 * 9 / 30
-        expected = MENTOR_A_WEIGHT * a_pct + (4.9 * 12) - 10.0 - 500
+        expected = A_WEIGHT * a_pct + (4.9 * 12) - 10.0 - 500
         assert abs(score.iloc[0] - expected) < 0.01
 
     def test_ranking_unchanged_across_locations(self, sample_df):
-        """The mentor formula gives the same ranking at different locations."""
+        """Formula 1 gives the same ranking at different locations."""
         locations = [(20.2666, 85.8434), (20.2560, 85.7800)]
         rankings = []
         for lat, lon in locations:
-            ranked = rank_hospitals(sample_df, lat, lon, method="mentor")
+            ranked = rank_hospitals(sample_df, lat, lon, method="formula1")
             rankings.append(ranked["hospital_name"].tolist())
-        assert rankings[0] == rankings[1], "Mentor ranking should not change with location on this data"
+        assert rankings[0] == rankings[1], "Formula 1 ranking should not change with location on this data"
 
 
 class TestBalancedMethod:
@@ -115,12 +115,12 @@ class TestBalancedMethod:
 class TestSchemeFilter:
     def test_scheme_filter_keeps_all_in_table(self, sample_df):
         """Scheme filter: unranked hospitals still in results (never hidden)."""
-        result = rank_hospitals(sample_df, 20.27, 85.83, method="mentor", scheme_filter="pmjay")
+        result = rank_hospitals(sample_df, 20.27, 85.83, method="formula1", scheme_filter="pmjay")
         assert len(result) == len(sample_df), "All hospitals must remain in results"
 
     def test_scheme_filter_unranks_unknown(self, sample_df):
         """Unknown scheme hospitals get rank=0 when filter is on."""
-        result = rank_hospitals(sample_df, 20.27, 85.83, method="mentor", scheme_filter="pmjay")
+        result = rank_hospitals(sample_df, 20.27, 85.83, method="formula1", scheme_filter="pmjay")
         unknown = result[result["accepts_pmjay"] != "true"]
         assert (unknown["rank"] == 0).all()
 
@@ -149,7 +149,7 @@ class TestSpecialtyRanking:
         specialty_ids = set(hosp.loc[hosp["category"].str.lower() == "specialty", "hospital_id"])
         assert len(specialty_ids) > 0, "Dataset must have specialty hospitals"
 
-        for method in ["mentor", "bedscore"]:
+        for method in ["formula1", "formula2"]:
             for name, (lat, lon) in LANDMARKS.items():
                 res = rank_hospitals(hosp, lat, lon, method=method, include_specialty=False)
                 specialty_rows = res[res["hospital_id"].isin(specialty_ids)]
@@ -232,19 +232,19 @@ class TestSchemeCardToggleAffordability:
 
 
 class TestQuickPicks:
-    def test_quick_picks_identical_between_mentor_and_bedscore(self):
-        """C9: Quick Picks must behave identically in Mentor mode and BedScore mode."""
+    def test_quick_picks_identical_between_formula1_and_formula2(self):
+        """C9: Quick Picks must behave identically in Formula 1 mode and Formula 2 mode."""
         from src.config import ENRICHED_CSV, LANDMARKS
         from src.geo import road_distance_km
         hosp = pd.read_csv(ENRICHED_CSV)
         lat, lon = LANDMARKS["Bhubaneswar Railway Station"]
         hosp["dist_km"] = road_distance_km(lat, lon, hosp["latitude"].values, hosp["longitude"].values).round(1)
 
-        res_mentor = rank_hospitals(hosp, lat, lon, method="mentor", include_specialty=False)
-        res_bedscore = rank_hospitals(hosp, lat, lon, method="bedscore", include_specialty=False)
+        res_f1 = rank_hospitals(hosp, lat, lon, method="formula1", include_specialty=False)
+        res_f2 = rank_hospitals(hosp, lat, lon, method="formula2", include_specialty=False)
 
-        cand_m = rankable(res_mentor, include_specialty=False)
-        cand_b = rankable(res_bedscore, include_specialty=False)
+        cand_m = rankable(res_f1, include_specialty=False)
+        cand_b = rankable(res_f2, include_specialty=False)
 
         # Nearest
         near_m = cand_m.sort_values(["dist_km", "hospital_id"]).iloc[0]["hospital_id"]

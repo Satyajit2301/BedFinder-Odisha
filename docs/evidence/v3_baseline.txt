@@ -1,0 +1,108 @@
+================================================================================
+BEDFINDER ODISHA — V3.0 BASELINE AUDIT (Step 0)
+Generated: 2026-10-12
+================================================================================
+
+1. HOW "USE MY CURRENT LOCATION" WORKS TODAY & ROOT CAUSE
+--------------------------------------------------------------------------------
+Investigation:
+- Grep for `geolocation`, `ip`, `requests.get`, `components` shows NO calls to browser Geolocation API, IP geolocation services, or Streamlit custom components in app.py or src/.
+- In `app.py` lines 248-251:
+    else:  # "Use my current location"
+        place = "Device Location (Bhubaneswar Central)"
+        user_lat, user_lon = 20.2961, 85.8245
+        st.info("📍 Using device location: Bhubaneswar Central (20.2961°N, 85.8245°E)")
+
+Root Cause in ONE sentence:
+The option "Use my current location" currently contains no browser Geolocation API or IP lookup call, and instead hardcodes the fixed coordinates of Bhubaneswar Central (20.2961, 85.8245).
+
+
+2. EVERY PLACE THE WORD 'MENTOR' / 'SIR' / "SIR'S" APPEARS
+--------------------------------------------------------------------------------
+Grep search across repository:
+- src/config.py:
+  * MENTOR_CSV = DATA_DIR / "dataset_npn_7.csv"
+  * MENTOR_A_WEIGHT = 1000.0
+  * MENTOR_VARIANT = "literal"
+  * Line 72 comment: "# 'literal': 1000*A + X - Y - Z (Sir's exact update: A in %, X=r*v, Y=km, Z=fee)"
+- src/scoring.py:
+  * mentor_literal()
+  * mentor_score()
+  * "mentor" branch in rank_hospitals()
+  * Docstrings referencing mentor formula and Sir's formulation
+- app.py:
+  * Line 199: "# Mentor requirement #1"
+  * Line 255: "# Ranking method (Mentor formula is default as requested by mentor)"
+  * Line 258: '["Mentor formula (as given)", "BedScore (recommended)"]'
+  * Line 260: help text referencing 'Mentor formula (as given)'
+  * Line 263: method_key = "mentor" if "mentor" in method.lower() else "bedscore"
+  * Line 696: "Mentor formula (1000*A + X - Y - Z)"
+  * Expander: "Why we added BedScore" discussing mentor formula sensitivity
+- tests/test_scoring.py:
+  * TestMentorFormula class
+  * test_mentor_ranking_insensitive_to_location
+  * test_quick_picks_identical_between_mentor_and_bedscore
+- tests/test_data.py:
+  * test_mentor_rows_untouched, test_snapshot_anchored_to_mentor_beds
+- tests/test_bedscore.py:
+  * mentor_df(), mentor_score, mentor_literal
+- tests/test_docs.py:
+  * test_mentor_formula_weight_1000
+- tests/test_app.py:
+  * References to "Mentor formula (as given)"
+- docs/ (README.md, DATA_CARD.md, DEMO_SCRIPT.md, QA_PREP.md, BLOCKED.md, VERIFICATION.md):
+  * "Mentor hospitals: real (from the mentor CSV)"
+  * Discussion of mentor formula vs BedScore
+- bedscore_reference.py:
+  * "Sir's updated formula as typed: 100*A + X - Y - Z"
+
+
+3. EVERY USE OF P_AVAIL, P_BED, QUICK_PICK, EXPLAIN, BUILD_FACTS, SIMULATE
+--------------------------------------------------------------------------------
+- p_avail:
+  * src/ml.py: probability of >15% free beds (index 2 of 3-class classifier output).
+  * app.py: snap["p_avail"] = pred["p_avail"].values; previously caused G1 bug when passed to rank_hospitals.
+  * scripts/audit_ml.py: evaluated for Brier score loss.
+- p_bed:
+  * src/scoring.py: queue-theoretic arrival probability p_bed(free, total, eta_min, alos_days).
+  * src/scoring.py: multiplier in BedScore formula: 100.0 * p_bed * utility.
+  * src/ml.py: sum of p_limited + p_avail (probability of at least 5% free beds).
+  * app.py: displayed in hospital cards ("Likely >99%") and table ("Bed Chance").
+- quick_pick:
+  * app.py: lines 366-418 render 4 cards (Nearest, Cheapest, Best Rated, Most Beds Free).
+  * tests/test_scoring.py: TestQuickPicks tests consistency and specialty exclusions.
+  * docs/DEMO_SCRIPT.md & BLOCKED.md: documentation references.
+- explain:
+  * src/llm.py: explain() function calling Groq API or template fallback.
+  * app.py: line 327 button "Explain this ranking", lines 777-789 call explain().
+  * scripts/test_llm_call.py & docs/llm_proof.json.
+- build_facts:
+  * src/llm.py: build_facts() extracts structured facts dict from ranked DataFrame.
+  * tests/test_llm.py & scripts/test_llm_call.py: tests and proof generator.
+- simulate:
+  * app.py: lines 288-323 "🧪 Simulate a hospital filling up" expander (session-only bed count override).
+  * scripts/generate_history.py: synthetic 90-day history generator.
+  * tests/test_bedscore.py: tests simulating Apollo at 0 beds.
+  * docs/screenshots/06_closeup_simulate_0_beds_warning.png.
+
+
+4. WHAT THE SCHEME TOGGLE CHANGES TODAY
+--------------------------------------------------------------------------------
+- Score:
+  * In `rank_hospitals` (src/scoring.py:288-318), `user_has_card` triggers `effective_fee` (fee -> 0 for accepting hospitals).
+  * This changes `result["fee_eff"]`.
+  * For BedScore: enters `affordability(fee_eff)`.
+  * For Formula 1 / mentor_score: enters as Z parameter `mentor_score(..., result["fee_eff"], ...)`.
+- Fee column in Table:
+  * Currently shows `table_data["Fee/day"] = table_data["admission_fee_inr"]` (RAW/LISTED fee).
+  * The toggle does NOT change the table fee column today.
+- Cards:
+  * Currently shows `fee=r["admission_fee_inr"]` (RAW/LISTED fee).
+  * The toggle does NOT change the displayed card fee today.
+- Quick Picks:
+  * Currently sorts by `ranked.sort_values(["admission_fee_inr", "hospital_id"])` (RAW/LISTED fee).
+  * The toggle does NOT change Quick Picks today.
+- Formula 1:
+  * In `rank_hospitals()`: Formula 1 uses `result["fee_eff"]` (effective fee).
+  * In `mentor_literal()`: uses `df[fee_col]` (raw listed fee).
+================================================================================

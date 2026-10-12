@@ -6,13 +6,13 @@
 
 ## 1. Overview & Data Provenance
 
-> **Data Summary:** Mentor hospitals: real (from the mentor CSV). Added hospitals and scheme flags: illustrative demo data compiled from public listings, not independently verified. Occupancy: simulated.
+> **Data Summary:** 20 hospitals come from the provided dataset; 5 added hospitals and the scheme flags are illustrative; bed counts are simulated.
 
 | Data Layer | Source | Status | Description |
 |---|---|---|---|
-| **Mentor Hospitals (20)** | Mentor CSV (`data/raw/dataset_npn_7.csv`) | **REAL** | 20 hospitals with real names, coordinates, ratings, reviews, bed counts, and admission fees. Untouched and verified unchanged. |
+| **Provided Hospitals (20)** | Provided CSV (`data/raw/dataset_npn_7.csv`) | **REAL** | 20 hospitals with real names, coordinates, ratings, reviews, bed counts, and admission fees. Untouched and verified unchanged. |
 | **Added Hospitals (5)** | Public listings demo data (`data/added_hospitals_demo.csv`) | **ILLUSTRATIVE DEMO DATA** | 5 facilities compiled from public listings (KIMS, Blue Wheel, Hemalata, Kar Clinic, Ayush). 7 candidate entries were dropped because their location or name could not be matched to Bhubaneswar. |
-| **Occupancy History** | Simulated generator (`scripts/generate_history.py`) | **SIMULATED** | 90 days of hourly occupancy (54,000 rows across 25 hospitals) anchored to the mentor snapshot occupancy and free beds at the final timestamp. |
+| **Occupancy History** | Simulated generator (`scripts/generate_history.py`) | **SIMULATED** | 90 days of hourly occupancy (54,000 rows across 25 hospitals) anchored to the baseline snapshot occupancy and free beds at the final timestamp. |
 | **Scheme Acceptance** | Illustrative demo flags | **ILLUSTRATIVE DEMO FLAGS** | Set to `true` for government hospitals and large private chains, `unknown` for others. "Confirm cashless acceptance with the hospital before travelling." |
 | **Websites & Phones** | HTTP probe & directory listings (`scripts/verify_links.py`) | **AUDITED & LOGGED** | 25 hospitals evaluated: 16 websites listed (6 LIVE, 4 BLOCKED_403, 4 DNS_FAIL, 1 NOT_FOUND_404, 1 TLS_ERROR, 9 NONE). 16 phones listed (5 demo confirmed, 11 unconfirmed). Full audit log in `docs/verify_links_output.txt`. |
 
@@ -44,7 +44,7 @@ Full field-by-field audit trail with source documentation is recorded in `docs/A
 
 ## 4. Data Anchoring & Verification
 
-1. **Snapshot Anchoring:** For all 20 mentor hospitals, `beds_free_now` displayed in the app equals `general_ward_available_beds` from the mentor CSV exactly.
+1. **Snapshot Anchoring:** For all 20 baseline hospitals, `beds_free_now` displayed in the app equals `general_ward_available_beds` from the provided CSV exactly.
 2. **Re-anchored History:** `scripts/generate_history.py` simulates past occupancy such that the final timestamp matches `general_ward_occupancy_pct / 100.0` and `general_ward_available_beds` exactly.
 3. **State Scheme Naming:** Reported as **Gopabandhu Jan Arogya Yojana (GJAY)** (Odisha's state health insurance program, transitioning from BSKY, integrating Ayushman Bharat PM-JAY).
 4. **Emergency Helplines:** 108 (State Ambulance) / 112 (National Emergency Response): Reported as official public emergency response helplines per Odisha Department of Health & Family Welfare.

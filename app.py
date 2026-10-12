@@ -18,7 +18,7 @@ from streamlit_folium import st_folium
 
 from src.config import (
     ACCENT, EMERGENCY_TEXT, LANDMARKS, MAP_CENTRE, MAP_ZOOM,
-    MENTOR_A_WEIGHT,
+    A_WEIGHT,
     ODISHA_BOUNDS, STATUS_COLOURS, STATUS_NAMES, SCHEME_PMJAY, SCHEME_STATE,
     SCHEME_TOGGLE_LABEL,
     W_TRUST, W_CLOSE, W_FEE,
@@ -27,7 +27,7 @@ from src.data import build_snapshot, load_history_snapshot, load_hospitals, load
 from src.geo import road_distance_km, eta_minutes
 from src.llm import build_facts, explain
 from src.ml import predict_availability
-from src.scoring import formula_text, get_score_breakdown, rank_hospitals, rankable
+from src.scoring import formula_text, formula_latex, formula_legend, get_score_breakdown, rank_hospitals, rankable
 from src.ui_utils import render_html, safe_html, scheme_icon, status_word
 
 # ── Page config ───────────────────────────────────────────────────────
@@ -187,7 +187,7 @@ snap = build_snapshot(hosp, last)
 st.markdown("""
 <div class="main-header">
     <h1>🏥 BedFinder Odisha</h1>
-    <p style="margin-bottom: 6px;">Demo project. The 20 hospitals come from the mentor dataset. Bed counts are simulated. The 5 added hospitals and the scheme flags are illustrative.</p>
+    <p style="margin-bottom: 6px;">Demo project. 20 hospitals come from the provided dataset; 5 added hospitals and the scheme flags are illustrative; bed counts are simulated.</p>
     <span class="demo-badge">📊 Demo snapshot — historical occupancy simulated from snapshot</span>
 </div>
 """, unsafe_allow_html=True)
@@ -196,7 +196,7 @@ st.markdown("""
 with st.sidebar:
     st.markdown("### 📍 Location & Search")
 
-    # Mentor requirement #1: Landmark, manual coords/address, or current location
+    # Location input mode
     loc_mode = st.radio(
         "Location input mode",
         ["Select landmark", "Enter manually", "Use my current location"],
@@ -252,15 +252,19 @@ with st.sidebar:
 
     st.markdown("---")
 
-    # Ranking method (Mentor formula is default as requested by mentor)
+    # Ranking formula selector
+    formula_options = [
+        formula_text("formula1"),
+        formula_text("formula2"),
+    ]
     method = st.radio(
-        "Ranking method",
-        ["Mentor formula (as given)", "BedScore (recommended)"],
-        index=0,
-        help=f"**Mentor formula (as given)**: {formula_text('mentor').replace('Score = ', '')}\n\n"
-             f"**BedScore (recommended)**: {formula_text('bedscore').replace('Score = ', '')}"
+        "Ranking formula",
+        formula_options,
+        index=1,  # Default = Formula 2
+        help="Formula 1 is the baseline formula given in the problem statement; Formula 2 is BedScore (recommended)."
     )
-    method_key = "mentor" if "mentor" in method.lower() else "bedscore"
+    method_key = "formula1" if "formula 1" in method.lower() else "formula2"
+    st.caption(formula_legend(method_key))
 
     # Specialty hospital toggle (default to general only)
     show_specialty = st.toggle(
@@ -705,9 +709,9 @@ with st.expander("📊 Why this rank? (Score breakdown)"):
                                         p_available=p_available, user_has_card=user_has_card,
                                         include_specialty=show_specialty)
         fig = go.Figure()
-        if "mentor" in method_key:
+        if "formula1" in method_key or "1" in method_key:
             comps = [
-                (f"Availability ({int(MENTOR_A_WEIGHT)}·A)", "#22AA5E"),
+                (f"Availability ({int(A_WEIGHT)}·A)", "#22AA5E"),
                 ("Reputation (X)", "#00BFA6"),
                 ("Distance (-Y)", "#FFAA00"),
                 ("Fee (-Z)", "#DC3545"),
@@ -720,7 +724,7 @@ with st.expander("📊 Why this rank? (Score breakdown)"):
                 template="plotly_dark",
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(0,0,0,0)",
-                title=f"Mentor Formula Breakdown: {int(MENTOR_A_WEIGHT)}·A + X − Y − Z",
+                title=f"Formula 1 Breakdown: {int(A_WEIGHT)}·A + X − Y − Z",
                 yaxis_title="Component Points",
                 height=420,
                 legend=dict(orientation="h", yanchor="bottom", y=1.02),
@@ -747,17 +751,17 @@ with st.expander("📊 Why this rank? (Score breakdown)"):
             )
         st.plotly_chart(fig, use_container_width=True)
 
-# Why we added a second method
-with st.expander("🔬 Why we added BedScore"):
+# Why two formulas?
+with st.expander("🔬 Why two formulas?"):
     st.markdown(f"""
-    **Finding:** The mentor's formula `{int(MENTOR_A_WEIGHT)}·A + X − Y − Z` (where `X = Rating × Reviews` and `A` = bed availability in %)
+    **Finding:** Formula 1 `{int(A_WEIGHT)}·A + X − Y − Z` (where `X = Rating × Reviews` and `A` = bed availability in %)
     gives **identical rankings at every location in Bhubaneswar.**
 
-    **Location Blindness:** Even at weight {int(MENTOR_A_WEIGHT)} for bed availability, while 16 of 24 hospitals change rank compared to weight 100, the top 8 remain identical (Apollo, Manipal, SUM, Utkal, CARE, Sunshine, Sparsh, Vivekanand), and there is still **ONE ranking for every location** with **0 of 276 pairs flippable** by location. Only travel distance $Y$ varies with user location (a few km), which is completely dwarfed by reputation $X$ (ranging up to 149,545).
+    **Location Blindness:** Even at weight {int(A_WEIGHT)} for bed availability, while 16 of 24 hospitals change rank compared to weight 100, the top 8 remain identical (Apollo, Manipal, SUM, Utkal, CARE, Sunshine, Sparsh, Vivekanand), and there is still **ONE ranking for every location** with **0 of 276 pairs flippable** by location. Only travel distance $Y$ varies with user location (a few km), which is completely dwarfed by reputation $X$ (ranging up to 149,545).
 
-    **Result:** Apollo Hospitals is always #1 across all 12 landmarks citywide.
+    **Result:** Apollo Hospitals is always #1 across all 12 landmarks citywide under Formula 1.
 
-    **Our improvement:** The **BedScore** method applies physics-based queue arrival probability `P`,
+    **Our improvement:** **Formula 2 (BedScore)** applies physics-based queue arrival probability `P`,
     log-damped review trust, and bounded distance and fee terms. The ranking genuinely responds to user location (12 distinct orders and 9 distinct Rank-1 hospitals across 12 landmarks).
     """)
 
@@ -766,13 +770,13 @@ with st.expander("📋 About the data"):
     st.markdown(f"""
     | Data | Source | Status |
     |------|--------|--------|
-    | Mentor 20 hospitals (beds, fees, ratings) | Mentor CSV (`dataset_npn_7.csv`) | **Real** |
+    | Baseline 20 hospitals (beds, fees, ratings) | Provided CSV (`dataset_npn_7.csv`) | **Real** |
     | Added 5 hospitals & scheme flags | Public listings (demo data) | **Illustrative Demo Data** |
     | Hourly occupancy history (90 days) | Smooth bridge anchored to snapshot | **Simulated** |
     | ML availability prediction | HistGradientBoosting on anchored history | **Pipeline Validated** |
     | State scheme name | Official Gopabandhu Jan Arogya Yojana (GJAY) | **Official** |
 
-    *Mentor hospitals: real (from the mentor CSV). Added hospitals and scheme flags: illustrative demo data compiled from public listings, not independently verified. Occupancy: simulated.*
+    *Baseline hospitals: real (from the provided CSV). Added hospitals and scheme flags: illustrative demo data compiled from public listings, not independently verified. Occupancy: simulated.*
     """)
 
 # ── LLM explanation ───────────────────────────────────────────────────

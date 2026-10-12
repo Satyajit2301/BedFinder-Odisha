@@ -3,18 +3,18 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.config import LANDMARKS, MENTOR_CSV, RAW_DIR
+from src.config import LANDMARKS, PROVIDED_CSV, RAW_DIR
 from src.scoring import (
     W_CLOSE, W_FEE, W_TRUST,
     affordability, bedscore, closeness, effective_fee, explain_terms,
-    mentor_literal, mentor_score, p_bed, trust,
+    formula1_literal, formula1_score, p_bed, trust,
 )
 
 
 @pytest.fixture
-def mentor_df():
-    """Load raw mentor CSV."""
-    df = pd.read_csv(MENTOR_CSV).dropna(how="all").reset_index(drop=True)
+def base_df():
+    """Load raw dataset CSV."""
+    df = pd.read_csv(PROVIDED_CSV).dropna(how="all").reset_index(drop=True)
     return df
 
 
@@ -42,24 +42,24 @@ class TestBedScoreUnitProperties:
 
 
 class TestBedScoreLocationSensitivity:
-    def test_multiple_distinct_top1_hospitals(self, mentor_df):
+    def test_multiple_distinct_top1_hospitals(self, base_df):
         """BedScore produces multiple distinct rank-1 hospitals across 8 landmarks."""
         top1 = set()
         for name, (la, lo) in LANDMARKS.items():
-            r = bedscore(mentor_df, la, lo)
+            r = bedscore(base_df, la, lo)
             top1.add(r["hospital_id"].iloc[0])
         assert len(top1) >= 4, f"Expected at least 4 distinct rank-1 hospitals, got {len(top1)}"
 
 
 class TestBedGate:
-    def test_hospital_filling_up_drops_in_rank(self, mentor_df):
+    def test_hospital_filling_up_drops_in_rank(self, base_df):
         """Apollo fills up -> drops in score and rank."""
         la, lo = LANDMARKS["Bhubaneswar Railway Station"]
-        before = bedscore(mentor_df, la, lo)
+        before = bedscore(base_df, la, lo)
         ap_before = before[before["hospital_name"].str.startswith("Apollo")].iloc[0]
 
         # Simulate Apollo having 0 beds
-        d_full = mentor_df.copy()
+        d_full = base_df.copy()
         d_full.loc[d_full["hospital_name"].str.startswith("Apollo"), "general_ward_available_beds"] = 0
         after_full = bedscore(d_full, la, lo)
         ap_after_full = after_full[after_full["hospital_name"].str.startswith("Apollo")].iloc[0]
@@ -70,9 +70,9 @@ class TestBedGate:
 
 
 class TestSchemeCardToggle:
-    def test_scheme_card_keeps_all_rows_and_alters_fee(self, mentor_df):
+    def test_scheme_card_keeps_all_rows_and_alters_fee(self, base_df):
         """Scheme card toggle changes effective fee without removing any hospital."""
-        df = mentor_df.copy()
+        df = base_df.copy()
         # Mark half as accepting
         accept = ("Apollo", "Manipal", "SUM", "CARE", "Kalinga")
         df["accepts_test"] = df["hospital_name"].apply(lambda n: any(n.startswith(a) for a in accept))
@@ -89,21 +89,21 @@ class TestSchemeCardToggle:
 
 
 class TestExplainTerms:
-    def test_explain_terms_adds_up(self, mentor_df):
+    def test_explain_terms_adds_up(self, base_df):
         """explain_terms points sum exactly to the final score."""
         la, lo = LANDMARKS["Bhubaneswar Railway Station"]
-        d = bedscore(mentor_df, la, lo)
+        d = bedscore(base_df, la, lo)
         ex = explain_terms(d)
         tot = ex[["trust_pts", "closeness_pts", "affordability_pts"]].sum(axis=1)
         assert np.allclose(tot, d["score"]), "Terms must add up to the score"
         assert np.allclose(tot + ex["lost_to_bed_risk"], 100 * d["utility"]), "Lost points must match utility gap"
 
 
-class TestMentorLiteralFormula:
-    def test_mentor_literal_runs_and_preserves_order(self, mentor_df):
-        """Mentor formula runs and produces consistent ranking."""
+class TestFormula1Literal:
+    def test_formula1_literal_runs_and_preserves_order(self, base_df):
+        """Formula 1 runs and produces consistent ranking."""
         la, lo = LANDMARKS["Bhubaneswar Railway Station"]
-        r = bedscore(mentor_df, la, lo)
-        m_score = mentor_literal(r, r["dist_km"])
-        assert len(m_score) == len(mentor_df)
+        r = bedscore(base_df, la, lo)
+        m_score = formula1_literal(r, r["dist_km"])
+        assert len(m_score) == len(base_df)
         assert m_score.notna().all()

@@ -1,9 +1,9 @@
 # 🏥 BedFinder Odisha
 
 > **Emergency General-Ward Bed Finder & Triage Recommendation System — Bhubaneswar, Odisha**  
-> **Data Notice:** Mentor hospitals: real (from the mentor CSV). Added hospitals and scheme flags: illustrative demo data compiled from public listings, not independently verified. Occupancy: simulated.
+> **Data Notice:** 20 hospitals come from the provided dataset; 5 added hospitals and the scheme flags are illustrative; bed counts are simulated.
 
-A robust Streamlit application designed for patients and emergency caregivers in Bhubaneswar. It provides real-time ranking using the mentor's formula and an improved balanced **BedScore** method, ML bed availability forecasting at arrival time, illustrative scheme acceptance (PM-JAY / BSKY-GJAY), contact information guards, and an interactive dark map.
+A robust Streamlit application designed for patients and emergency caregivers in Bhubaneswar. It provides real-time ranking using Formula 1 (the baseline formula given in the problem statement) and an improved balanced **BedScore** method, ML bed availability forecasting at arrival time, illustrative scheme acceptance (PM-JAY / BSKY-GJAY), contact information guards, and an interactive dark map.
 
 **Core Philosophy: It recommends; it never restricts.**
 
@@ -41,11 +41,11 @@ streamlit run app.py
 ## 🌟 Key Features
 
 1. **Two Complementary Scoring Methods:**
-   - **Mentor formula (as given, default):** Exact implementation of `Weight Score = 1000*A + X - Y - Z`. Transparently demonstrates why review volume dominates distance across Bhubaneswar.
+   - **Formula 1 (problem statement baseline):** Exact implementation of `Score = 1000*A + X - Y - Z`. Transparently demonstrates why review volume dominates distance across Bhubaneswar.
    - **BedScore (recommended):** Balanced multi-criteria score weighting Closeness (35%), Bayesian Trust (40%), Affordability (25%), gated by arrival bed probability $p_{\text{bed\_arrival}}$. Yields location-sensitive recommendations across 12 landmarks.
 2. **Predictive ML Classification:**
    - Classifies bed status at estimated time of arrival into 3 classes: `Available (>=15%)`, `Limited (5-15%)`, and `Full (<5%)`.
-   - Re-anchored to the mentor's snapshot data with a 48-hour smooth bridge so ML predictions and on-screen bed counts never conflict.
+   - Re-anchored to the baseline snapshot data with a 48-hour smooth bridge so ML predictions and on-screen bed counts never conflict.
    - Honestly audited against persistence baseline in `docs/ML_REPORT.md` (Macro-F1 0.7769 vs 0.7687 baseline).
 3. **Interactive Dark Leaflet Map:**
    - OpenStreetMap tiles darkened via `.leaflet-tile-pane` CSS filter without inverting marker pins or badges.
@@ -80,7 +80,7 @@ All 49 tests pass:
 - `tests/test_bedscore.py`: Monotonicity of trust/distance/fee, location sensitivity, bed gating, scheme toggles, explain terms additivity.
 - `tests/test_data.py`: Snapshot bed alignment, coordinates within Odisha bounds, specialty hospital flags, history bridge continuity.
 - `tests/test_ml.py`: Classification mappings, prediction horizons, monotonicity.
-- `tests/test_scoring.py`: Mentor formula exactness, balanced score normalization, Bayesian rating shrinkage.
+- `tests/test_scoring.py`: Formula 1 exactness, balanced score normalization, Bayesian rating shrinkage.
 - `tests/test_ui.py`: HTML escaping, status thresholds, scheme icons, emergency copy.
 
 Automated visual testing via Playwright:
@@ -104,7 +104,7 @@ bedfinder_odisha/
 │   ├── config.py               # Constants, landmarks, color tokens, scheme labels
 │   ├── data.py                 # Caching data loader & live update merge
 │   ├── geo.py                  # Haversine distance, travel times, coordinate validation
-│   ├── scoring.py              # Mentor formula and BedScore implementation
+│   ├── scoring.py              # Formula 1 and BedScore implementation
 │   ├── ml.py                   # Model inference & arrival probability calculator
 │   ├── features.py             # Feature engineering pipeline
 │   └── llm.py                  # Direct Groq LLM client with regex number check
@@ -117,7 +117,7 @@ bedfinder_odisha/
 │   ├── test_llm_call.py        # Real Groq API call validation test
 │   └── capture_screenshots.py  # Playwright automated screenshot script
 ├── data/                       # Datasets
-│   ├── raw/dataset_npn_7.csv   # Original mentor 20-hospital CSV (frozen)
+│   ├── raw/dataset_npn_7.csv   # Original 20-hospital CSV (frozen)
 │   ├── hospitals_enriched.csv  # 25 hospitals with coordinates, beds, fees, scheme flags
 │   └── history.csv             # 90-day anchored occupancy history
 ├── models/                     # Trained ML artifacts (committed to repo)
@@ -128,7 +128,7 @@ bedfinder_odisha/
 │   ├── DATA_CARD.md            # Data provenance, field verification & methodology
 │   ├── ML_REPORT.md            # 5-seed ML audit report & 12-location sensitivity table
 │   ├── DEMO_SCRIPT.md          # 7-step presentation narrative
-│   ├── QA_PREP.md              # Mentor Q&A defense guide
+│   ├── QA_PREP.md              # Technical Q&A defense guide
 │   ├── BLOCKED.md              # Blocked items log (0 blocked items)
 │   ├── llm_proof.json          # Real Groq call execution proof
 │   └── screenshots/            # Playwright visual audit screenshots
