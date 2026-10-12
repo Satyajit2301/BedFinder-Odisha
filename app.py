@@ -30,7 +30,10 @@ from src.geo import (
 )
 from src.llm import build_facts, explain
 from src.ml import predict_availability, forecast_hospital_horizons
-from src.scoring import formula_text, formula_latex, formula_legend, get_score_breakdown, rank_hospitals, rankable
+from src.scoring import (
+    formula_text, formula_latex, formula_legend, get_score_breakdown, rank_hospitals, rankable,
+    generate_why_rank_bullets, compare_with_rank1,
+)
 from src.ui_utils import render_html, safe_html, scheme_icon, status_word, format_p
 
 # ── Page config ───────────────────────────────────────────────────────
@@ -1030,6 +1033,12 @@ with st.expander("📊 Why this rank? (Score breakdown)"):
         )
         h_row = ranked[ranked["hospital_name"] == sel_bd_name].iloc[0]
 
+        # V8: Deterministic 3 bullets
+        bullets = generate_why_rank_bullets(h_row, ranked.head(5), method=method_key)
+        st.markdown(f"**Key factors for {sel_bd_name}:**")
+        for b in bullets:
+            st.markdown(f"- {b}")
+
         if "formula1" in method_key or "1" in method_key:
             # Formula 1 breakdown: a 5-row table (1000·A, X, −Y, −Z, total), no chart (the terms differ by 1000×)
             avail_beds = float(h_row.get("general_ward_available_beds", h_row.get("beds_free_now", 20)))
@@ -1098,6 +1107,32 @@ with st.expander("📊 Why this rank? (Score breakdown)"):
                 f"Bed arrival probability P = {format_p(p_val)}."
             )
 
+        # V8: Compare with #1 selector
+        st.markdown("---")
+        st.markdown("##### ⚖️ Compare with #1")
+        rank1_row = ranked.iloc[0]
+        if len(ranked) > 1:
+            other_hosps = [h for h in hosp_names_bd if h != rank1_row["hospital_name"]]
+            default_comp_idx = 0
+            if sel_bd_name != rank1_row["hospital_name"] and sel_bd_name in other_hosps:
+                default_comp_idx = other_hosps.index(sel_bd_name)
+
+            sel_comp_name = st.selectbox(
+                f"Compare against #1 ({rank1_row['hospital_name']})",
+                other_hosps,
+                index=default_comp_idx,
+                key="compare_with_rank1_select",
+            )
+            comp_row = ranked[ranked["hospital_name"] == sel_comp_name].iloc[0]
+            cmp_res = compare_with_rank1(comp_row, rank1_row, method=method_key)
+
+            cols_cmp = st.columns(len(cmp_res["diff_points"]))
+            for idx, (t_name, t_diff) in enumerate(cmp_res["diff_points"].items()):
+                cols_cmp[idx].metric(label=t_name, value=f"{t_diff:+.1f} pts")
+
+            st.markdown(f"**Driver:** {cmp_res['driver_sentence']}")
+
+
 
 # Why two formulas?
 with st.expander("🔬 Why two formulas?"):
@@ -1129,16 +1164,6 @@ with st.expander("📋 About the data"):
     *Baseline hospitals: real (from the provided CSV). Added hospitals and scheme flags: illustrative demo data compiled from public listings, not independently verified. Occupancy: simulated.*
     """)
 
-# ── LLM explanation ───────────────────────────────────────────────────
-explain_clicked = False
-if explain_clicked and not ranked.empty:
-    facts = build_facts(ranked, method=method, location_name=place, top_n=3)
-
-    with st.spinner("Generating explanation..."):
-        explanation = explain(facts)
-    st.markdown("---")
-    st.markdown("#### 🤖 Ranking Explanation")
-    st.markdown(explanation)
 
 # ── Emergency footer ──────────────────────────────────────────────────
 st.markdown("---")

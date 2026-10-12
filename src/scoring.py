@@ -458,3 +458,149 @@ def get_score_breakdown(df: pd.DataFrame, user_lat: float, user_lon: float,
         })
     return breakdown.sort_values("Total", ascending=False)
 
+
+def generate_why_rank_bullets(row: pd.Series, top5_df: pd.DataFrame | None = None, method: str = "formula2") -> list[str]:
+    """Generate 3 deterministic template bullets explaining the hospital's rank.
+    
+    Bullets:
+    1. Distance & ETA (e.g. 'Closest of the top 5: 3.2 km, about 9 min' or 'Distance: 4.8 km, about 13 min')
+    2. Bed status on arrival & chance P (e.g. 'Bed status on arrival: Limited (64%); bed chance 99.6%')
+    3. Fee & Affordability (e.g. 'Fee Rs 600 → affordability 76%')
+    """
+    from src.ui_utils import format_p
+    dist = float(row["dist_km"])
+    eta = int(round(float(row["eta_min"])))
+
+    # Bullet 1: Closeness / Distance
+    if top5_df is not None and not top5_df.empty and dist <= float(top5_df["dist_km"].min()) + 0.05:
+        b1 = f"Closest of the top 5: {dist:.1f} km, about {eta} min"
+    else:
+        b1 = f"Distance: {dist:.1f} km, about {eta} min"
+
+    # Bullet 2: Bed status on arrival & chance P
+    ml_stat = str(row.get("ml_status", "Available"))
+    conf = float(row.get("ml_confidence", 0.78))
+    conf_pct = int(round(conf * 100)) if conf <= 1.0 else int(round(conf))
+    p_val = float(row.get("p_bed", 1.0))
+    b2 = f"Bed status on arrival: {ml_stat} ({conf_pct}%); bed chance {format_p(p_val)}"
+
+    # Bullet 3: Fee & Affordability
+    fee = int(row["admission_fee_inr"])
+    fee_eff = int(row.get("fee_eff", fee))
+    if "formula1" in str(method).lower() or "1" in str(method).lower():
+        avail = int(row.get("general_ward_available_beds", row.get("beds_free_now", 20)))
+        total = int(row.get("general_ward_total_beds", row.get("general_beds", 100)))
+        a_pct = 100.0 * avail / max(total, 1)
+        b3 = f"Fee Rs {fee_eff:,} (listed Rs {fee:,}) · availability {a_pct:.1f}%"
+    else:
+        t_aff = float(row.get("t_afford", max(0.0, 1.0 - fee_eff / FEE_CAP_INR)))
+        aff_pct = int(round(t_aff * 100))
+        if fee_eff == 0:
+            b3 = f"Fee Rs 0 (cashless scheme) → affordability 100%"
+        else:
+            b3 = f"Fee Rs {fee_eff:,} → affordability {aff_pct}%"
+
+    return [b1, b2, b3]
+
+
+def compare_with_rank1(comp_row: pd.Series, rank1_row: pd.Series, method: str = "formula2") -> dict:
+    """Compare a hospital with the Rank #1 hospital deterministically.
+    
+    Returns:
+        dict with:
+            - 'diff_points': dict mapping term names to point differences (comp - rank1)
+            - 'total_diff': float total score difference
+            - 'driver_term': str name of term with the largest absolute difference
+            - 'driver_sentence': str one sentence naming the biggest driver
+    """
+    hosp_name = str(comp_row["hospital_name"])
+
+    if "formula1" in str(method).lower() or "1" in str(method).lower():
+        r1_avail = float(rank1_row.get("general_ward_available_beds", rank1_row.get("beds_free_now", 20)))
+        r1_tot = float(rank1_row.get("general_ward_total_beds", rank1_row.get("general_beds", 100)))
+        r1_a = A_WEIGHT * (100.0 * r1_avail / max(r1_tot, 1.0))
+        r1_x = float(rank1_row["rating_5"]) * float(rank1_row["review_count"])
+        r1_y = -float(rank1_row["dist_km"])
+        r1_z = -float(rank1_row.get("fee_eff", rank1_row["admission_fee_inr"]))
+        r1_score = r1_a + r1_x + r1_y + r1_z
+
+        comp_avail = float(comp_row.get("general_ward_available_beds", comp_row.get("beds_free_now", 20)))
+        comp_tot = float(comp_row.get("general_ward_total_beds", comp_row.get("general_beds", 100)))
+        comp_a = A_WEIGHT * (100.0 * comp_avail / max(comp_tot, 1.0))
+        comp_x = float(comp_row["rating_5"]) * float(comp_row["review_count"])
+        comp_y = -float(comp_row["dist_km"])
+        comp_z = -float(comp_row.get("fee_eff", comp_row["admission_fee_inr"]))
+        comp_score = comp_a + comp_x + comp_y + comp_z
+
+        diff_points = {
+            "1000·A (Availability)": round(comp_a - r1_a, 1),
+            "X (Reputation)": round(comp_x - r1_x, 1),
+            "−Y (Distance)": round(comp_y - r1_y, 1),
+            "−Z (Fee)": round(comp_z - r1_z, 1),
+        }
+        total_diff = comp_score - r1_score
+        driver_term = max(diff_points.keys(), key=lambda k: abs(diff_points[k]))
+
+        trail_pts = abs(total_diff)
+        dist_diff = float(comp_row["dist_km"]) - float(rank1_row["dist_km"])
+
+        if driver_term == "X (Reputation)":
+            reason = f"reputation score X is {abs(diff_points['X (Reputation)']):,.1f} points lower"
+        elif driver_term == "−Y (Distance)":
+            reason = f"it is {dist_diff:.1f} km farther"
+        elif driver_term == "−Z (Fee)":
+            fee_diff = float(comp_row.get("fee_eff", comp_row["admission_fee_inr"])) - float(rank1_row.get("fee_eff", rank1_row["admission_fee_inr"]))
+            reason = f"admission fee is Rs {int(abs(fee_diff)):,} higher"
+        else:
+            reason = f"availability term 1000·A is {abs(diff_points['1000·A (Availability)']):,.1f} points lower"
+
+        driver_sentence = f"{hosp_name} trails #{int(rank1_row.get('rank', 1))} by {trail_pts:,.1f} points, mainly because {reason}."
+    else:
+        # Formula 2 BedScore
+        r1_p = float(rank1_row["p_bed"])
+        r1_trust = 100.0 * r1_p * W_TRUST * float(rank1_row["t_trust"])
+        r1_close = 100.0 * r1_p * W_CLOSE * float(rank1_row["t_close"])
+        r1_afford = 100.0 * r1_p * W_FEE * float(rank1_row["t_afford"])
+        r1_score = float(rank1_row["score"])
+
+        comp_p = float(comp_row["p_bed"])
+        comp_trust = 100.0 * comp_p * W_TRUST * float(comp_row["t_trust"])
+        comp_close = 100.0 * comp_p * W_CLOSE * float(comp_row["t_close"])
+        comp_afford = 100.0 * comp_p * W_FEE * float(comp_row["t_afford"])
+        comp_score = float(comp_row["score"])
+
+        diff_points = {
+            "Trust": round(comp_trust - r1_trust, 1),
+            "Closeness": round(comp_close - r1_close, 1),
+            "Affordability": round(comp_afford - r1_afford, 1),
+        }
+        total_diff = comp_score - r1_score
+        driver_term = max(diff_points.keys(), key=lambda k: abs(diff_points[k]))
+
+        trail_pts = abs(total_diff)
+        dist_diff = float(comp_row["dist_km"]) - float(rank1_row["dist_km"])
+
+        if driver_term == "Closeness":
+            if dist_diff > 0:
+                reason = f"it is {dist_diff:.1f} km farther"
+            else:
+                reason = f"it is closer ({abs(dist_diff):.1f} km) but trails on other factors"
+        elif driver_term == "Affordability":
+            fee_diff = float(comp_row.get("fee_eff", comp_row["admission_fee_inr"])) - float(rank1_row.get("fee_eff", rank1_row["admission_fee_inr"]))
+            if fee_diff > 0:
+                reason = f"admission fee is Rs {int(fee_diff):,} higher"
+            else:
+                reason = f"fee is Rs {int(abs(fee_diff)):,} lower but trails on other factors"
+        else:
+            reason = f"reputation trust is {abs(diff_points['Trust']):.1f} points lower"
+
+        driver_sentence = f"{hosp_name} trails #{int(rank1_row.get('rank', 1))} by {trail_pts:.1f} points, mainly because {reason}."
+
+    return {
+        "diff_points": diff_points,
+        "total_diff": round(total_diff, 1),
+        "driver_term": driver_term,
+        "driver_sentence": driver_sentence,
+    }
+
+

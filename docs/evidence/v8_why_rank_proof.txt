@@ -1,0 +1,46 @@
+=== V8 DETERMINISTIC WHY THIS RANK VERIFICATION ===
+
+--- 1. Formula 2 Top Hospital Bullets (Bhubaneswar Railway Station) ---
+Hospital: Neelachal Hospital Pvt. Ltd. (Rank #1)
+  * Closest of the top 5: 0.9 km, about 3 min
+  * Bed status on arrival: Available (78%); bed chance 100%
+  * Fee Rs 500 → affordability 80%
+
+--- 2. Formula 2 Compare with #1 ---
+Comparing #2 Sunshine Hospital vs #1 Neelachal Hospital Pvt. Ltd.:
+  Point diffs: {'Trust': 3.6, 'Closeness': -1.4, 'Affordability': -4.0}
+  Total diff: -1.8 pts
+  Driver term: Affordability
+  Sentence: Sunshine Hospital trails #1 by 1.8 points, mainly because admission fee is Rs 400 higher.
+
+Comparing #3 Shree Hospitals vs #1 Neelachal Hospital Pvt. Ltd.:
+  Point diffs: {'Trust': 0.7, 'Closeness': -1.8, 'Affordability': -2.5}
+  Total diff: -3.6 pts
+  Driver term: Affordability
+  Sentence: Shree Hospitals trails #1 by 3.6 points, mainly because admission fee is Rs 250 higher.
+
+Comparing #4 Kar Clinic & Hospital vs #1 Neelachal Hospital Pvt. Ltd.:
+  Point diffs: {'Trust': -0.9, 'Closeness': -5.1, 'Affordability': -1.5}
+  Total diff: -7.5 pts
+  Driver term: Closeness
+  Sentence: Kar Clinic & Hospital trails #1 by 7.5 points, mainly because it is 1.2 km farther.
+
+Comparing #5 PGIMER & Capital Hospital Bhubaneswar vs #1 Neelachal Hospital Pvt. Ltd.:
+  Point diffs: {'Trust': -6.5, 'Closeness': -8.4, 'Affordability': 5.0}
+  Total diff: -9.9 pts
+  Driver term: Closeness
+  Sentence: PGIMER & Capital Hospital Bhubaneswar trails #1 by 9.9 points, mainly because it is 2.2 km farther.
+
+--- 3. Formula 1 Top Hospital Bullets (Bhubaneswar Railway Station) ---
+Hospital: Apollo Hospitals Bhubaneswar (Rank #1)
+  * Closest of the top 5: 5.3 km, about 15 min
+  * Bed status on arrival: Available (78%); bed chance 100%
+  * Fee Rs 2,200 (listed Rs 2,200) · availability 7.3%
+
+--- 4. Formula 1 Compare with #1 ---
+Comparing #2 Manipal Hospitals, Bhubaneswar vs #1 Apollo Hospitals Bhubaneswar:
+  Point diffs: {'1000·A (Availability)': 1277.8, 'X (Reputation)': -65554.2, '−Y (Distance)': -5.2, '−Z (Fee)': 200.0}
+  Total diff: -64,081.6 pts
+  Driver term: X (Reputation)
+  Sentence: Manipal Hospitals, Bhubaneswar trails #1 by 64,081.6 points, mainly because reputation score X is 65,554.2 points lower.
+

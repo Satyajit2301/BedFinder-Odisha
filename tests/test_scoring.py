@@ -326,3 +326,59 @@ class TestV5SchemeCardEffects:
             assert len(r_on) == 25
 
 
+class TestWhyThisRankV8:
+    def test_why_rank_bullets_numbers_match_dataframe(self):
+        """V8: Every number in the 3 bullets equals the dataframe values."""
+        from src.config import ENRICHED_CSV, LANDMARKS
+        from src.scoring import rank_hospitals, generate_why_rank_bullets
+        from src.ui_utils import format_p
+
+        df = pd.read_csv(ENRICHED_CSV)
+        lat, lon = LANDMARKS["Patia / KIIT Square"]
+        ranked = rank_hospitals(df, lat, lon, method="formula2")
+
+        for _, row in ranked.head(5).iterrows():
+            bullets = generate_why_rank_bullets(row, ranked.head(5), method="formula2")
+            assert len(bullets) == 3, "Must generate exactly 3 bullets"
+
+            # Bullet 1: distance & ETA
+            dist_str = f"{row['dist_km']:.1f} km"
+            eta_str = f"{int(round(row['eta_min']))} min"
+            assert dist_str in bullets[0], f"Expected {dist_str} in bullet 1: {bullets[0]}"
+            assert eta_str in bullets[0], f"Expected {eta_str} in bullet 1: {bullets[0]}"
+
+            # Bullet 2: bed status & P
+            p_str = format_p(float(row.get("p_bed", 1.0)))
+            assert p_str in bullets[1], f"Expected {p_str} in bullet 2: {bullets[1]}"
+
+            # Bullet 3: fee & affordability
+            fee_val = int(row.get("fee_eff", row["admission_fee_inr"]))
+            assert f"Rs {fee_val:,}" in bullets[2], f"Expected fee in bullet 3: {bullets[2]}"
+
+    def test_compare_with_rank1_driver_is_largest_absolute_difference(self):
+        """V8: driver term is strictly the one with the largest absolute difference."""
+        from src.config import ENRICHED_CSV, LANDMARKS
+        from src.scoring import rank_hospitals, compare_with_rank1
+
+        df = pd.read_csv(ENRICHED_CSV)
+        lat, lon = LANDMARKS["Bhubaneswar Railway Station"]
+
+        for m in ["formula2", "formula1"]:
+            ranked = rank_hospitals(df, lat, lon, method=m)
+            r1 = ranked.iloc[0]
+
+            for i in range(1, len(ranked)):
+                comp = ranked.iloc[i]
+                cmp_res = compare_with_rank1(comp, r1, method=m)
+
+                diff_points = cmp_res["diff_points"]
+                expected_driver = max(diff_points.keys(), key=lambda k: abs(diff_points[k]))
+                assert cmp_res["driver_term"] == expected_driver, (
+                    f"Driver term mismatch for {comp['hospital_name']} under {m}: "
+                    f"got {cmp_res['driver_term']}, expected {expected_driver}"
+                )
+                assert str(comp["hospital_name"]) in cmp_res["driver_sentence"]
+                assert f"{abs(cmp_res['total_diff']):.1f}" in cmp_res["driver_sentence"] or f"{abs(cmp_res['total_diff']):,.1f}" in cmp_res["driver_sentence"]
+
+
+
