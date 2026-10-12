@@ -150,8 +150,13 @@ def bedscore(df: pd.DataFrame, user_lat: float, user_lon: float, *,
 
     pmjay_flag = d["accepts_pmjay"].astype(str).str.lower() == "true" if "accepts_pmjay" in d.columns else pd.Series(False, index=d.index)
     state_flag = d["accepts_state_scheme"].astype(str).str.lower() == "true" if "accepts_state_scheme" in d.columns else pd.Series(False, index=d.index)
-    d["scheme_flag"] = pmjay_flag | state_flag
+    if accepts_col is not None and accepts_col in d.columns:
+        test_flag = (d[accepts_col].astype(str).str.lower() == "true") | (d[accepts_col] == True)
+        d["scheme_flag"] = pmjay_flag | state_flag | test_flag
+    else:
+        d["scheme_flag"] = pmjay_flag | state_flag
     d["fee_eff"] = effective_fee(d[fee_col], d["scheme_flag"], user_has_card)
+
 
     est_flags = np.zeros(len(d), bool)
     if "fields_estimated" in d.columns:
@@ -337,8 +342,13 @@ def rank_hospitals(df: pd.DataFrame, user_lat: float, user_lon: float,
     card_active = user_has_card or (scheme_filter is not None and scheme_filter != "None")
     pmjay_flag = result["accepts_pmjay"].astype(str).str.lower() == "true" if "accepts_pmjay" in result.columns else pd.Series(False, index=result.index)
     state_flag = result["accepts_state_scheme"].astype(str).str.lower() == "true" if "accepts_state_scheme" in result.columns else pd.Series(False, index=result.index)
-    result["scheme_flag"] = pmjay_flag | state_flag
+    if accepts_col is not None and accepts_col in result.columns and accepts_col not in ("accepts_pmjay", "accepts_state_scheme"):
+        test_flag = (result[accepts_col].astype(str).str.lower() == "true") | (result[accepts_col] == True)
+        result["scheme_flag"] = pmjay_flag | state_flag | test_flag
+    else:
+        result["scheme_flag"] = pmjay_flag | state_flag
     result["fee_eff"] = effective_fee(result[fee_col].values, result["scheme_flag"].values, card_active)
+
 
     # Check for estimated rating/reviews
     est_flags = np.zeros(len(result), bool)
@@ -443,7 +453,8 @@ def get_score_breakdown(df: pd.DataFrame, user_lat: float, user_lon: float,
             "Trust": trust_pts,
             "Closeness": close_pts,
             "Affordability": afford_pts,
-            "Lost to Bed Risk": lost_pts,
+            "Bed-risk deduction": lost_pts,
             "Total": d["score"].values,
         })
     return breakdown.sort_values("Total", ascending=False)
+

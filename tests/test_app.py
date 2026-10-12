@@ -65,12 +65,16 @@ def test_app_control_matrix(method_label, has_card, top_n, location_name):
 def test_regression_pmjay_no_crash():
     """Verify that scheme card toggle works without throwing list.index error."""
     at = AppTest.from_file("app.py", default_timeout=30).run()
+    card_toggle_on = [t for t in at.sidebar.toggle if "card" in t.label.lower()][0]
     # Toggle card holder ON
-    at.sidebar.toggle[1].set_value(True).run()
+    card_toggle_on.set_value(True).run()
     assert not at.exception
-    # Toggle card holder OFF
-    at.sidebar.toggle[1].set_value(False).run()
+    # Toggle card holder OFF (re-query node from new tree)
+    card_toggle_off = [t for t in at.sidebar.toggle if "card" in t.label.lower()][0]
+    card_toggle_off.set_value(False).run()
     assert not at.exception
+
+
 
 
 def test_regression_emergency_banner_html_clean():
@@ -82,11 +86,12 @@ def test_regression_emergency_banner_html_clean():
 
 
 def test_regression_tile_css_isolation():
-    """Verify CSS invert applies strictly to .leaflet-tile-pane in app.py."""
+    """Verify CartoDB dark-matter tiles are used and leaflet CSS invert filter is removed per V7."""
     with open("app.py", "r", encoding="utf-8") as f:
         app_code = f.read()
-    assert ".leaflet-tile-pane" in app_code
-    assert "filter: invert(1)" in app_code
+    assert "cartocdn.com/dark_all" in app_code
+    assert "filter: invert(1)" not in app_code
+
 
 
 @pytest.mark.parametrize("top_n", [1, 3, 10, 25])
@@ -210,7 +215,8 @@ def test_v3_sort_table_by():
             assert row["Rank"] == rank_mapping[hosp], f"Rank value changed for {hosp} in sort {opt}"
 
     # Test "Cheapest" with scheme card ON: cashless rows (fee 0) must appear first
-    at.sidebar.toggle[1].set_value(True).run()
+    card_toggle = [t for t in at.sidebar.toggle if "card" in t.label.lower()][0]
+    card_toggle.set_value(True).run()
     assert not at.exception
     sort_sb = [s for s in at.selectbox if s.key == "sort_table_by"][0]
     sort_sb.select("Cheapest (effective fee)").run()
@@ -226,7 +232,8 @@ def test_v5_ui_card_effects():
     at = AppTest.from_file("app.py", default_timeout=30).run()
     assert not at.exception
     # Toggle card ON
-    at.sidebar.toggle[1].set_value(True).run()
+    card_toggle = [t for t in at.sidebar.toggle if "card" in t.label.lower()][0]
+    card_toggle.set_value(True).run()
     assert not at.exception
     df = at.dataframe[0].value
     # Find flagged hospital (Scheme == ✓)
@@ -271,8 +278,9 @@ def test_v6_demo_tools_and_simulation():
     # After reset, banner is gone and Apollo beds restored
     df_reset = at.dataframe[0].value
     apollo_reset = df_reset[df_reset["Hospital"].str.contains("Apollo")].iloc[0]
-    assert apollo_reset["Free Beds"] == 22
+    assert "22" in str(apollo_reset["Beds free"])
     assert not any("SIMULATION ACTIVE:" in str(md.value) for md in at.markdown)
+
 
 
 def test_v6_demo_tools_hidden_when_demo_mode_false(monkeypatch):

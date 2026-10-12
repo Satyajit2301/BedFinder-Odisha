@@ -1,0 +1,38 @@
+=== V7 SCREEN CLEAN-UP VERIFICATION ===
+
+--- 1. Formula 2 Score Breakdown Term Sum Check ---
+Tested across all 12 landmarks x 25 hospitals.
+Max absolute difference (|Trust + Closeness + Affordability - Total|): 0.000000 points (<= 0.05 PASS)
+
+Sample breakdown for Neelachal Hospital Pvt. Ltd. at Bhubaneswar Railway Station:
+  Trust: 26.51
+  Closeness: 35.53
+  Affordability: 20.00
+  Bed-risk deduction: 0.00
+  Sum of 3 terms: 82.04
+  Total score: 82.04
+
+--- 2. Formula 1 5-Row Table Check ---
+Sample Formula 1 table for Apollo Hospitals Bhubaneswar:
+  Row 1 (1000*A): +7,333.3
+  Row 2 (X):      +149,544.6
+  Row 3 (-Y):     -5.3
+  Row 4 (-Z):     -2,200.0
+  Row 5 (Total):  154,672.6
+
+--- 3. P Display Formatting Verification ---
+  P = 0.996 -> 99.6%
+  P = 0.9995 -> ≥99.9%
+  P = 1.0 -> 100%
+  P = 0.78 -> 78.0%
+  P = 0.0005 -> <0.1%
+  P = 0.0 -> 0.0%
+
+--- 4. Map Tiles, Table Columns, and Units in app.py ---
+  CartoDB dark-matter tile layer in app.py: True
+  Leaflet invert filter removed from app.py: True
+  Zero raw '₹' symbols in app.py: True
+  Default table columns defined: 'Rank', 'Hospital', 'Distance', 'ETA', 'Beds free', 'Bed status (ML)', 'Fee/day', 'Rating', 'Scheme', 'Directions'
+  Show more columns toggle present: True
+  Slim emergency strip present: True
+

@@ -8,3 +8,5 @@
 | V4 | DONE | docs/evidence/v4_ml_proof.txt | ML fields renamed, clamped horizon, bed status visible on cards & table, safety flag places after unflagged, 6h forecast & accuracy expander |
 | V5 | DONE | docs/evidence/v5_scheme_proof.txt | Unified effective_fee for both formulas, ~~Rs fee~~ Rs 0 with cashless badge, rank arrows ▲/▼, card ON summary line, Scheme column |
 | V6 | DONE | docs/evidence/v6_simulation_proof.txt | Simulation moved to Demo tools expander at bottom, top active banner with reset, feeds ML features, DEMO_MODE toggle |
+| V7 | DONE | docs/evidence/v7_cleanup_proof.txt | Score breakdown sums to score, Formula 1 5-row table, P display format, nowrap estimated line, default 10 columns + Show more toggle, CartoDB tiles, 3 sidebar groups, slim emergency strip, consistent Rs |
+

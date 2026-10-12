@@ -31,7 +31,7 @@ from src.geo import (
 from src.llm import build_facts, explain
 from src.ml import predict_availability, forecast_hospital_horizons
 from src.scoring import formula_text, formula_latex, formula_legend, get_score_breakdown, rank_hospitals, rankable
-from src.ui_utils import render_html, safe_html, scheme_icon, status_word
+from src.ui_utils import render_html, safe_html, scheme_icon, status_word, format_p
 
 # ── Page config ───────────────────────────────────────────────────────
 st.set_page_config(
@@ -121,16 +121,21 @@ st.markdown("""
     .badge-no { background: #3D1F1F; color: #DC3545; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; }
     .badge-unknown { background: #3D3520; color: #FFAA00; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; }
 
-    /* Emergency footer */
+    /* Emergency footer - slim single line */
     .emergency-bar {
         background: linear-gradient(90deg, #2D1B1B 0%, #1A1F2B 100%);
-        padding: 0.9rem 1.2rem;
-        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
         border: 1px solid rgba(220, 53, 69, 0.4);
         margin-top: 1rem;
-        font-size: 0.92rem;
-        line-height: 1.4;
+        font-size: 0.85rem;
+        line-height: 1.3;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
     }
+
 
     /* Hide streamlit deploy button and footer */
     #MainMenu {visibility: hidden;}
@@ -326,8 +331,8 @@ with st.sidebar:
                 st.rerun()
 
     st.markdown("---")
+    st.markdown("### 2 📐 Ranking Formula")
 
-    # Ranking formula selector
     formula_options = [
         formula_text("formula1"),
         formula_text("formula2"),
@@ -341,6 +346,17 @@ with st.sidebar:
     method_key = "formula1" if "formula 1" in method.lower() else "formula2"
     st.caption(formula_legend(method_key))
 
+    st.markdown("---")
+    st.markdown("### 3 ⚙️ Options")
+
+    # Scheme toggle: card-holder toggle replaces dropdown
+    user_has_card = st.toggle(
+        SCHEME_TOGGLE_LABEL,
+        value=False,
+        help="Hospitals with verified cashless acceptance get effective fee Rs 0. Non-accepting hospitals remain visible and ranked at listed fee."
+    )
+    st.caption("Confirm cashless acceptance with the hospital before travelling.")
+
     # Specialty hospital toggle (default to general only)
     show_specialty = st.toggle(
         "Include specialty hospitals",
@@ -352,15 +368,6 @@ with st.sidebar:
     n_hospitals = len(snap)
     top_n = st.slider("Top N hospitals to highlight", 1, n_hospitals, 3)
 
-    st.markdown("---")
-
-    # Scheme toggle: card-holder toggle replaces dropdown
-    user_has_card = st.toggle(
-        SCHEME_TOGGLE_LABEL,
-        value=False,
-        help="Hospitals with verified cashless acceptance get effective fee Rs 0. Non-accepting hospitals remain visible and ranked at listed fee."
-    )
-    st.caption("Confirm cashless acceptance with the hospital before travelling.")
 
 
 # ── Location state ───────────────────────────────────────────────────
@@ -536,11 +543,9 @@ else:
     cols = st.columns(min(3, len(top_hospitals)))
     for i, (_, r) in enumerate(top_hospitals.head(3).iterrows()):
         with cols[i]:
-            est_tag = ""
-            est_disclosure = ""
+            est_line = ""
             if r.get("fields_estimated", "") and str(r["fields_estimated"]) != "nan" and r["fields_estimated"]:
-                est_tag = safe_html(' <span class="est-badge">some fields estimated</span>')
-                est_disclosure = safe_html('<div class="detail" style="color: #FBBF24; font-size: 0.78rem;">ℹ️ Some data estimated — confirm by phone</div>')
+                est_line = safe_html('<div style="white-space:nowrap; font-size:0.78rem; color:#FFAA00; margin-top:-2px; margin-bottom:4px;" title="Some data estimated — confirm by phone">ⓘ Some fields estimated</div>')
 
             spec_tag = ""
             if show_specialty and str(r.get("category", "")).lower() == "specialty":
@@ -600,10 +605,10 @@ else:
 
             card_html = render_html("""
             <div class="hospital-card">
-                <h3>#{rank}{arrow} {name}{spec_tag}{est_tag}</h3>
+                <h3>#{rank}{arrow} {name}{spec_tag}</h3>
+                {est_line}
                 <div class="stat" style="color: {ml_col};">{ml_display_str} — {beds} beds free now</div>
                 {safety_badge}
-                {est_disclosure}
                 <div class="detail">
                     📍 {dist:.1f} km · ~{eta} min &nbsp; {fee_card} &nbsp; ⭐ {rating:.1f}★ ({reviews:,} reviews)
                 </div>
@@ -617,13 +622,14 @@ else:
                     {phone_card} &nbsp; {web_card}
                 </div>
             </div>
-            """, rank=int(r["rank"]), arrow=arrow_str, name=r["hospital_name"][:32], spec_tag=spec_tag, est_tag=est_tag,
-               est_disclosure=est_disclosure,
+            """, rank=int(r["rank"]), arrow=arrow_str, name=r["hospital_name"][:45], spec_tag=spec_tag,
+               est_line=est_line,
                ml_col=ml_col, ml_display_str=ml_display_str, beds=r["beds_free_now"],
                safety_badge=safety_badge, dist=r["dist_km"], eta=r["eta_min"], fee_card=fee_card_html,
                rating=r["rating_5"], reviews=r["review_count"], type_str=r["hospital_type"],
                live_text=live_text, scheme_val=scheme_val,
                phone_card=phone_card, web_card=web_card)
+
 
             st.markdown(card_html, unsafe_allow_html=True)
 
@@ -634,18 +640,10 @@ st.markdown("#### 🗺️ Hospital Map")
 m = folium.Map(
     location=[user_lat, user_lon],
     zoom_start=MAP_ZOOM,
-    tiles="OpenStreetMap",
+    tiles="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+    attr='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
 )
 
-# Apply CSS filter ONLY to tile pane, preserving marker colours
-dark_tile_style = folium.Element("""
-<style>
-.leaflet-tile-pane {
-    filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.9);
-}
-</style>
-""")
-m.get_root().html.add_child(dark_tile_style)
 
 # User marker: distinct prominent pin on top
 user_div = folium.DivIcon(
@@ -722,7 +720,7 @@ for _, r in result.iterrows():
         🛏️ {r['beds_free_now']} beds free now<br>
         {status_ico} Bed status (ML): {status_word_txt} {conf_pct}%<br>
         📍 {r['dist_km']:.1f} km · ~{r['eta_min']} min<br>
-        💰 ₹{r['admission_fee_inr']}/day<br>
+        💰 Rs {int(r['admission_fee_inr']):,}/day<br>
         ⭐ {r['rating_5']:.1f}★ ({r['review_count']:,} reviews)<br>
         PM-JAY: {scheme_icon(r.get('accepts_pmjay'), is_html=True)} &nbsp; GJAY: {scheme_icon(r.get('accepts_state_scheme'), is_html=True)}<br>
         {phone_line}{website_line}{directions_line}
@@ -785,19 +783,25 @@ if map_state and map_state.get("last_clicked"):
             st.error(loc_err)
         st.rerun()
 
-st.caption("🟢 Likely (≥80%) · 🟡 Tight (50–80%) · 🔴 Unlikely (<50%) · 🔵 Your location · Numbered pins = Top N · Grey = Specialty / Unranked")
+st.caption("🟢 Available (>15%) · 🟡 Limited (5–15%) · 🔴 Likely full (<5%) · 🔵 Your location · Numbered pins = Top N · Grey = Specialty / Unranked")
+
 
 # ── Full table ────────────────────────────────────────────────────────
 st.markdown("---")
 st.markdown("#### 📋 All Hospitals")
 
-sort_by = st.selectbox(
-    "Sort table by",
-    ["Recommended rank", "Nearest", "Cheapest (effective fee)", "Highest rated", "Most beds free"],
-    index=0,
-    help="Sorting only changes the order of this table. The recommendation above is unchanged.",
-    key="sort_table_by",
-)
+col_sort, col_toggle = st.columns([3, 2])
+with col_sort:
+    sort_by = st.selectbox(
+        "Sort table by",
+        ["Recommended rank", "Nearest", "Cheapest (effective fee)", "Highest rated", "Most beds free"],
+        index=0,
+        help="Sorting only changes the order of this table. The recommendation above is unchanged.",
+        key="sort_table_by",
+    )
+with col_toggle:
+    show_more = st.toggle("Show more columns", value=False, help="Adds Category, Type, Reviews, Phone, and Website columns.")
+
 st.caption("Sorting only changes the order of this table. The recommendation above is unchanged.")
 
 table_data = result[[
@@ -818,9 +822,16 @@ table_data["Rank"] = result.apply(format_table_rank, axis=1)
 table_data["Hospital"] = table_data["hospital_name"]
 table_data["Category"] = table_data["category"].str.capitalize()
 table_data["Type"] = table_data["hospital_type"]
-table_data["Km"] = table_data["dist_km"]
-table_data["ETA min"] = table_data["eta_min"]
-table_data["Free Beds"] = table_data["beds_free_now"]
+table_data["Distance"] = table_data["dist_km"]
+table_data["ETA"] = table_data["eta_min"]
+
+def format_beds_free(r):
+    avail = int(r.get("general_ward_available_beds", r.get("beds_free_now", 20)))
+    total = int(r.get("general_ward_total_beds", r.get("general_beds", 100)))
+    pct_val = int(round(100.0 * avail / max(total, 1)))
+    return f"{avail} / {total} ({pct_val}%)"
+
+table_data["Beds free"] = result.apply(format_beds_free, axis=1)
 
 def format_ml_status(r):
     stat = str(r.get("ml_status", "Available"))
@@ -868,21 +879,29 @@ else:
 
 if sort_by == "Recommended rank":
     table_data["_sort_rank"] = table_data["rank"].apply(lambda r: r if r > 0 else 9999)
-    table_data = table_data.sort_values(["_sort_rank", "Km", "hospital_id"])
+    table_data = table_data.sort_values(["_sort_rank", "dist_km", "hospital_id"])
 elif sort_by == "Nearest":
-    table_data = table_data.sort_values(["Km", "hospital_id"])
+    table_data = table_data.sort_values(["dist_km", "hospital_id"])
 elif sort_by == "Cheapest (effective fee)":
-    table_data = table_data.sort_values(["fee_eff", "Km", "hospital_id"])
+    table_data = table_data.sort_values(["fee_eff", "dist_km", "hospital_id"])
 elif sort_by == "Highest rated":
     table_data = table_data.sort_values(["Rating", "Reviews", "hospital_id"], ascending=[False, False, True])
 elif sort_by == "Most beds free":
-    table_data = table_data.sort_values(["Free Beds", "Km", "hospital_id"], ascending=[False, True, True])
+    table_data = table_data.sort_values(["beds_free_now", "dist_km", "hospital_id"], ascending=[False, True, True])
 
-display_cols = [
-    "Rank", "Hospital", "Category", "Type", "Km", "ETA min", "Free Beds",
-    "Bed status (ML)", "Fee/day", "Rating", "Reviews", "Scheme",
-    "Phone", "Website", "Directions",
+default_cols = [
+    "Rank", "Hospital", "Distance", "ETA", "Beds free",
+    "Bed status (ML)", "Fee/day", "Rating", "Scheme", "Directions",
 ]
+if show_more:
+    display_cols = [
+        "Rank", "Hospital", "Category", "Type", "Distance", "ETA", "Beds free",
+        "Bed status (ML)", "Fee/day", "Rating", "Reviews", "Scheme",
+        "Phone", "Website", "Directions",
+    ]
+else:
+    display_cols = default_cols
+
 display_df = table_data[display_cols]
 
 # Highlight top N rows
@@ -895,26 +914,27 @@ def highlight_top(row):
 st.dataframe(
     display_df.style.apply(highlight_top, axis=1),
     column_config={
-        "Rank": st.column_config.TextColumn("Rank", width="medium", help="Final rank after ML safety gate. Shows ▲/▼ rank shifts when Scheme Card is ON."),
-        "Hospital": st.column_config.TextColumn("Hospital", width="medium"),
+        "Rank": st.column_config.TextColumn("Rank", width="small", help="Final rank after ML safety gate. Shows ▲/▼ rank shifts when Scheme Card is ON."),
+        "Hospital": st.column_config.TextColumn("Hospital", width="large", help="Hospital name (full, untruncated)"),
         "Category": st.column_config.TextColumn("Category", width="small"),
         "Type": st.column_config.TextColumn("Type", width="small"),
-        "Km": st.column_config.NumberColumn("Distance", format="%.1f km"),
-        "ETA min": st.column_config.NumberColumn("ETA", format="%d min"),
-        "Free Beds": st.column_config.NumberColumn("Free Beds", format="%d"),
-        "Bed status (ML)": st.column_config.TextColumn("Bed status (ML)", width="medium", help="ML prediction for general ward at arrival (+1h to +6h). Model shortest forecast is +1 h."),
-        "Fee/day": st.column_config.TextColumn("Fee/day", help="Listed admission fee per day. Struck through if cashless under active scheme card."),
-        "Rating": st.column_config.NumberColumn("Rating", format="%.1f ★"),
-        "Reviews": st.column_config.NumberColumn("Reviews", format="%d"),
-        "Scheme": st.column_config.TextColumn("Scheme", help="✓ Verified cashless acceptance (demo flag) | ? Scheme acceptance not confirmed"),
+        "Distance": st.column_config.NumberColumn("Distance", format="%.1f km", width="small"),
+        "ETA": st.column_config.NumberColumn("ETA", format="%d min", width="small"),
+        "Beds free": st.column_config.TextColumn("Beds free", width="medium", help="Free beds / total beds (availability %)"),
+        "Bed status (ML)": st.column_config.TextColumn("Bed status (ML)", width="medium", help="ML prediction for general ward at arrival (+1h to +6h)."),
+        "Fee/day": st.column_config.TextColumn("Fee/day", width="medium", help="Listed admission fee per day. Struck through if cashless under active scheme card."),
+        "Rating": st.column_config.NumberColumn("Rating", format="%.1f ★", width="small"),
+        "Reviews": st.column_config.NumberColumn("Reviews", format="%d", width="small"),
+        "Scheme": st.column_config.TextColumn("Scheme", width="small", help="✓ Verified cashless acceptance (demo flag) | ? Scheme acceptance not confirmed"),
         "Phone": st.column_config.TextColumn("Phone", width="small", help="Verified phone number or 'Not verified'"),
-        "Website": st.column_config.LinkColumn("Website", display_text="Visit"),
-        "Directions": st.column_config.LinkColumn("Directions", display_text="Navigate"),
+        "Website": st.column_config.LinkColumn("Website", display_text="Visit", width="small"),
+        "Directions": st.column_config.LinkColumn("Directions", display_text="Navigate", width="small"),
     },
     hide_index=True,
     use_container_width=True,
     height=520,
 )
+
 
 # ── Bed forecast (ML) ─────────────────────────────────────────────────
 st.markdown("---")
@@ -998,54 +1018,86 @@ with st.expander("🎯 How good is the ML model?"):
 
 # ── Expanders ─────────────────────────────────────────────────────────
 
-# Why this rank?
+# Why this rank? (Score breakdown)
 with st.expander("📊 Why this rank? (Score breakdown)"):
     if not ranked.empty:
-        breakdown = get_score_breakdown(ranked, user_lat, user_lon, method=method_key,
-                                        p_available=p_available, user_has_card=user_has_card,
-                                        include_specialty=show_specialty)
-        fig = go.Figure()
+        hosp_names_bd = list(ranked["hospital_name"].unique())
+        sel_bd_name = st.selectbox(
+            "Select hospital to inspect score breakdown",
+            hosp_names_bd,
+            index=0,
+            key="score_breakdown_hosp_select",
+        )
+        h_row = ranked[ranked["hospital_name"] == sel_bd_name].iloc[0]
+
         if "formula1" in method_key or "1" in method_key:
-            comps = [
-                (f"Availability ({int(A_WEIGHT)}·A)", "#22AA5E"),
-                ("Reputation (X)", "#00BFA6"),
-                ("Distance (-Y)", "#FFAA00"),
-                ("Fee (-Z)", "#DC3545"),
+            # Formula 1 breakdown: a 5-row table (1000·A, X, −Y, −Z, total), no chart (the terms differ by 1000×)
+            avail_beds = float(h_row.get("general_ward_available_beds", h_row.get("beds_free_now", 20)))
+            total_beds = float(h_row.get("general_ward_total_beds", h_row.get("general_beds", 100)))
+            a_pct = 100.0 * avail_beds / max(total_beds, 1.0)
+            a_pts = A_WEIGHT * a_pct
+            x_pts = float(h_row["rating_5"]) * float(h_row["review_count"])
+            y_pts = -float(h_row["dist_km"])
+            z_pts = -float(h_row["fee_eff"])
+            f1_total = a_pts + x_pts + y_pts + z_pts
+
+            f1_table_data = [
+                {"Term": f"1000·A (Availability: {a_pct:.1f}%)", "Value": f"+{a_pts:,.1f}", "Formula Term": f"{int(A_WEIGHT)} × (Free Beds ÷ Total Beds %)"},
+                {"Term": "X (Reputation)", "Value": f"+{x_pts:,.1f}", "Formula Term": "Rating × Number of Reviews"},
+                {"Term": "−Y (Distance)", "Value": f"{y_pts:,.1f}", "Formula Term": "− Road Distance (km)"},
+                {"Term": "−Z (Fee)", "Value": f"{z_pts:,.1f}", "Formula Term": "− Effective Admission Fee (Rs/day)"},
+                {"Term": "Total Score", "Value": f"{f1_total:,.1f}", "Formula Term": f"{int(A_WEIGHT)}·A + X − Y − Z"},
             ]
-            for comp, col in comps:
-                if comp in breakdown.columns:
-                    fig.add_trace(go.Bar(name=comp, x=breakdown["hospital_name"].str[:20], y=breakdown[comp], marker_color=col))
-            fig.update_layout(
-                barmode="relative",
-                template="plotly_dark",
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-                title=f"Formula 1 Breakdown: {int(A_WEIGHT)}·A + X − Y − Z",
-                yaxis_title="Component Points",
-                height=420,
-                legend=dict(orientation="h", yanchor="bottom", y=1.02),
-            )
+            st.markdown(f"##### Formula 1 Breakdown for {sel_bd_name}")
+            st.table(pd.DataFrame(f1_table_data))
         else:
-            comps = [
-                ("Trust", "#00BFA6"),
-                ("Closeness", "#3B82F6"),
-                ("Affordability", "#10B981"),
-                ("Lost to Bed Risk", "#EF4444"),
-            ]
-            for comp, col in comps:
-                if comp in breakdown.columns:
-                    fig.add_trace(go.Bar(name=comp, x=breakdown["hospital_name"].str[:20], y=breakdown[comp], marker_color=col))
-            fig.update_layout(
-                barmode="stack",
+            # Formula 2 breakdown: bars are the three term-points only (Trust, Closeness, Affordability)
+            # and sum EXACTLY to the shown score. A separate small bar "Bed-risk deduction" appears only if it is >= 0.5 points.
+            p_val = float(h_row["p_bed"])
+            t_trust_val = float(h_row["t_trust"])
+            t_close_val = float(h_row["t_close"])
+            t_afford_val = float(h_row["t_afford"])
+            utility_val = float(h_row["utility"])
+            score_val = float(h_row["score"])
+
+            trust_pts = 100.0 * p_val * W_TRUST * t_trust_val
+            close_pts = 100.0 * p_val * W_CLOSE * t_close_val
+            afford_pts = 100.0 * p_val * W_FEE * t_afford_val
+            bed_risk_ded = 100.0 * (1.0 - p_val) * utility_val
+
+            terms = ["Trust", "Closeness", "Affordability"]
+            vals = [round(trust_pts, 2), round(close_pts, 2), round(afford_pts, 2)]
+            colors = ["#00BFA6", "#3B82F6", "#10B981"]
+
+            if bed_risk_ded >= 0.5:
+                terms.append("Bed-risk deduction")
+                vals.append(round(bed_risk_ded, 2))
+                colors.append("#EF4444")
+
+            fig_bd = go.Figure()
+            fig_bd.add_trace(go.Bar(
+                x=terms,
+                y=vals,
+                marker_color=colors,
+                text=[f"{v:.1f}" for v in vals],
+                textposition="outside",
+            ))
+            fig_bd.update_layout(
                 template="plotly_dark",
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(0,0,0,0)",
-                title="BedScore Breakdown: Component Points & Lost to Bed Risk",
-                yaxis_title="Points (out of 100)",
-                height=420,
-                legend=dict(orientation="h", yanchor="bottom", y=1.02),
+                title=f"How the score of {sel_bd_name} is built",
+                yaxis_title="Points",
+                height=360,
+                margin=dict(l=40, r=40, t=50, b=40),
             )
-        st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig_bd, use_container_width=True)
+            st.caption(
+                f"Score: **{score_val:.1f}** "
+                f"(Trust: {trust_pts:.1f} + Closeness: {close_pts:.1f} + Affordability: {afford_pts:.1f} = {trust_pts + close_pts + afford_pts:.1f} pts). "
+                f"Bed arrival probability P = {format_p(p_val)}."
+            )
+
 
 # Why two formulas?
 with st.expander("🔬 Why two formulas?"):
@@ -1090,7 +1142,13 @@ if explain_clicked and not ranked.empty:
 
 # ── Emergency footer ──────────────────────────────────────────────────
 st.markdown("---")
-st.markdown(f'<div class="emergency-bar">{EMERGENCY_TEXT}</div>', unsafe_allow_html=True)
+st.markdown(
+    '<div class="emergency-bar">'
+    '🚑 In a medical emergency call <strong>108</strong> (Ambulance) or <strong>112</strong> (Unified Helpline) · Toll-free 24/7 across Odisha'
+    '</div>',
+    unsafe_allow_html=True,
+)
+
 
 # ── Demo tools (bottom expander, hidden when DEMO_MODE is False) ───────
 if DEMO_MODE:

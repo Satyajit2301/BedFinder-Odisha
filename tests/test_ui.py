@@ -119,3 +119,54 @@ def test_screenshots_folder_only_contains_produced_files():
     assert not unexpected, f"Unexpected screenshot files found in docs/screenshots: {unexpected}"
 
 
+def test_format_p_display():
+    """V7: P display has one decimal, shows '≥99.9%' instead of 100% unless exactly 1.0."""
+    from src.ui_utils import format_p
+    assert format_p(0.996) == "99.6%"
+    assert format_p(0.9992) == "≥99.9%"
+    assert format_p(0.9999) == "≥99.9%"
+    assert format_p(1.0) == "100%"
+    assert format_p(0.784) == "78.4%"
+    assert format_p(0.0005) == "<0.1%"
+
+
+def test_score_breakdown_bars_sum_to_score():
+    """V7: Bar values (Trust, Closeness, Affordability) sum EXACTLY to the score ±0.05 for every hospital."""
+    import numpy as np
+    from src.data import load_hospitals, load_history_snapshot, build_snapshot
+    from src.scoring import get_score_breakdown
+    from src.config import LANDMARKS
+
+    hosp = load_hospitals()
+    last = load_history_snapshot()
+    snap = build_snapshot(hosp, last)
+
+    for lm_name, (la, lo) in LANDMARKS.items():
+        bd = get_score_breakdown(snap, la, lo, method="formula2")
+        term_sum = bd["Trust"] + bd["Closeness"] + bd["Affordability"]
+        diff = np.abs(term_sum - bd["Total"])
+        assert np.all(diff <= 0.05), f"Breakdown terms did not sum to score within 0.05 at {lm_name}: max diff {diff.max()}"
+
+
+def test_map_tiles_cartodb_and_no_invert_css():
+    """V7: Map uses CartoDB dark-matter tiles, removes CSS invert filter, and uses consistent Rs."""
+    from pathlib import Path
+    app_text = Path("app.py").read_text(encoding="utf-8")
+    assert "cartocdn.com/dark_all" in app_text, "CartoDB dark-matter tile URL must be used"
+    assert "filter: invert(1)" not in app_text, "Leaflet CSS invert filter must be removed"
+    assert "₹" not in app_text, "Currency symbol must be consistently 'Rs', no raw ₹ in app.py"
+
+
+def test_table_default_columns():
+    """V7: Table default columns match the specification."""
+    from pathlib import Path
+    app_text = Path("app.py").read_text(encoding="utf-8")
+    expected_default = [
+        "Rank", "Hospital", "Distance", "ETA", "Beds free",
+        "Bed status (ML)", "Fee/day", "Rating", "Scheme", "Directions",
+    ]
+    for col in expected_default:
+        assert f'"{col}"' in app_text, f"Default column {col} missing from app.py"
+
+
+

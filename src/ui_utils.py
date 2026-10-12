@@ -49,3 +49,19 @@ def status_word(p: float) -> tuple[str, str, str]:
         return "Tight", "#FFAA00", "🟡"
     else:
         return "Unlikely", "#DC3545", "🔴"
+
+
+def format_p(p: float) -> str:
+    """Format bed arrival probability P per UI requirement V7:
+    - one decimal ("99.6%")
+    - show "≥99.9%" instead of "100%" unless it is exactly 1.0
+    - show "<0.1%" if non-zero but below 0.001
+    """
+    if p >= 1.0:
+        return "100%"
+    if p >= 0.999:
+        return "≥99.9%"
+    if p <= 0.001 and p > 0.0:
+        return "<0.1%"
+    return f"{p * 100:.1f}%"
+
